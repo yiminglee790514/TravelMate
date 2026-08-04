@@ -1,6 +1,36 @@
-/**
- * 依 ID 取得旅程
- */
+const STORAGE_KEY = "travelmate-trips";
+
+/* ===========================
+   Trip
+=========================== */
+
+function getTrips() {
+  const data = localStorage.getItem(STORAGE_KEY);
+
+  if (!data) return [];
+
+  try {
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("讀取旅程失敗：", error);
+    return [];
+  }
+}
+
+function saveTrips(trips) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+}
+
+function addTrip(trip) {
+  const trips = getTrips();
+
+  trips.push(trip);
+
+  saveTrips(trips);
+
+  return trip;
+}
+
 function getTrip(id) {
 
   const trip = getTrips().find(
@@ -9,7 +39,7 @@ function getTrip(id) {
 
   if (!trip) return null;
 
-  // ===== 相容舊版本資料 =====
+  /* ===== 相容舊資料 ===== */
 
   if (!trip.items) {
     trip.items = [];
@@ -40,3 +70,132 @@ function getTrip(id) {
 
   return trip;
 }
+
+function updateTrip(updatedTrip) {
+
+  const trips = getTrips();
+
+  const index = trips.findIndex(
+    (trip) => String(trip.id) === String(updatedTrip.id)
+  );
+
+  if (index === -1) return;
+
+  trips[index] = updatedTrip;
+
+  saveTrips(trips);
+}
+
+function deleteTrip(id) {
+
+  const trips = getTrips().filter(
+    (trip) => String(trip.id) !== String(id)
+  );
+
+  saveTrips(trips);
+}
+
+/* ===========================
+   Item
+=========================== */
+
+function getItems(tripId) {
+
+  const trip = getTrip(tripId);
+
+  if (!trip) return [];
+
+  return trip.items;
+}
+
+function addItem(tripId, item) {
+
+  const trip = getTrip(tripId);
+
+  if (!trip) return;
+
+  trip.items.push(item);
+
+  updateTrip(trip);
+}
+
+function updateItem(tripId, updatedItem) {
+
+  const trip = getTrip(tripId);
+
+  if (!trip) return;
+
+  const index = trip.items.findIndex(
+    (item) => item.id === updatedItem.id
+  );
+
+  if (index === -1) return;
+
+  trip.items[index] = updatedItem;
+
+  updateTrip(trip);
+}
+
+function deleteItem(tripId, itemId) {
+
+  const trip = getTrip(tripId);
+
+  if (!trip) return;
+
+  trip.items = trip.items.filter(
+    (item) => item.id !== itemId
+  );
+
+  updateTrip(trip);
+}
+
+/* ===========================
+   Flight
+=========================== */
+
+function getFlights(tripId) {
+
+  const trip = getTrip(tripId);
+
+  if (!trip) return {
+    outbound: null,
+    inbound: null,
+  };
+
+  return trip.flights;
+}
+
+function saveFlights(tripId, flights) {
+
+  const trip = getTrip(tripId);
+
+  if (!trip) return;
+
+  trip.flights = flights;
+
+  updateTrip(trip);
+}
+
+/* ===========================
+   Export
+=========================== */
+
+const tripService = {
+
+  getTrips,
+  getTrip,
+  addTrip,
+  updateTrip,
+  deleteTrip,
+
+  getItems,
+  addItem,
+  updateItem,
+  deleteItem,
+
+  getFlights,
+  saveFlights,
+
+};
+
+export default tripService;
