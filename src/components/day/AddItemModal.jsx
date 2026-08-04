@@ -19,6 +19,10 @@ export default function AddItemModal({
   // 專門存放各種類型的額外資料
   const [extra, setExtra] = useState(item?.extra || {});
 
+  const [flightType, setFlightType] = useState(
+  item?.flightType || "outbound"
+);
+
   function handleSave() {
 
     if (!time || !title.trim()) {
@@ -34,6 +38,7 @@ export default function AddItemModal({
       address,
       note,
       type,
+      flightType,
       extra,
     });
 
@@ -93,12 +98,41 @@ export default function AddItemModal({
             <option value="transport">🚆 交通</option>
           </select>
 
-          {type === "flight" && (
-              <FlightEditor
-                extra={extra}
-                setExtra={setExtra}
+        {type === "flight" && (
+
+          <div className="rounded-2xl border bg-blue-50 p-4">
+
+            <div className="mb-3 text-lg font-bold text-blue-700">
+              ✈️ 航班
+            </div>
+
+            <label className="flex items-center gap-3 py-2">
+
+              <input
+                type="radio"
+                checked={flightType === "outbound"}
+                onChange={() => setFlightType("outbound")}
               />
-            )}
+
+              去程
+
+            </label>
+
+            <label className="mt-2 flex items-center gap-3 py-2">
+
+              <input
+                type="radio"
+                checked={flightType === "inbound"}
+                onChange={() => setFlightType("inbound")}
+              />
+
+              回程
+
+            </label>
+
+          </div>
+
+        )}
 
         </div>
 
