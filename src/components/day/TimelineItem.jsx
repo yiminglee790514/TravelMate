@@ -11,7 +11,7 @@ export default function TimelineItem({
     <div className="flex items-center gap-4 py-4">
 
       {/* 時間 */}
-      <div className="w-16 text-right">
+      <div className="w-12 text-right">
 
         <div className="font-semibold text-gray-700">
           {time}
@@ -31,7 +31,7 @@ export default function TimelineItem({
       {/* 內容 */}
       <div className="flex-1">
 
-        <div className="text-xl font-semibold">
+        <div className="text-[18px] font-semibold leading-tight">
           {icon} {title}
         </div>
 
@@ -71,11 +71,11 @@ export default function TimelineItem({
       </div>
 
       {/* 操作按鈕 */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1">
 
         <button
           onClick={onEdit}
-          className="rounded-lg p-2 text-xl transition hover:bg-blue-100"
+          className="rounded-lg p-1.5 text-xl transition hover:bg-blue-100"
           title="修改"
         >
           ✏️
@@ -83,7 +83,7 @@ export default function TimelineItem({
 
         <button
           onClick={onDelete}
-          className="rounded-lg p-2 text-lg transition hover:bg-red-100"
+          className="rounded-lg p-1.5 text-lg transition hover:bg-red-100"
           title="刪除"
         >
           🗑️
