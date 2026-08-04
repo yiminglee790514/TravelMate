@@ -2,9 +2,10 @@ export default function TimelineItem({
   time,
   title,
   icon,
+  onDelete,
 }) {
   return (
-    <div className="flex gap-4 py-4">
+    <div className="flex items-center gap-4 py-4">
 
       <div className="w-16 text-right">
 
@@ -25,12 +26,18 @@ export default function TimelineItem({
       <div className="flex-1">
 
         <div className="text-xl">
-
           {icon} {title}
-
         </div>
 
       </div>
+
+      <button
+        onClick={onDelete}
+        className="rounded-lg p-2 text-xl hover:bg-red-100"
+        title="刪除"
+      >
+        🗑️
+      </button>
 
     </div>
   );

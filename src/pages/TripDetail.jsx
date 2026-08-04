@@ -1,5 +1,7 @@
 import TimelineItem from "../components/day/TimelineItem";
-import { useState } from "react";
+import AddItemModal from "../components/day/AddItemModal";
+
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 
 import tripService from "../services/tripService";
@@ -30,8 +32,20 @@ export default function TripDetail() {
   const { id } = useParams();
 
   const [openDay, setOpenDay] = useState(1);
+const [showModal, setShowModal] = useState(false);
+
+const [items, setItems] = useState([]);
+
 
   const trip = tripService.getTrip(id);
+
+useEffect(() => {
+  setItems(tripService.getItems(id));
+}, [id]);
+
+if (!trip.items) {
+  trip.items = [];
+}
 
   if (!trip) {
     return (
@@ -114,25 +128,27 @@ export default function TripDetail() {
 
                     <div className="space-y-2">
 
-                      <TimelineItem
-                        time="09:00"
-                        title="桃園機場"
-                        icon="✈️"
-                      />
+{items.map((item) => (
+  <TimelineItem
+    key={item.id}
+    time={item.time}
+    title={item.title}
+    icon={item.icon}
+    onDelete={() => {
 
-                      <TimelineItem
-                        time="11:30"
-                        title="香港"
-                        icon="🛬"
-                      />
+      tripService.deleteItem(id, item.id);
 
-                      <TimelineItem
-                        time="15:00"
-                        title="飯店"
-                        icon="🏨"
-                      />
+      setItems(
+        tripService.getItems(id)
+      );
 
-                      <button className="mt-4 w-full rounded-xl bg-blue-500 py-3 text-white">
+    }}
+  />
+))}
+                      <button
+                        onClick={() => setShowModal(true)}
+                        className="mt-4 w-full rounded-xl bg-blue-500 py-3 text-white"
+                      >
                         ＋ 新增行程
                       </button>
 
@@ -143,6 +159,7 @@ export default function TripDetail() {
                 )}
 
               </div>
+
             );
 
           })}
@@ -151,6 +168,35 @@ export default function TripDetail() {
 
       </div>
 
+      {showModal && (
+<AddItemModal
+  onClose={() => setShowModal(false)}
+  onSave={(item) => {
+
+    const iconMap = {
+      flight: "✈️",
+      hotel: "🏨",
+      restaurant: "🍜",
+      attraction: "📍",
+      shopping: "🛍️",
+      transport: "🚆",
+    };
+
+const newItem = {
+  ...item,
+  icon: iconMap[item.type] || "📍",
+};
+
+tripService.addItem(id, newItem);
+
+setItems(tripService.getItems(id));
+
+setShowModal(false);
+  }}
+/>
+      )}
+
     </div>
+
   );
 }

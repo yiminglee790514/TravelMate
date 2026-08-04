@@ -31,10 +31,26 @@ function formatDate(date) {
   return date.replaceAll("-", "/");
 }
 
-export default function TripCard({ trip }) {
+export default function TripCard({ trip, onDelete }) {
   return (
     <Link to={`/trip/${trip.id}`}>
-      <div className="mt-6 rounded-3xl bg-white p-6 shadow-lg transition hover:scale-[1.02] hover:shadow-xl">
+
+      <div className="relative mt-6 rounded-3xl bg-white p-6 shadow-lg transition hover:scale-[1.02] hover:shadow-xl">
+
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (window.confirm(`確定要刪除「${trip.title}」嗎？`)) {
+              onDelete(trip.id);
+            }
+          }}
+          className="absolute right-5 top-5 rounded-lg p-2 text-xl hover:bg-red-100"
+          title="刪除旅程"
+        >
+          🗑️
+        </button>
 
         <h2 className="text-2xl font-bold">
           {trip.title}
@@ -53,6 +69,7 @@ export default function TripCard({ trip }) {
         </div>
 
       </div>
+
     </Link>
   );
 }

@@ -22,6 +22,9 @@ export default function AddTripModal({ onClose, onSave }) {
       city,
       startDate,
       endDate,
+
+      // 每個旅程都有自己的行程
+      items: [],
     });
 
     onClose();

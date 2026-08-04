@@ -24,6 +24,12 @@ export default function Home() {
     setShowModal(false);
   }
 
+  function handleDeleteTrip(id) {
+    tripService.deleteTrip(id);
+
+    setTrips(tripService.getTrips());
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
 
@@ -46,6 +52,7 @@ export default function Home() {
               <TripCard
                 key={trip.id}
                 trip={trip}
+                onDelete={handleDeleteTrip}
               />
             ))}
           </div>
