@@ -14,30 +14,41 @@ export default function TripModal({
   const [startDate, setStartDate] = useState(trip?.startDate || "");
   const [endDate, setEndDate] = useState(trip?.endDate || "");
 
-  function handleSave() {
+function handleSave() {
 
-    if (!title.trim()) {
-      alert("請輸入旅程名稱");
-      return;
-    }
+  if (!title.trim()) {
+    alert("請輸入旅程名稱");
+    return;
+  }
 
-    data: trip?.data || {
-    flights: {
+  onSave({
+    id: trip?.id || Date.now(),
+
+    title,
+    country,
+    city,
+    startDate,
+    endDate,
+
+    // 保留舊資料
+    items: trip?.items || [],
+
+    flights: trip?.flights || {
       outbound: null,
       inbound: null,
     },
 
-    hotels: [],
+    hotels: trip?.hotels || [],
 
-    transports: [],
+    transports: trip?.transports || [],
 
-    expenses: [],
+    expenses: trip?.expenses || [],
 
-    tickets: [],
-  },
+    tickets: trip?.tickets || [],
+  });
 
-    onClose();
-  }
+  onClose();
+}
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40">
