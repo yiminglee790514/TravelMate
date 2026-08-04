@@ -1,9 +1,14 @@
 import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
+
 import tripService from "../services/tripService";
+import TripModal from "../components/TripModal";
 
 export default function TripDashboard() {
 
   const { id } = useParams();
+
+  const [showTripModal, setShowTripModal] = useState(false);
 
   const trip = tripService.getTrip(id);
 
@@ -20,12 +25,24 @@ export default function TripDashboard() {
 
       <div className="mx-auto max-w-md px-6 py-10">
 
-        <Link
-          to="/"
-          className="text-blue-500"
-        >
-          ← 回首頁
-        </Link>
+        <div className="flex items-center justify-between">
+
+          <Link
+            to="/"
+            className="text-blue-500"
+          >
+            ← 回首頁
+          </Link>
+
+          <button
+            onClick={() => setShowTripModal(true)}
+            className="rounded-xl p-2 text-xl transition hover:bg-gray-100"
+            title="修改旅程"
+          >
+            ✏️
+          </button>
+
+        </div>
 
         <h1 className="mt-6 text-4xl font-bold">
           {trip.title}
@@ -81,6 +98,20 @@ export default function TripDashboard() {
         </div>
 
       </div>
+
+      {showTripModal && (
+
+        <TripModal
+          trip={trip}
+          onClose={() => setShowTripModal(false)}
+          onSave={(updatedTrip) => {
+            tripService.updateTrip(updatedTrip);
+            setShowTripModal(false);
+            window.location.reload();
+          }}
+        />
+
+      )}
 
     </div>
   );

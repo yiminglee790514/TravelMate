@@ -77,22 +77,14 @@ if (!trip.items) {
 
       <div className="mx-auto max-w-md px-6 py-10">
 
-        <div className="flex items-center justify-between">
+ <div>
 
-<Link
-  to={`/trip/${id}`}
-  className="text-blue-500"
->
-  ← {trip.title}
-</Link>
-
-  <button
-    onClick={() => setShowTripModal(true)}
-    className="rounded-xl p-2 text-xl transition hover:bg-gray-100"
-    title="修改旅程"
+  <Link
+    to={`/trip/${id}`}
+    className="text-blue-500"
   >
-    ✏️
-  </button>
+    ← 回旅程
+  </Link>
 
 </div>
 
