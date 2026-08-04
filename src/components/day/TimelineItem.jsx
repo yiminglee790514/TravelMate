@@ -2,20 +2,25 @@ export default function TimelineItem({
   time,
   title,
   icon,
+  address,
+  note,
+  onEdit,
   onDelete,
 }) {
   return (
     <div className="flex items-center gap-4 py-4">
 
+      {/* 時間 */}
       <div className="w-16 text-right">
 
-        <div className="font-semibold">
+        <div className="font-semibold text-gray-700">
           {time}
         </div>
 
       </div>
 
-      <div className="flex flex-col items-center">
+      {/* Timeline */}
+      <div className="flex flex-col items-center justify-start pt-2">
 
         <div className="h-4 w-4 rounded-full bg-blue-500"></div>
 
@@ -23,21 +28,68 @@ export default function TimelineItem({
 
       </div>
 
+      {/* 內容 */}
       <div className="flex-1">
 
-        <div className="text-xl">
+        <div className="text-xl font-semibold">
           {icon} {title}
         </div>
 
+        {address && (
+          <div className="mt-3">
+
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Address
+            </div>
+
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 block text-sm text-blue-600 hover:underline"
+            >
+              📍 {address}
+            </a>
+
+          </div>
+        )}
+
+        {note && (
+          <div className="mt-3">
+
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Note
+            </div>
+
+            <div className="mt-1 rounded-xl bg-yellow-50 p-3 text-sm text-gray-700">
+              📝 {note}
+            </div>
+
+          </div>
+        )}
+
       </div>
 
-      <button
-        onClick={onDelete}
-        className="rounded-lg p-2 text-xl hover:bg-red-100"
-        title="刪除"
-      >
-        🗑️
-      </button>
+      {/* 操作按鈕 */}
+      <div className="flex items-center gap-2">
+
+        <button
+          onClick={onEdit}
+          className="rounded-lg p-2 text-xl transition hover:bg-blue-100"
+          title="修改"
+        >
+          ✏️
+        </button>
+
+        <button
+          onClick={onDelete}
+          className="rounded-lg p-2 text-lg transition hover:bg-red-100"
+          title="刪除"
+        >
+          🗑️
+        </button>
+
+      </div>
 
     </div>
   );

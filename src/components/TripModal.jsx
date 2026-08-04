@@ -1,12 +1,18 @@
 import { useState } from "react";
 
-export default function AddTripModal({ onClose, onSave }) {
+export default function TripModal({
+  trip,
+  onClose,
+  onSave,
+}) {
 
-  const [title, setTitle] = useState("");
-  const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const isEdit = !!trip;
+
+  const [title, setTitle] = useState(trip?.title || "");
+  const [country, setCountry] = useState(trip?.country || "");
+  const [city, setCity] = useState(trip?.city || "");
+  const [startDate, setStartDate] = useState(trip?.startDate || "");
+  const [endDate, setEndDate] = useState(trip?.endDate || "");
 
   function handleSave() {
 
@@ -15,17 +21,20 @@ export default function AddTripModal({ onClose, onSave }) {
       return;
     }
 
-    onSave({
-      id: Date.now(),
-      title,
-      country,
-      city,
-      startDate,
-      endDate,
+    data: trip?.data || {
+    flights: {
+      outbound: null,
+      inbound: null,
+    },
 
-      // 每個旅程都有自己的行程
-      items: [],
-    });
+    hotels: [],
+
+    transports: [],
+
+    expenses: [],
+
+    tickets: [],
+  },
 
     onClose();
   }
@@ -36,7 +45,7 @@ export default function AddTripModal({ onClose, onSave }) {
       <div className="w-[420px] rounded-3xl bg-white p-8 shadow-2xl">
 
         <h2 className="mb-6 text-2xl font-bold">
-          新增旅程
+          {isEdit ? "修改旅程" : "新增旅程"}
         </h2>
 
         <div className="space-y-4">
@@ -91,7 +100,7 @@ export default function AddTripModal({ onClose, onSave }) {
             onClick={handleSave}
             className="rounded-xl bg-blue-500 px-5 py-3 text-white"
           >
-            建立
+            {isEdit ? "儲存" : "建立"}
           </button>
 
         </div>

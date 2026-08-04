@@ -31,11 +31,31 @@ function formatDate(date) {
   return date.replaceAll("-", "/");
 }
 
+function getFlag(country) {
+  const flags = {
+    日本: "🇯🇵",
+    韓國: "🇰🇷",
+    香港: "🇭🇰",
+    台灣: "🇹🇼",
+    泰國: "🇹🇭",
+    美國: "🇺🇸",
+    新加坡: "🇸🇬",
+    越南: "🇻🇳",
+    法國: "🇫🇷",
+    英國: "🇬🇧",
+  };
+
+  return flags[country] || "🌍";
+}
+
 export default function TripCard({ trip, onDelete }) {
+
+  const itemCount = trip.items?.length || 0;
+
   return (
     <Link to={`/trip/${trip.id}`}>
 
-      <div className="relative mt-6 rounded-3xl bg-white p-6 shadow-lg transition hover:scale-[1.02] hover:shadow-xl">
+      <div className="relative mt-6 rounded-3xl bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
 
         <button
           onClick={(e) => {
@@ -46,26 +66,50 @@ export default function TripCard({ trip, onDelete }) {
               onDelete(trip.id);
             }
           }}
-          className="absolute right-5 top-5 rounded-lg p-2 text-xl hover:bg-red-100"
+          className="absolute right-5 top-5 rounded-xl p-2 text-lg transition hover:bg-red-100"
           title="刪除旅程"
         >
           🗑️
         </button>
 
-        <h2 className="text-2xl font-bold">
-          {trip.title}
-        </h2>
+        <div className="flex items-start justify-between">
 
-        <p className="mt-3 text-gray-500">
-          📍 {trip.country}｜{trip.city}
-        </p>
+          <div>
 
-        <p className="mt-2 text-gray-500">
-          📅 {formatDate(trip.startDate)} ~ {formatDate(trip.endDate)}
-        </p>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {getFlag(trip.country)} {trip.title}
+            </h2>
 
-        <div className="mt-5 border-t pt-4 font-semibold text-blue-600">
-          {getTripStatus(trip.startDate, trip.endDate)}
+            <p className="mt-2 text-gray-500">
+              {trip.city} · {trip.country}
+            </p>
+
+          </div>
+
+          <div className="text-2xl text-gray-300">
+            ›
+          </div>
+
+        </div>
+
+        <div className="mt-5 rounded-2xl bg-gray-50 p-4">
+
+          <div className="text-sm text-gray-500">
+            📅 {formatDate(trip.startDate)} ~ {formatDate(trip.endDate)}
+          </div>
+
+          <div className="mt-3 flex items-center justify-between">
+
+            <div className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
+              {getTripStatus(trip.startDate, trip.endDate)}
+            </div>
+
+            <div className="text-sm text-gray-500">
+              📋 {itemCount} 個行程
+            </div>
+
+          </div>
+
         </div>
 
       </div>
