@@ -133,12 +133,19 @@ export default function FlightModal({
             value={departureCode}
             onChange={(e) => {
 
-                const airport = AIRPORTS.find(
-                (a) => a.code === e.target.value
-                );
+                    const airport = AIRPORTS.find(
+                    (a) => a.code === e.target.value
+                    );
 
-                setDepartureCode(airport.code);
-                setDepartureName(airport.name);
+                    if (!airport) return;
+
+                    setDepartureCode(airport.code);
+
+                    if (airport.code !== "CUSTOM") {
+                    setDepartureName(airport.name);
+                    } else {
+                    setDepartureName("");
+                    }
 
             }}
             >
@@ -160,19 +167,21 @@ export default function FlightModal({
 
             </select>
 
+            {departureCode === "CUSTOM" && (
+            <input
+                className="w-full rounded-xl border p-3"
+                placeholder="請輸入出發機場"
+                value={departureName}
+                onChange={(e) => setDepartureName(e.target.value)}
+            />
+            )}
+
             <input
             type="time"
             className="w-full rounded-xl border p-3"
             value={departureTime}
             onChange={(e)=>setDepartureTime(e.target.value)}
             />
-
-          <input
-            type="time"
-            className="w-full rounded-xl border p-3"
-            value={departureTime}
-            onChange={(e)=>setDepartureTime(e.target.value)}
-          />
 
           <hr/>
 
@@ -186,13 +195,18 @@ export default function FlightModal({
             onChange={(e) => {
 
                 const airport = AIRPORTS.find(
-                (a) => a.code === e.target.value
+                    (a) => a.code === e.target.value
                 );
 
                 if (!airport) return;
 
                 setArrivalCode(airport.code);
-                setArrivalName(airport.name);
+
+                if (airport.code !== "CUSTOM") {
+                    setArrivalName(airport.name);
+                } else {
+                    setArrivalName("");
+                }
 
             }}
             >
@@ -213,6 +227,15 @@ export default function FlightModal({
             ))}
 
             </select>
+
+            {arrivalCode === "CUSTOM" && (
+            <input
+                className="w-full rounded-xl border p-3"
+                placeholder="請輸入抵達機場"
+                value={arrivalName}
+                onChange={(e) => setArrivalName(e.target.value)}
+            />
+            )}
 
             <input
             type="time"

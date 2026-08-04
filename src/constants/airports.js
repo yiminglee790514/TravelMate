@@ -7,6 +7,12 @@ export const AIRPORTS = [
 },
 
 {
+    code: "KHH",
+    name: "高雄國際機場（小港）",
+    city: "高雄",
+},
+
+{
     code:"NRT",
     name:"成田國際機場",
     city:"東京",
@@ -22,6 +28,12 @@ export const AIRPORTS = [
     code:"KIX",
     name:"關西國際機場",
     city:"大阪",
+},
+
+{
+  code: "CUSTOM",
+  name: "✏️ 自訂機場",
+  city: "",
 },
 
 
