@@ -16,11 +16,21 @@ export default function TripModal({
 
 function handleSave() {
 
+  console.log("handleSave 執行");
+  console.log({
+    title,
+    country,
+    city,
+    startDate,
+    endDate,
+  });
+
   if (!title.trim()) {
     alert("請輸入旅程名稱");
     return;
   }
 
+  console.log("準備呼叫 onSave");
   onSave({
     id: trip?.id || Date.now(),
 
@@ -46,7 +56,8 @@ function handleSave() {
 
     tickets: trip?.tickets || [],
   });
-
+  console.log("onSave 已呼叫");
+  
   onClose();
 }
 

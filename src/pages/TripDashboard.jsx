@@ -104,11 +104,13 @@ export default function TripDashboard() {
         <TripModal
           trip={trip}
           onClose={() => setShowTripModal(false)}
-          onSave={(updatedTrip) => {
-            tripService.updateTrip(updatedTrip);
-            setShowTripModal(false);
-            window.location.reload();
-          }}
+            onSave={(updatedTrip) => {
+
+                tripService.updateTrip(updatedTrip);
+
+                setShowTripModal(false);
+
+            }}
         />
 
       )}

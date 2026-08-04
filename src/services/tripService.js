@@ -86,9 +86,14 @@ function updateTrip(updatedTrip) {
 
   const trips = getTrips();
 
+  console.log("更新前：", trips);
+
   const index = trips.findIndex(
     (trip) => String(trip.id) === String(updatedTrip.id)
   );
+
+  console.log("index =", index);
+  console.log("updatedTrip =", updatedTrip);
 
   if (index === -1) return;
 
