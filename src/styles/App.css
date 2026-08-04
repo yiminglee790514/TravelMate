@@ -1,0 +1,92 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#F2F2F7;
+    font-family:"Microsoft JhengHei",sans-serif;
+}
+
+.app{
+    max-width:420px;
+    margin:auto;
+    padding:25px;
+}
+
+header{
+    margin-top:20px;
+    margin-bottom:35px;
+}
+
+header h1{
+    font-size:42px;
+    font-weight:700;
+}
+
+header p{
+    margin-top:8px;
+    color:#666;
+}
+
+.addBtn{
+
+    width:100%;
+
+    padding:16px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:#007AFF;
+
+    color:white;
+
+    font-size:18px;
+
+    cursor:pointer;
+}
+
+.addBtn:hover{
+
+    background:#0066D6;
+
+}
+
+.emptyCard{
+
+    margin-top:25px;
+
+    background:white;
+
+    border-radius:24px;
+
+    padding:40px;
+
+    text-align:center;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+}
+
+.icon{
+
+    font-size:55px;
+
+}
+
+.emptyCard h2{
+
+    margin-top:20px;
+
+}
+
+.emptyCard p{
+
+    margin-top:10px;
+
+    color:#888;
+
+}
