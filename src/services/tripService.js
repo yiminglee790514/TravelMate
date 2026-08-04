@@ -1,3 +1,5 @@
+import { syncLocalToCloud } from "./cloudService";
+
 const STORAGE_KEY = "travelmate-trips";
 
 /* ===========================
@@ -18,7 +20,16 @@ function getTrips() {
 }
 
 function saveTrips(trips) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(trips)
+  );
+
+  // 同步到 Firebase（非同步執行，不影響原本流程）
+  syncLocalToCloud(trips)
+    .catch(console.error);
+
 }
 
 function addTrip(trip) {

@@ -4,33 +4,74 @@ import Home from "./pages/Home";
 import TripDashboard from "./pages/TripDashboard";
 import ItineraryPage from "./pages/ItineraryPage";
 import FlightPage from "./pages/FlightPage";
+import { useEffect, useState } from "react";
+import { listenAuth } from "./services/authService";
+import Login from "./pages/Login";
+import { syncCloudToLocal } from "./services/cloudService";
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
 
-        <Route
-          path="/"
-          element={<Home />}
-        />
+  const [user, setUser] = useState(undefined);
 
-        <Route
-          path="/trip/:id"
-          element={<TripDashboard />}
-        />
+useEffect(() => {
 
-        <Route
-          path="/trip/:id/flight"
-          element={<FlightPage />}
-        />
+  const unsubscribe = listenAuth(async (currentUser) => {
 
-        <Route
-          path="/trip/:id/itinerary"
-          element={<ItineraryPage />}
-        />
+    if (currentUser) {
 
-      </Routes>
-    </BrowserRouter>
-  );
+      try {
+
+        await syncCloudToLocal();
+
+      } catch (err) {
+
+        console.error(err);
+
+      }
+
+    }
+
+    setUser(currentUser);
+
+  });
+
+  return unsubscribe;
+
+}, []);
+
+  if (user === undefined) {
+    return null;
+  }
+
+  if (!user) {
+  return <Login />;
+}
+
+return (
+  <BrowserRouter key={user.uid}>
+    <Routes>
+
+      <Route
+        path="/"
+        element={<Home />}
+      />
+
+      <Route
+        path="/trip/:id"
+        element={<TripDashboard />}
+      />
+
+      <Route
+        path="/trip/:id/flight"
+        element={<FlightPage />}
+      />
+
+      <Route
+        path="/trip/:id/itinerary"
+        element={<ItineraryPage />}
+      />
+
+    </Routes>
+  </BrowserRouter>
+);
 }
