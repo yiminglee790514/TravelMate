@@ -44,42 +44,43 @@ export default function WeatherPage() {
 }
 
   const [city, setCity] = useState(trip?.city || "");
-  const [weather, setWeather] = useState(null);
+  const [, forceUpdate] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  async function loadWeather(searchCity = city) {
+async function loadForecast(day, index) {
 
-    try {
+  const data = await getWeather(day.city);
+    console.log("day =", day.date);
+    console.log("index =", index);
+    console.log("API 日期 =", data.forecast.forecastday.map(f => f.date));
 
-      setLoading(true);
+  if (!data?.forecast?.forecastday?.length) return;
 
-      const data = await getWeather(searchCity);
-
-      console.log(data);
-
-      setWeather(data);
-
-    } catch (err) {
-
-      console.error(err);
-
-      alert("查詢天氣失敗");
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  }
-
-function handleEdit(day, newCity) {
-
-  day.city = newCity;
+  day.forecast =
+    data.forecast.forecastday[index] ||
+    data.forecast.forecastday[0];
 
   tripService.updateTrip(trip);
 
-  loadWeather(newCity);
+  forceUpdate(v => v + 1);
+
+}
+
+async function handleEdit(day, newCity) {
+
+  const index = trip.weather.findIndex(
+    (item) => item.id === day.id
+  );
+
+  if (index === -1) return;
+
+  day.city = newCity;
+
+  day.forecast = null;
+
+  tripService.updateTrip(trip);
+
+  await loadForecast(day, index);
 
 }
 
@@ -89,7 +90,15 @@ useEffect(() => {
 
   generateWeatherDays();
 
-  loadWeather(trip.city);
+    trip.weather.forEach((day, index) => {
+
+    if (!day.forecast) {
+
+        loadForecast(day, index);
+
+    }
+
+    });
 
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
@@ -123,44 +132,32 @@ useEffect(() => {
 
 
 
-        <div className="mt-8 space-y-4">
+<div className="mt-8 space-y-4">
 
-          {loading ? (
+  {loading ? (
 
-            <div className="rounded-2xl bg-white p-8 text-center shadow">
-              讀取天氣中...
-            </div>
+    <div className="rounded-2xl bg-white p-8 text-center shadow">
+      讀取天氣中...
+    </div>
 
-          ) : weather?.forecast?.forecastday ? (
+  ) : (
 
-weather.forecast.forecastday.map((forecast, index) => {
+    <>
+      {trip.weather.map((day) => (
 
-  const day = trip.weather[index];
+        <WeatherDayCard
+          key={`${day.date}-${day.city}`}
+          day={day}
+          weather={day.forecast}
+          onEdit={handleEdit}
+        />
 
-  return (
+      ))}
+    </>
 
-    <WeatherDayCard
-      key={`${day.id}-${forecast.date}`}
-      day={day}
-      weather={forecast}
-      onEdit={handleEdit}
-    />
+  )}
 
-  );
-
-})
-
-          ) : (
-
-            <div className="rounded-2xl bg-white p-8 text-center shadow">
-
-              查無天氣資料
-
-            </div>
-
-          )}
-
-        </div>
+</div>
 
       </div>
 
