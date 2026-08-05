@@ -8,6 +8,9 @@ import { useEffect, useState } from "react";
 import { listenAuth } from "./services/authService";
 import Login from "./pages/Login";
 import { syncCloudToLocal } from "./services/cloudService";
+import HotelPage from "./pages/HotelPage";
+import TransportPage from "./pages/TransportPage";
+import WeatherPage from "./pages/WeatherPage";
 
 export default function App() {
 
@@ -57,13 +60,28 @@ return (
       />
 
       <Route
+        path="/trip/:id/weather"
+        element={<WeatherPage />}
+      />
+
+      <Route
         path="/trip/:id"
         element={<TripDashboard />}
       />
 
       <Route
+        path="/trip/:id/transport"
+        element={<TransportPage />}
+      />
+
+      <Route
         path="/trip/:id/flight"
         element={<FlightPage />}
+      />
+
+      <Route
+        path="/trip/:id/hotel"
+        element={<HotelPage />}
       />
 
       <Route

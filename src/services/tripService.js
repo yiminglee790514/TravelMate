@@ -71,6 +71,14 @@ function getTrip(id) {
     trip.transports = [];
   }
 
+  if (!trip.weather) {
+  trip.weather = [];
+}
+
+  if (!trip.weather) {
+    trip.weather = [];
+  }
+
   if (!trip.expenses) {
     trip.expenses = [];
   }

@@ -66,19 +66,29 @@ export default function TripDashboard() {
             <span>›</span>
           </Link>
 
-          <button
-            className="flex w-full items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
-          >
+          <Link
+            to={`/trip/${id}/hotel`}
+            className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
+            >
             <span>🏨 飯店</span>
             <span>›</span>
-          </button>
+          </Link>
 
-          <button
-            className="flex w-full items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
-          >
+          <Link
+            to={`/trip/${id}/transport`}
+            className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
+            >
             <span>🚆 交通</span>
             <span>›</span>
-          </button>
+        </Link>
+
+          <Link
+            to={`/trip/${id}/weather`}
+            className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
+            >
+            <span>🌤️ 天氣</span>
+            <span>›</span>
+          </Link>
 
           <Link
             to={`/trip/${id}/itinerary`}
