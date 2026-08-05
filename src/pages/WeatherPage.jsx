@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import tripService from "../services/tripService";
 import { getWeather } from "../services/weatherService";
+import WeatherDayCard from "../components/WeatherDayCard";
 
 export default function WeatherPage() {
 
@@ -72,6 +73,16 @@ export default function WeatherPage() {
 
   }
 
+function handleEdit(day, newCity) {
+
+  day.city = newCity;
+
+  tripService.updateTrip(trip);
+
+  loadWeather(newCity);
+
+}
+
 useEffect(() => {
 
   if (!trip) return;
@@ -110,30 +121,7 @@ useEffect(() => {
           🌤️ 天氣
         </h1>
 
-        <div className="mt-6">
 
-          <label className="mb-2 block text-sm font-medium text-gray-600">
-            天氣地點
-          </label>
-
-          <div className="flex gap-2">
-
-            <input
-              className="flex-1 rounded-xl border p-3"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            />
-
-            <button
-              onClick={() => loadWeather(city)}
-              className="rounded-xl bg-blue-500 px-5 text-white"
-            >
-              查詢
-            </button>
-
-          </div>
-
-        </div>
 
         <div className="mt-8 space-y-4">
 
@@ -145,54 +133,22 @@ useEffect(() => {
 
           ) : weather?.forecast?.forecastday ? (
 
-            weather.forecast.forecastday.map((day) => (
+weather.forecast.forecastday.map((forecast, index) => {
 
-              <div
-                key={day.date}
-                className="rounded-2xl bg-white p-5 shadow"
-              >
+  const day = trip.weather[index];
 
-                <div className="flex items-center justify-between">
+  return (
 
-                  <div>
+    <WeatherDayCard
+      key={`${day.id}-${forecast.date}`}
+      day={day}
+      weather={forecast}
+      onEdit={handleEdit}
+    />
 
-                    <div className="text-lg font-bold">
+  );
 
-                      {day.date}
-
-                    </div>
-
-                    <div className="mt-1 text-gray-500">
-
-                      {day.day.condition.text}
-
-                    </div>
-
-                  </div>
-
-                  <img
-                    src={day.day.condition.icon}
-                    alt={day.day.condition.text}
-                    className="h-14 w-14"
-                  />
-
-                </div>
-
-                <div className="mt-4 text-lg">
-
-                  🌡️ {day.day.mintemp_c}° ~ {day.day.maxtemp_c}°
-
-                </div>
-
-                <div className="mt-2 text-gray-500">
-
-                  ☔ 降雨機率 {day.day.daily_chance_of_rain}%
-
-                </div>
-
-              </div>
-
-            ))
+})
 
           ) : (
 

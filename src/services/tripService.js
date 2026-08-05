@@ -72,10 +72,6 @@ function getTrip(id) {
   }
 
   if (!trip.weather) {
-  trip.weather = [];
-}
-
-  if (!trip.weather) {
     trip.weather = [];
   }
 
