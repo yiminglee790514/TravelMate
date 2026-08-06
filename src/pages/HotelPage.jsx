@@ -1,51 +1,85 @@
 import { Link, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import tripService from "../services/tripService";
+import { getShare } from "../services/shareService";
+
 import HotelModal from "../components/HotelModal";
 import HotelCard from "../components/HotelCard";
 
 export default function HotelPage() {
 
-  const { id } = useParams();
+  const { id, shareId } = useParams();
+
+  const readonly = !!shareId;
+
+  const [trip, setTrip] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
 
   const [editingHotel, setEditingHotel] = useState(null);
 
-  const trip = tripService.getTrip(id);
+  useEffect(() => {
+
+    async function loadTrip() {
+
+      if (readonly) {
+
+        const data = await getShare(shareId);
+
+        setTrip(data);
+
+      } else {
+
+        setTrip(tripService.getTrip(id));
+
+      }
+
+    }
+
+    loadTrip();
+
+  }, [id, shareId, readonly]);
 
   if (!trip) {
+
     return (
       <div className="min-h-screen flex items-center justify-center">
-        找不到旅程
+        載入中...
       </div>
     );
+
   }
 
-function handleSaveHotel(hotel) {
+  function handleSaveHotel(hotel) {
 
-    const index = trip.hotels.findIndex(
-        (h) => h.id === hotel.id
+    const updatedTrip = { ...trip };
+
+    updatedTrip.hotels = [...updatedTrip.hotels];
+
+    const index = updatedTrip.hotels.findIndex(
+      (h) => h.id === hotel.id
     );
 
     if (index === -1) {
 
-        trip.hotels.push(hotel);
+      updatedTrip.hotels.push(hotel);
 
     } else {
 
-        trip.hotels[index] = hotel;
+      updatedTrip.hotels[index] = hotel;
 
     }
 
-    tripService.updateTrip(trip);
+    tripService.updateTrip(updatedTrip);
+
+    setTrip(updatedTrip);
 
     setEditingHotel(null);
 
     setShowModal(false);
 
-}
+  }
 
   return (
 
@@ -54,7 +88,11 @@ function handleSaveHotel(hotel) {
       <div className="mx-auto max-w-md px-6 py-10">
 
         <Link
-          to={`/trip/${id}`}
+          to={
+            readonly
+              ? `/share/${shareId}`
+              : `/trip/${id}`
+          }
           className="text-blue-500"
         >
           ← 返回旅程
@@ -64,21 +102,25 @@ function handleSaveHotel(hotel) {
           🏨 飯店
         </h1>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="
-            mt-8
-            w-full
-            rounded-2xl
-            bg-blue-500
-            py-4
-            text-lg
-            font-semibold
-            text-white
-          "
-        >
-          ＋ 新增飯店
-        </button>
+        {!readonly && (
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="
+              mt-8
+              w-full
+              rounded-2xl
+              bg-blue-500
+              py-4
+              text-lg
+              font-semibold
+              text-white
+            "
+          >
+            ＋ 新增飯店
+          </button>
+
+        )}
 
         <div className="mt-8 space-y-4">
 
@@ -94,33 +136,34 @@ function handleSaveHotel(hotel) {
 
             trip.hotels.map((hotel) => (
 
-            <HotelCard
+              <HotelCard
                 key={hotel.id}
                 hotel={hotel}
-
+                readonly={readonly}
                 onEdit={() => {
 
-                setEditingHotel(hotel);
+                  setEditingHotel(hotel);
 
-                setShowModal(true);
+                  setShowModal(true);
 
                 }}
-
                 onDelete={() => {
 
-                if (!confirm("確定刪除此飯店？")) return;
+                  if (!confirm("確定刪除此飯店？")) return;
 
-                trip.hotels = trip.hotels.filter(
-                    (h) => h.id !== hotel.id
-                );
+                  const updatedTrip = { ...trip };
 
-                tripService.updateTrip(trip);
+                  updatedTrip.hotels =
+                    updatedTrip.hotels.filter(
+                      (h) => h.id !== hotel.id
+                    );
 
-                window.location.reload();
+                  tripService.updateTrip(updatedTrip);
+
+                  setTrip(updatedTrip);
 
                 }}
-
-            />
+              />
 
             ))
 
@@ -130,18 +173,18 @@ function handleSaveHotel(hotel) {
 
       </div>
 
-      {showModal && (
+      {!readonly && showModal && (
 
         <HotelModal
-            hotel={editingHotel}
-            onClose={() => {
+          hotel={editingHotel}
+          onClose={() => {
 
-                setEditingHotel(null);
+            setEditingHotel(null);
 
-                setShowModal(false);
+            setShowModal(false);
 
-            }}
-            onSave={handleSaveHotel}
+          }}
+          onSave={handleSaveHotel}
         />
 
       )}

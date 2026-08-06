@@ -1,44 +1,78 @@
 import { Link, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import tripService from "../services/tripService";
+import { getShare } from "../services/shareService";
+
 import TransportModal from "../components/TransportModal";
 import TransportCard from "../components/TransportCard";
 
 export default function TransportPage() {
 
-  const { id } = useParams();
+  const { id, shareId } = useParams();
+
+  const readonly = !!shareId;
+
+  const [trip, setTrip] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
   const [editingTransport, setEditingTransport] = useState(null);
 
-  const trip = tripService.getTrip(id);
+  useEffect(() => {
+
+    async function loadTrip() {
+
+      if (readonly) {
+
+        const data = await getShare(shareId);
+
+        setTrip(data);
+
+      } else {
+
+        setTrip(tripService.getTrip(id));
+
+      }
+
+    }
+
+    loadTrip();
+
+  }, [id, shareId, readonly]);
 
   if (!trip) {
+
     return (
       <div className="min-h-screen flex items-center justify-center">
-        找不到旅程
+        載入中...
       </div>
     );
+
   }
 
   function handleSaveTransport(transport) {
 
-    const index = trip.transports.findIndex(
+    const updatedTrip = { ...trip };
+
+    updatedTrip.transports = [...updatedTrip.transports];
+
+    const index = updatedTrip.transports.findIndex(
       (t) => t.id === transport.id
     );
 
     if (index === -1) {
 
-      trip.transports.push(transport);
+      updatedTrip.transports.push(transport);
 
     } else {
 
-      trip.transports[index] = transport;
+      updatedTrip.transports[index] = transport;
 
     }
 
-    tripService.updateTrip(trip);
+    tripService.updateTrip(updatedTrip);
+
+    setTrip(updatedTrip);
 
     setEditingTransport(null);
     setShowModal(false);
@@ -49,15 +83,18 @@ export default function TransportPage() {
 
     if (!confirm("確定刪除此交通？")) return;
 
-    trip.transports = trip.transports.filter(
-      (t) => t.id !== id
-    );
+    const updatedTrip = { ...trip };
 
-    tripService.updateTrip(trip);
+    updatedTrip.transports =
+      updatedTrip.transports.filter(
+        (t) => t.id !== id
+      );
+
+    tripService.updateTrip(updatedTrip);
+
+    setTrip(updatedTrip);
 
     setEditingTransport(null);
-
-    window.location.reload();
 
   }
 
@@ -68,7 +105,11 @@ export default function TransportPage() {
       <div className="mx-auto max-w-md px-6 py-10">
 
         <Link
-          to={`/trip/${id}`}
+          to={
+            readonly
+              ? `/share/${shareId}`
+              : `/trip/${id}`
+          }
           className="text-blue-500"
         >
           ← 返回旅程
@@ -78,27 +119,31 @@ export default function TransportPage() {
           🚆 交通
         </h1>
 
-        <button
-          onClick={() => {
+        {!readonly && (
 
-            setEditingTransport(null);
+          <button
+            onClick={() => {
 
-            setShowModal(true);
+              setEditingTransport(null);
 
-          }}
-          className="
-            mt-8
-            w-full
-            rounded-2xl
-            bg-blue-500
-            py-4
-            text-lg
-            font-semibold
-            text-white
-          "
-        >
-          ＋ 新增交通
-        </button>
+              setShowModal(true);
+
+            }}
+            className="
+              mt-8
+              w-full
+              rounded-2xl
+              bg-blue-500
+              py-4
+              text-lg
+              font-semibold
+              text-white
+            "
+          >
+            ＋ 新增交通
+          </button>
+
+        )}
 
         <div className="mt-8 space-y-4">
 
@@ -117,7 +162,7 @@ export default function TransportPage() {
               <TransportCard
                 key={transport.id}
                 transport={transport}
-
+                readonly={readonly}
                 onEdit={() => {
 
                   setEditingTransport(transport);
@@ -125,13 +170,11 @@ export default function TransportPage() {
                   setShowModal(true);
 
                 }}
-
                 onDelete={() => {
 
                   handleDeleteTransport(transport.id);
 
                 }}
-
               />
 
             ))
@@ -142,11 +185,10 @@ export default function TransportPage() {
 
       </div>
 
-      {showModal && (
+      {!readonly && showModal && (
 
         <TransportModal
           transport={editingTransport}
-
           onClose={() => {
 
             setEditingTransport(null);
@@ -154,9 +196,7 @@ export default function TransportPage() {
             setShowModal(false);
 
           }}
-
           onSave={handleSaveTransport}
-
         />
 
       )}

@@ -14,14 +14,20 @@ export default function Home() {
   const [trips, setTrips] = useState([]);
 
   useEffect(() => {
-    setTrips(tripService.getTrips());
+
+    setTrips(
+      tripService.getTrips()
+    );
+
   }, []);
 
   function handleAddTrip(trip) {
 
     tripService.addTrip(trip);
 
-    setTrips(tripService.getTrips());
+    setTrips(
+      tripService.getTrips()
+    );
 
     setShowModal(false);
 
@@ -31,7 +37,9 @@ export default function Home() {
 
     tripService.deleteTrip(id);
 
-    setTrips(tripService.getTrips());
+    setTrips(
+      tripService.getTrips()
+    );
 
   }
 

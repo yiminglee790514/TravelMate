@@ -2,6 +2,7 @@ export default function HotelCard({
   hotel,
   onEdit,
   onDelete,
+  readonly = false,
 }) {
 
   const nights =
@@ -25,23 +26,27 @@ export default function HotelCard({
           🏨 {hotel.name}
         </div>
 
-        <div className="flex gap-1">
+        {!readonly && (
 
-          <button
-            onClick={onEdit}
-            className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-blue-100 hover:text-blue-500"
-          >
-            ✏️
-          </button>
+          <div className="flex gap-1">
 
-          <button
-            onClick={onDelete}
-            className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-red-100 hover:text-red-500"
-          >
-            🗑️
-          </button>
+            <button
+              onClick={onEdit}
+              className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-blue-100 hover:text-blue-500"
+            >
+              ✏️
+            </button>
 
-        </div>
+            <button
+              onClick={onDelete}
+              className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-red-100 hover:text-red-500"
+            >
+              🗑️
+            </button>
+
+          </div>
+
+        )}
 
       </div>
 

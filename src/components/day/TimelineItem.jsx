@@ -1,4 +1,5 @@
 export default function TimelineItem({
+  item,
   time,
   title,
   icon,
@@ -6,8 +7,24 @@ export default function TimelineItem({
   note,
   onEdit,
   onDelete,
+  readonly = false,
 }) {
+
+  // 支援兩種傳法：
+  // <TimelineItem item={...} />
+  // <TimelineItem time="" title="" ... />
+  if (item) {
+
+    time = item.time;
+    title = item.title;
+    icon = item.icon;
+    address = item.address;
+    note = item.note;
+
+  }
+
   return (
+
     <div className="py-4">
 
       {/* 第一行：時間 + 操作 */}
@@ -17,25 +34,29 @@ export default function TimelineItem({
           {time}
         </div>
 
-        <div className="flex items-center gap-1">
+        {!readonly && (
 
-          <button
-            onClick={onEdit}
-            className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-blue-100 hover:text-blue-500"
-            title="修改"
-          >
-            ✏️
-          </button>
+          <div className="flex items-center gap-1">
 
-          <button
-            onClick={onDelete}
-            className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-red-100 hover:text-red-500"
-            title="刪除"
-          >
-            🗑️
-          </button>
+            <button
+              onClick={onEdit}
+              className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-blue-100 hover:text-blue-500"
+              title="修改"
+            >
+              ✏️
+            </button>
 
-        </div>
+            <button
+              onClick={onDelete}
+              className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-red-100 hover:text-red-500"
+              title="刪除"
+            >
+              🗑️
+            </button>
+
+          </div>
+
+        )}
 
       </div>
 
@@ -54,12 +75,12 @@ export default function TimelineItem({
         {/* 內容 */}
         <div className="min-w-0 flex-1">
 
-          {/* 地點名稱 */}
           <div className="break-words text-xl font-semibold">
             {icon} {title}
           </div>
 
           {address && (
+
             <div className="mt-3">
 
               <div className="text-[11px] font-semibold text-gray-400">
@@ -76,9 +97,11 @@ export default function TimelineItem({
               </a>
 
             </div>
+
           )}
 
           {note && (
+
             <div className="mt-3">
 
               <div className="text-[11px] font-semibold text-gray-400">
@@ -90,6 +113,7 @@ export default function TimelineItem({
               </div>
 
             </div>
+
           )}
 
         </div>
@@ -97,5 +121,7 @@ export default function TimelineItem({
       </div>
 
     </div>
+
   );
+
 }

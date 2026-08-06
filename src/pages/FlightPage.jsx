@@ -1,29 +1,54 @@
 import { Link, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import tripService from "../services/tripService";
+import { getShare } from "../services/shareService";
 
 import FlightCard from "../components/flight/FlightCard";
 import FlightModal from "../components/flight/FlightModal";
 
 export default function FlightPage() {
 
-  const { id } = useParams();
+  const { id, shareId } = useParams();
 
-  const [trip, setTrip] = useState(
-    tripService.getTrip(id)
-  );
+  const readonly = !!shareId;
+
+  const [trip, setTrip] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
 
   const [flightType, setFlightType] = useState("outbound");
 
+  useEffect(() => {
+
+    async function loadTrip() {
+
+      if (readonly) {
+
+        const data = await getShare(shareId);
+
+        setTrip(data);
+
+      } else {
+
+        setTrip(tripService.getTrip(id));
+
+      }
+
+    }
+
+    loadTrip();
+
+  }, [id, shareId, readonly]);
+
   if (!trip) {
+
     return (
       <div className="min-h-screen flex items-center justify-center">
-        找不到旅程
+        載入中...
       </div>
     );
+
   }
 
   function saveFlight(flight) {
@@ -33,9 +58,11 @@ export default function FlightPage() {
       ...trip,
 
       flights: trip.flights || {
+
         outbound: null,
         inbound: null,
-      }
+
+      },
 
     };
 
@@ -43,9 +70,8 @@ export default function FlightPage() {
 
     tripService.updateTrip(updatedTrip);
 
-    setTrip(
-      tripService.getTrip(id)
-    );
+    setTrip(updatedTrip);
+
   }
 
   return (
@@ -55,7 +81,11 @@ export default function FlightPage() {
       <div className="mx-auto max-w-md px-6 py-10">
 
         <Link
-          to={`/trip/${id}`}
+          to={
+            readonly
+              ? `/share/${shareId}`
+              : `/trip/${id}`
+          }
           className="text-blue-500"
         >
           ← 回旅程
@@ -70,6 +100,7 @@ export default function FlightPage() {
           <FlightCard
             title="🛫 去程"
             flight={trip.flights?.outbound}
+            readonly={readonly}
             onAdd={() => {
 
               setFlightType("outbound");
@@ -89,6 +120,7 @@ export default function FlightPage() {
           <FlightCard
             title="🛬 回程"
             flight={trip.flights?.inbound}
+            readonly={readonly}
             onAdd={() => {
 
               setFlightType("inbound");
@@ -109,24 +141,17 @@ export default function FlightPage() {
 
       </div>
 
-      {showModal && (
+      {!readonly && showModal && (
 
         <FlightModal
-
           title={
             flightType === "outbound"
               ? "建立去程航班"
               : "建立回程航班"
           }
-
-          flight={
-            trip.flights?.[flightType]
-          }
-
+          flight={trip.flights?.[flightType]}
           onClose={() => setShowModal(false)}
-
           onSave={saveFlight}
-
         />
 
       )}

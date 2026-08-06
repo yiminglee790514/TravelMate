@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function WeatherDayCard({
   day,
   weather,
   onEdit,
+  readonly = false,
 }) {
 
   const [editing, setEditing] = useState(false);
   const [city, setCity] = useState(day.city);
+
+  useEffect(() => {
+    setCity(day.city);
+  }, [day.city]);
 
   return (
 
@@ -18,9 +23,7 @@ export default function WeatherDayCard({
         <div className="flex-1">
 
           <div className="text-sm font-semibold text-blue-500">
-
             {day.date}
-
           </div>
 
           {editing ? (
@@ -34,7 +37,7 @@ export default function WeatherDayCard({
               />
 
               <button
-                className="text-green-600 font-bold"
+                className="font-bold text-green-600"
                 onClick={() => {
 
                   onEdit(day, city);
@@ -47,7 +50,7 @@ export default function WeatherDayCard({
               </button>
 
               <button
-                className="text-red-600 font-bold"
+                className="font-bold text-red-600"
                 onClick={() => {
 
                   setCity(day.city);
@@ -66,17 +69,19 @@ export default function WeatherDayCard({
             <div className="mt-2 flex items-center gap-3">
 
               <div className="text-lg font-bold">
-
                 📍 {day.city}
-
               </div>
 
-              <button
-                className="rounded-lg p-1 hover:bg-gray-100"
-                onClick={() => setEditing(true)}
-              >
-                ✏️
-              </button>
+              {!readonly && (
+
+                <button
+                  className="rounded-lg p-1 hover:bg-gray-100"
+                  onClick={() => setEditing(true)}
+                >
+                  ✏️
+                </button>
+
+              )}
 
             </div>
 
@@ -86,7 +91,7 @@ export default function WeatherDayCard({
 
       </div>
 
-      {weather ? (
+      {weather?.day ? (
 
         <div className="mt-6">
 
@@ -95,15 +100,11 @@ export default function WeatherDayCard({
             <div>
 
               <div className="text-lg font-semibold">
-
                 {weather.day.condition.text}
-
               </div>
 
               <div className="mt-2 text-2xl font-bold">
-
                 {weather.day.mintemp_c}° ~ {weather.day.maxtemp_c}°
-
               </div>
 
             </div>
@@ -119,15 +120,11 @@ export default function WeatherDayCard({
           <div className="mt-5 flex justify-between text-sm text-gray-500">
 
             <span>
-
               ☔ {weather.day.daily_chance_of_rain}%
-
             </span>
 
             <span>
-
               💨 {weather.day.maxwind_kph} km/h
-
             </span>
 
           </div>
@@ -136,10 +133,8 @@ export default function WeatherDayCard({
 
       ) : (
 
-        <div className="mt-6 text-gray-400">
-
-          讀取天氣中...
-
+        <div className="mt-6 text-center text-gray-400">
+          正在抓取 {day.city} 天氣...
         </div>
 
       )}

@@ -20,7 +20,21 @@ export async function syncCloudToLocal() {
 
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) return;
+  // 第一次登入，自動建立使用者資料
+  if (!snap.exists()) {
+
+    await setDoc(ref, {
+      trips: [],
+    });
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([])
+    );
+
+    return;
+
+  }
 
   const data = snap.data();
 
@@ -41,8 +55,14 @@ export async function syncLocalToCloud(trips) {
 
   const ref = doc(db, "users", user.uid);
 
-  await setDoc(ref, {
-    trips,
-  });
+  await setDoc(
+    ref,
+    {
+      trips,
+    },
+    {
+      merge: true,
+    }
+  );
 
 }

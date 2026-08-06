@@ -3,6 +3,7 @@ export default function FlightCard({
   flight,
   onAdd,
   onEdit,
+  readonly = false,
 }) {
 
   if (!flight) {
@@ -37,12 +38,15 @@ export default function FlightCard({
           {title}
         </div>
 
+        {!readonly && (
+
         <button
-          onClick={onEdit}
-          className="rounded-lg p-2 hover:bg-gray-100"
+            onClick={onEdit}
         >
-          ✏️
+            ✏️
         </button>
+
+        )}
 
       </div>
 

@@ -11,6 +11,7 @@ import { syncCloudToLocal } from "./services/cloudService";
 import HotelPage from "./pages/HotelPage";
 import TransportPage from "./pages/TransportPage";
 import WeatherPage from "./pages/WeatherPage";
+import SharePage from "./pages/SharePage";
 
 export default function App() {
 
@@ -57,6 +58,36 @@ return (
       <Route
         path="/"
         element={<Home />}
+      />
+
+      <Route
+        path="/share/:shareId"
+        element={<SharePage />}
+      />
+
+      <Route
+        path="/share/:shareId/flight"
+        element={<FlightPage />}
+      />
+
+      <Route
+        path="/share/:shareId/hotel"
+        element={<HotelPage />}
+      />
+
+      <Route
+        path="/share/:shareId/transport"
+        element={<TransportPage />}
+      />
+
+      <Route
+        path="/share/:shareId/weather"
+        element={<WeatherPage />}
+      />
+
+      <Route
+        path="/share/:shareId/itinerary"
+        element={<ItineraryPage />}
       />
 
       <Route

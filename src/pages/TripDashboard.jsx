@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import tripService from "../services/tripService";
 import TripModal from "../components/TripModal";
+import { createShare } from "../services/shareService";
 
 export default function TripDashboard() {
 
@@ -11,6 +12,24 @@ export default function TripDashboard() {
   const [showTripModal, setShowTripModal] = useState(false);
 
   const trip = tripService.getTrip(id);
+
+  async function handleShare() {
+
+  const shareId = Math.random()
+  .toString(36)
+  .substring(2, 10)
+  .toUpperCase();
+
+  await createShare(shareId, trip);
+
+  const url =
+    `${window.location.origin}/share/${shareId}`;
+
+  await navigator.clipboard.writeText(url);
+
+  alert(`分享連結已複製！\n\n${url}`);
+
+}
 
   if (!trip) {
     return (
@@ -47,6 +66,17 @@ export default function TripDashboard() {
         <h1 className="mt-6 text-4xl font-bold">
           {trip.title}
         </h1>
+
+        <div className="mt-4">
+
+        <button
+            onClick={handleShare}
+            className="rounded-xl bg-green-500 px-4 py-2 text-white transition hover:bg-green-600"
+        >
+            🔗 分享旅程
+        </button>
+
+        </div>
 
         <p className="mt-2 text-gray-500">
           📍 {trip.country}｜{trip.city}
