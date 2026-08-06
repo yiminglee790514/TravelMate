@@ -16,31 +16,33 @@ export default function TripModal({
 
 function handleSave() {
 
-  console.log("handleSave 執行");
-  console.log({
-    title,
-    country,
-    city,
-    startDate,
-    endDate,
-  });
-
   if (!title.trim()) {
+
     alert("請輸入旅程名稱");
+
     return;
+
   }
 
-  console.log("準備呼叫 onSave");
   onSave({
+
+    // 保留 Firestore 原本所有欄位
+    ...trip,
+
+    // 新增旅程沒有 trip 時建立 id
     id: trip?.id || Date.now(),
 
     title,
+
     country,
+
     city,
+
     startDate,
+
     endDate,
 
-    // 保留舊資料
+    // 相容舊資料
     items: trip?.items || [],
 
     flights: trip?.flights || {
@@ -52,13 +54,16 @@ function handleSave() {
 
     transports: trip?.transports || [],
 
+    weather: trip?.weather || [],
+
     expenses: trip?.expenses || [],
 
     tickets: trip?.tickets || [],
+
   });
-  console.log("onSave 已呼叫");
-  
+
   onClose();
+
 }
 
   return (

@@ -5,7 +5,11 @@ import EmptyState from "../components/EmptyState";
 import TripModal from "../components/TripModal";
 import TripCard from "../components/TripCard";
 
-import tripService from "../services/tripService";
+import {
+  listenTrips,
+  createTrip,
+  deleteTrip,
+} from "../services/tripCloudService";
 
 export default function Home() {
 
@@ -15,31 +19,49 @@ export default function Home() {
 
   useEffect(() => {
 
-    setTrips(
-      tripService.getTrips()
-    );
+    const unsubscribe = listenTrips((data) => {
+
+      setTrips(data);
+
+    });
+
+    return unsubscribe;
 
   }, []);
 
-  function handleAddTrip(trip) {
+  async function handleAddTrip(trip) {
 
-    tripService.addTrip(trip);
+    try {
 
-    setTrips(
-      tripService.getTrips()
-    );
+      await createTrip(trip);
 
-    setShowModal(false);
+      setShowModal(false);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(err.message);
+
+    }
 
   }
 
-  function handleDeleteTrip(id) {
+  async function handleDeleteTrip(id) {
 
-    tripService.deleteTrip(id);
+    if (!window.confirm("確定要刪除這個旅程嗎？")) return;
 
-    setTrips(
-      tripService.getTrips()
-    );
+    try {
+
+      await deleteTrip(id);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(err.message);
+
+    }
 
   }
 
@@ -76,11 +98,15 @@ export default function Home() {
         <div className="mt-10 mb-4 flex items-center justify-between">
 
           <h2 className="text-xl font-bold text-gray-800">
+
             我的旅程
+
           </h2>
 
           <div className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
+
             {trips.length} 個旅程
+
           </div>
 
         </div>

@@ -5,14 +5,17 @@ import TripModal from "../components/TripModal";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 
-import tripService from "../services/tripService";
+import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 
 function getDays(startDate, endDate) {
+
   if (!startDate || !endDate) return [];
 
   const result = [];
+
   const current = new Date(startDate);
+
   const end = new Date(endDate);
 
   let day = 1;
@@ -20,8 +23,11 @@ function getDays(startDate, endDate) {
   while (current <= end) {
 
     result.push({
+
       day,
+
       date: current.toISOString().split("T")[0],
+
     });
 
     current.setDate(current.getDate() + 1);
@@ -39,6 +45,14 @@ export default function TripDetail() {
   const { id, shareId } = useParams();
 
   const readonly = !!shareId;
+
+  const {
+
+    trip: cloudTrip,
+
+    updateTrip,
+
+  } = useTrip(id);
 
   const [openDay, setOpenDay] = useState(1);
 
@@ -62,7 +76,11 @@ export default function TripDetail() {
 
         const data = await getShare(shareId);
 
-        if (!data.items) data.items = [];
+        if (!data.items) {
+
+          data.items = [];
+
+        }
 
         setTrip(data);
 
@@ -70,13 +88,23 @@ export default function TripDetail() {
 
       } else {
 
-        const t = tripService.getTrip(id);
+        if (!cloudTrip) return;
 
-        if (!t.items) t.items = [];
+        const t = {
+
+          ...cloudTrip,
+
+        };
+
+        if (!t.items) {
+
+          t.items = [];
+
+        }
 
         setTrip(t);
 
-        setItems(tripService.getItems(id));
+        setItems(t.items);
 
       }
 
@@ -84,7 +112,7 @@ export default function TripDetail() {
 
     loadTrip();
 
-  }, [id, shareId, readonly]);
+  }, [cloudTrip, shareId, readonly]);
 
   if (!trip) {
 
@@ -104,7 +132,10 @@ export default function TripDetail() {
 
   }
 
-  const days = getDays(trip.startDate, trip.endDate);
+  const days = getDays(
+    trip.startDate,
+    trip.endDate
+  );
 
   return (
 
@@ -206,16 +237,23 @@ export default function TripDetail() {
                             setShowModal(true);
 
                           }}
-                          onDelete={() => {
+                          onDelete={async () => {
 
-                            tripService.deleteItem(
-                              id,
-                              timelineItem.id
-                            );
+                            const updatedItems =
+                              items.filter(
+                                (i) =>
+                                  i.id !== timelineItem.id
+                              );
 
-                            setItems(
-                              tripService.getItems(id)
-                            );
+                            await updateTrip({
+
+                              ...trip,
+
+                              items: updatedItems,
+
+                            });
+
+                            setItems(updatedItems);
 
                           }}
                         />
@@ -269,15 +307,20 @@ export default function TripDetail() {
           setShowModal(false);
 
         }}
-        onSave={(item) => {
+        onSave={async (item) => {
 
           const iconMap = {
 
             flight: "✈️",
+
             hotel: "🏨",
+
             restaurant: "🍜",
+
             attraction: "📍",
+
             shopping: "🛍️",
+
             transport: "🚆",
 
           };
@@ -290,19 +333,41 @@ export default function TripDetail() {
 
           };
 
+          let updatedItems;
+
           if (editItem) {
 
-            tripService.updateItem(id, newItem);
+            updatedItems = items.map((i) =>
+
+              i.id === newItem.id
+
+                ? newItem
+
+                : i
+
+            );
 
           } else {
 
-            tripService.addItem(id, newItem);
+            updatedItems = [
+
+              ...items,
+
+              newItem,
+
+            ];
 
           }
 
-          setItems(
-            tripService.getItems(id)
-          );
+          await updateTrip({
+
+            ...trip,
+
+            items: updatedItems,
+
+          });
+
+          setItems(updatedItems);
 
           setEditItem(null);
 
@@ -318,13 +383,11 @@ export default function TripDetail() {
       <TripModal
         trip={trip}
         onClose={() => setShowTripModal(false)}
-        onSave={(updatedTrip) => {
+        onSave={async (updatedTrip) => {
 
-          tripService.updateTrip(updatedTrip);
+          await updateTrip(updatedTrip);
 
-          setTrip(
-            tripService.getTrip(id)
-          );
+          setTrip(updatedTrip);
 
           setShowTripModal(false);
 

@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import tripService from "../services/tripService";
+import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 
 import FlightCard from "../components/flight/FlightCard";
@@ -12,6 +12,11 @@ export default function FlightPage() {
   const { id, shareId } = useParams();
 
   const readonly = !!shareId;
+
+  const {
+    trip: cloudTrip,
+    updateTrip,
+  } = useTrip(id);
 
   const [trip, setTrip] = useState(null);
 
@@ -31,7 +36,7 @@ export default function FlightPage() {
 
       } else {
 
-        setTrip(tripService.getTrip(id));
+        setTrip(cloudTrip);
 
       }
 
@@ -39,19 +44,23 @@ export default function FlightPage() {
 
     loadTrip();
 
-  }, [id, shareId, readonly]);
+  }, [cloudTrip, shareId, readonly]);
 
   if (!trip) {
 
     return (
+
       <div className="min-h-screen flex items-center justify-center">
+
         載入中...
+
       </div>
+
     );
 
   }
 
-  function saveFlight(flight) {
+  async function saveFlight(flight) {
 
     const updatedTrip = {
 
@@ -60,6 +69,7 @@ export default function FlightPage() {
       flights: trip.flights || {
 
         outbound: null,
+
         inbound: null,
 
       },
@@ -68,9 +78,17 @@ export default function FlightPage() {
 
     updatedTrip.flights[flightType] = flight;
 
-    tripService.updateTrip(updatedTrip);
+    if (readonly) {
 
-    setTrip(updatedTrip);
+      setTrip(updatedTrip);
+
+      return;
+
+    }
+
+    await updateTrip(updatedTrip);
+
+    setShowModal(false);
 
   }
 
@@ -92,7 +110,9 @@ export default function FlightPage() {
         </Link>
 
         <h1 className="mt-6 text-4xl font-bold">
+
           ✈️ 航班
+
         </h1>
 
         <div className="mt-8 space-y-6">

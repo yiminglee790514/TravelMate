@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import tripService from "../services/tripService";
+import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 
 import TransportModal from "../components/TransportModal";
@@ -13,9 +13,15 @@ export default function TransportPage() {
 
   const readonly = !!shareId;
 
+  const {
+    trip: cloudTrip,
+    updateTrip,
+  } = useTrip(id);
+
   const [trip, setTrip] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
+
   const [editingTransport, setEditingTransport] = useState(null);
 
   useEffect(() => {
@@ -30,7 +36,7 @@ export default function TransportPage() {
 
       } else {
 
-        setTrip(tripService.getTrip(id));
+        setTrip(cloudTrip);
 
       }
 
@@ -38,7 +44,7 @@ export default function TransportPage() {
 
     loadTrip();
 
-  }, [id, shareId, readonly]);
+  }, [cloudTrip, shareId, readonly]);
 
   if (!trip) {
 
@@ -50,49 +56,71 @@ export default function TransportPage() {
 
   }
 
-  function handleSaveTransport(transport) {
+  async function handleSaveTransport(transport) {
 
-    const updatedTrip = { ...trip };
+    const updatedTransports = [...(trip.transports || [])];
 
-    updatedTrip.transports = [...updatedTrip.transports];
-
-    const index = updatedTrip.transports.findIndex(
+    const index = updatedTransports.findIndex(
       (t) => t.id === transport.id
     );
 
     if (index === -1) {
 
-      updatedTrip.transports.push(transport);
+      updatedTransports.push(transport);
 
     } else {
 
-      updatedTrip.transports[index] = transport;
+      updatedTransports[index] = transport;
 
     }
 
-    tripService.updateTrip(updatedTrip);
+    const updatedTrip = {
 
-    setTrip(updatedTrip);
+      ...trip,
+
+      transports: updatedTransports,
+
+    };
+
+    if (readonly) {
+
+      setTrip(updatedTrip);
+
+      return;
+
+    }
+
+    await updateTrip(updatedTrip);
 
     setEditingTransport(null);
+
     setShowModal(false);
 
   }
 
-  function handleDeleteTransport(id) {
+  async function handleDeleteTransport(transportId) {
 
     if (!confirm("確定刪除此交通？")) return;
 
-    const updatedTrip = { ...trip };
+    const updatedTrip = {
 
-    updatedTrip.transports =
-      updatedTrip.transports.filter(
-        (t) => t.id !== id
-      );
+      ...trip,
 
-    tripService.updateTrip(updatedTrip);
+      transports: trip.transports.filter(
+        (t) => t.id !== transportId
+      ),
 
-    setTrip(updatedTrip);
+    };
+
+    if (readonly) {
+
+      setTrip(updatedTrip);
+
+      return;
+
+    }
+
+    await updateTrip(updatedTrip);
 
     setEditingTransport(null);
 
@@ -147,7 +175,7 @@ export default function TransportPage() {
 
         <div className="mt-8 space-y-4">
 
-          {trip.transports.length === 0 ? (
+          {trip.transports?.length === 0 ? (
 
             <div className="rounded-2xl bg-white p-8 text-center text-gray-400 shadow">
 
@@ -157,7 +185,7 @@ export default function TransportPage() {
 
           ) : (
 
-            trip.transports.map((transport) => (
+            trip.transports?.map((transport) => (
 
               <TransportCard
                 key={transport.id}

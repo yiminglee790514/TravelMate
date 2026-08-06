@@ -12,6 +12,7 @@ import HotelPage from "./pages/HotelPage";
 import TransportPage from "./pages/TransportPage";
 import WeatherPage from "./pages/WeatherPage";
 import SharePage from "./pages/SharePage";
+import { createUserProfile } from "./services/userService";
 
 export default function App() {
 
@@ -25,6 +26,10 @@ useEffect(() => {
 
       try {
 
+        // 第一次登入建立 users/{uid}
+        await createUserProfile();
+
+        // 再同步旅程
         await syncCloudToLocal();
 
       } catch (err) {

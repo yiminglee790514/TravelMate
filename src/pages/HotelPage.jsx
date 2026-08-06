@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import tripService from "../services/tripService";
+import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 
 import HotelModal from "../components/HotelModal";
@@ -12,6 +12,11 @@ export default function HotelPage() {
   const { id, shareId } = useParams();
 
   const readonly = !!shareId;
+
+  const {
+    trip: cloudTrip,
+    updateTrip,
+  } = useTrip(id);
 
   const [trip, setTrip] = useState(null);
 
@@ -31,7 +36,7 @@ export default function HotelPage() {
 
       } else {
 
-        setTrip(tripService.getTrip(id));
+        setTrip(cloudTrip);
 
       }
 
@@ -39,7 +44,7 @@ export default function HotelPage() {
 
     loadTrip();
 
-  }, [id, shareId, readonly]);
+  }, [cloudTrip, shareId, readonly]);
 
   if (!trip) {
 
@@ -51,33 +56,71 @@ export default function HotelPage() {
 
   }
 
-  function handleSaveHotel(hotel) {
+  async function handleSaveHotel(hotel) {
 
-    const updatedTrip = { ...trip };
+    const updatedHotels = [...(trip.hotels || [])];
 
-    updatedTrip.hotels = [...updatedTrip.hotels];
-
-    const index = updatedTrip.hotels.findIndex(
+    const index = updatedHotels.findIndex(
       (h) => h.id === hotel.id
     );
 
     if (index === -1) {
 
-      updatedTrip.hotels.push(hotel);
+      updatedHotels.push(hotel);
 
     } else {
 
-      updatedTrip.hotels[index] = hotel;
+      updatedHotels[index] = hotel;
 
     }
 
-    tripService.updateTrip(updatedTrip);
+    const updatedTrip = {
 
-    setTrip(updatedTrip);
+      ...trip,
+
+      hotels: updatedHotels,
+
+    };
+
+    if (readonly) {
+
+      setTrip(updatedTrip);
+
+      return;
+
+    }
+
+    await updateTrip(updatedTrip);
 
     setEditingHotel(null);
 
     setShowModal(false);
+
+  }
+
+  async function handleDeleteHotel(hotelId) {
+
+    if (!confirm("確定刪除此飯店？")) return;
+
+    const updatedTrip = {
+
+      ...trip,
+
+      hotels: trip.hotels.filter(
+        (h) => h.id !== hotelId
+      ),
+
+    };
+
+    if (readonly) {
+
+      setTrip(updatedTrip);
+
+      return;
+
+    }
+
+    await updateTrip(updatedTrip);
 
   }
 
@@ -105,7 +148,13 @@ export default function HotelPage() {
         {!readonly && (
 
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+
+              setEditingHotel(null);
+
+              setShowModal(true);
+
+            }}
             className="
               mt-8
               w-full
@@ -124,7 +173,7 @@ export default function HotelPage() {
 
         <div className="mt-8 space-y-4">
 
-          {trip.hotels.length === 0 ? (
+          {trip.hotels?.length === 0 ? (
 
             <div className="rounded-2xl bg-white p-8 text-center text-gray-400 shadow">
 
@@ -134,7 +183,7 @@ export default function HotelPage() {
 
           ) : (
 
-            trip.hotels.map((hotel) => (
+            trip.hotels?.map((hotel) => (
 
               <HotelCard
                 key={hotel.id}
@@ -149,18 +198,7 @@ export default function HotelPage() {
                 }}
                 onDelete={() => {
 
-                  if (!confirm("確定刪除此飯店？")) return;
-
-                  const updatedTrip = { ...trip };
-
-                  updatedTrip.hotels =
-                    updatedTrip.hotels.filter(
-                      (h) => h.id !== hotel.id
-                    );
-
-                  tripService.updateTrip(updatedTrip);
-
-                  setTrip(updatedTrip);
+                  handleDeleteHotel(hotel.id);
 
                 }}
               />

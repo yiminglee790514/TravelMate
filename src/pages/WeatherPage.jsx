@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import tripService from "../services/tripService";
+import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 import { getWeather } from "../services/weatherService";
 
@@ -13,125 +13,156 @@ export default function WeatherPage() {
 
   const readonly = !!shareId;
 
+  const {
+    trip: cloudTrip,
+    updateTrip,
+  } = useTrip(id);
+
   const [trip, setTrip] = useState(null);
 
   const [, forceUpdate] = useState(0);
 
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
 
-    async function loadTrip() {
+  async function loadTrip() {
 
-      let data;
+    let data;
 
-      if (readonly) {
+    if (readonly) {
 
-        data = await getShare(shareId);
+      data = await getShare(shareId);
 
-      } else {
+    } else {
 
-        data = tripService.getTrip(id);
-
-      }
-
-      if (!data.weather) {
-
-        data.weather = [];
-
-      }
-
-      if (data.weather.length === 0) {
-
-        const start = new Date(data.startDate);
-
-        const end = new Date(data.endDate);
-
-        const weather = [];
-
-        const current = new Date(start);
-
-        while (current <= end) {
-
-          weather.push({
-
-            id: Date.now() + weather.length,
-
-            date: current.toISOString().split("T")[0],
-
-            city: data.city,
-
-          });
-
-          current.setDate(current.getDate() + 1);
-
-        }
-
-        data.weather = weather;
-
-        if (!readonly) {
-
-          tripService.updateTrip(data);
-
-        }
-
-      }
-
-      setTrip(data);
-
-      data.weather.forEach((day) => {
-
-        if (!day.forecast) {
-
-          loadForecast(day);
-
-        }
-
-      });
+      data = cloudTrip;
 
     }
 
-    loadTrip();
+    if (!data) return;
 
-  }, [id, shareId, readonly]);
+    if (!data.weather) {
 
-  async function loadForecast(day) {
-
-    const data = await getWeather(day.city);
-
-    if (!data?.forecast?.forecastday?.length) return;
-
-    const forecast = data.forecast.forecastday.find(
-
-      (f) => f.date === day.date
-
-    );
-
-    day.forecast = forecast || data.forecast.forecastday[0];
-
-    if (!readonly) {
-
-      tripService.updateTrip(trip);
+      data.weather = [];
 
     }
 
-    forceUpdate((v) => v + 1);
+    if (data.weather.length === 0) {
+
+      const start = new Date(data.startDate);
+
+      const end = new Date(data.endDate);
+
+      const weather = [];
+
+      const current = new Date(start);
+
+      while (current <= end) {
+
+        weather.push({
+
+          id: Date.now() + weather.length,
+
+          date: current.toISOString().split("T")[0],
+
+          city: data.city,
+
+        });
+
+        current.setDate(current.getDate() + 1);
+
+      }
+
+      data = {
+
+        ...data,
+
+        weather,
+
+      };
+
+      if (!readonly) {
+
+        await updateTrip(data);
+
+      }
+
+    }
+
+    setTrip(data);
+
+    data.weather.forEach((day) => {
+
+      if (!day.forecast) {
+
+        loadForecast(day, data);
+
+      }
+
+    });
 
   }
 
-  async function handleEdit(day, newCity) {
+  loadTrip();
 
-    if (readonly) return;
+}, [cloudTrip, shareId, readonly]);
 
-    day.city = newCity;
+async function loadForecast(day, currentTrip) {
 
-    day.forecast = null;
+  const data = await getWeather(day.city);
 
-    tripService.updateTrip(trip);
+  if (!data?.forecast?.forecastday?.length) return;
 
-    await loadForecast(day);
+  const forecast = data.forecast.forecastday.find(
+
+    (f) => f.date === day.date
+
+  );
+
+  day.forecast = forecast || data.forecast.forecastday[0];
+
+  if (!readonly) {
+
+    await updateTrip({
+
+      ...currentTrip,
+
+      weather: [...currentTrip.weather],
+
+    });
 
   }
+
+  forceUpdate((v) => v + 1);
+
+}
+
+async function handleEdit(day, newCity) {
+
+  if (readonly) return;
+
+  day.city = newCity;
+
+  day.forecast = null;
+
+  await updateTrip({
+
+    ...trip,
+
+    weather: [...trip.weather],
+
+  });
+
+  await loadForecast(day, {
+
+    ...trip,
+
+    weather: [...trip.weather],
+
+  });
+
+}
 
   if (!trip) {
 

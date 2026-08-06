@@ -6,9 +6,9 @@ import {
 
 import { auth, db } from "../firebase";
 
-const STORAGE_KEY = "travelmate-trips";
-
-/* 下載雲端資料 */
+/* ===========================
+   同步使用者資料
+=========================== */
 
 export async function syncCloudToLocal() {
 
@@ -20,49 +20,58 @@ export async function syncCloudToLocal() {
 
   const snap = await getDoc(ref);
 
-  // 第一次登入，自動建立使用者資料
+  // 第一次登入
   if (!snap.exists()) {
 
     await setDoc(ref, {
-      trips: [],
-    });
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify([])
-    );
+      email: user.email,
+
+      displayName: user.displayName,
+
+      photoURL: user.photoURL || "",
+
+      createdAt: new Date(),
+
+    });
 
     return;
 
   }
 
-  const data = snap.data();
+  // 每次登入更新使用者資訊
+  await setDoc(
 
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(data.trips || [])
+    ref,
+
+    {
+
+      email: user.email,
+
+      displayName: user.displayName,
+
+      photoURL: user.photoURL || "",
+
+      lastLogin: new Date(),
+
+    },
+
+    {
+
+      merge: true,
+
+    }
+
   );
 
 }
 
-/* 上傳雲端資料 */
+/* ===========================
+   已不再使用
+=========================== */
 
-export async function syncLocalToCloud(trips) {
+export async function syncLocalToCloud() {
 
-  const user = auth.currentUser;
-
-  if (!user) return;
-
-  const ref = doc(db, "users", user.uid);
-
-  await setDoc(
-    ref,
-    {
-      trips,
-    },
-    {
-      merge: true,
-    }
-  );
+  // Firestore 版已不需要 localStorage 同步
 
 }

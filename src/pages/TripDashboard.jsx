@@ -1,8 +1,10 @@
 import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 
-import tripService from "../services/tripService";
+import useTrip from "../hooks/useTrip";
 import TripModal from "../components/TripModal";
+import MemberModal from "../components/MemberModal";
+
 import { createShare } from "../services/shareService";
 
 export default function TripDashboard() {
@@ -11,35 +13,44 @@ export default function TripDashboard() {
 
   const [showTripModal, setShowTripModal] = useState(false);
 
-  const trip = tripService.getTrip(id);
+  const [showMemberModal, setShowMemberModal] = useState(false);
+
+  const { trip, updateTrip } = useTrip(id);
 
   async function handleShare() {
 
-  const shareId = Math.random()
-  .toString(36)
-  .substring(2, 10)
-  .toUpperCase();
+    const shareId = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
 
-  await createShare(shareId, trip);
+    await createShare(shareId, trip);
 
-  const url =
-    `${window.location.origin}/share/${shareId}`;
+    const url =
+      `${window.location.origin}/share/${shareId}`;
 
-  await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(url);
 
-  alert(`分享連結已複製！\n\n${url}`);
+    alert(`分享連結已複製！\n\n${url}`);
 
-}
-
-  if (!trip) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        找不到旅程
-      </div>
-    );
   }
 
+    if (!trip) {
+
+    return (
+
+        <div className="min-h-screen flex items-center justify-center">
+
+        載入中...
+
+        </div>
+
+    );
+
+    }
+
   return (
+
     <div className="min-h-screen bg-gray-100">
 
       <div className="mx-auto max-w-md px-6 py-10">
@@ -67,18 +78,25 @@ export default function TripDashboard() {
           {trip.title}
         </h1>
 
-        <div className="mt-4">
+        <div className="mt-5 flex gap-3">
 
-        <button
+          <button
             onClick={handleShare}
-            className="rounded-xl bg-green-500 px-4 py-2 text-white transition hover:bg-green-600"
-        >
-            🔗 分享旅程
-        </button>
+            className="flex-1 rounded-xl bg-green-500 py-3 text-white transition hover:bg-green-600"
+          >
+            🔗 分享
+          </button>
+
+          <button
+            onClick={() => setShowMemberModal(true)}
+            className="flex-1 rounded-xl bg-blue-500 py-3 text-white transition hover:bg-blue-600"
+          >
+            👥 成員
+          </button>
 
         </div>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-4 text-gray-500">
           📍 {trip.country}｜{trip.city}
         </p>
 
@@ -99,7 +117,7 @@ export default function TripDashboard() {
           <Link
             to={`/trip/${id}/hotel`}
             className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
-            >
+          >
             <span>🏨 飯店</span>
             <span>›</span>
           </Link>
@@ -107,15 +125,15 @@ export default function TripDashboard() {
           <Link
             to={`/trip/${id}/transport`}
             className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
-            >
+          >
             <span>🚆 交通</span>
             <span>›</span>
-        </Link>
+          </Link>
 
           <Link
             to={`/trip/${id}/weather`}
             className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
-            >
+          >
             <span>🌤️ 天氣</span>
             <span>›</span>
           </Link>
@@ -142,19 +160,30 @@ export default function TripDashboard() {
       {showTripModal && (
 
         <TripModal
+        trip={trip}
+        onClose={() => setShowTripModal(false)}
+        onSave={async (updatedTrip) => {
+
+            await updateTrip(updatedTrip);
+
+            setShowTripModal(false);
+
+        }}
+        />
+
+      )}
+
+      {showMemberModal && (
+
+        <MemberModal
           trip={trip}
-          onClose={() => setShowTripModal(false)}
-            onSave={(updatedTrip) => {
-
-                tripService.updateTrip(updatedTrip);
-
-                setShowTripModal(false);
-
-            }}
+          onClose={() => setShowMemberModal(false)}
         />
 
       )}
 
     </div>
+
   );
+
 }
