@@ -68,6 +68,8 @@ function handleSave() {
 
     tickets: trip?.tickets || [],
 
+    packing: trip?.packing || [],
+
   });
 
   onClose();

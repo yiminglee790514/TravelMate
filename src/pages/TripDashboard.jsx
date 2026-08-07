@@ -163,6 +163,14 @@ export default function TripDashboard() {
             <span>›</span>
           </button>
 
+          <Link
+            to={`/trip/${id}/packing`}
+            className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
+            >
+            <span>🧳 行李清單</span>
+            <span>›</span>
+          </Link>
+
         </div>
 
       </div>

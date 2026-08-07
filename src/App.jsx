@@ -13,6 +13,7 @@ import TransportPage from "./pages/TransportPage";
 import WeatherPage from "./pages/WeatherPage";
 import SharePage from "./pages/SharePage";
 import { createUserProfile } from "./services/userService";
+import PackingPage from "./pages/PackingPage";
 
 export default function App() {
 
@@ -98,6 +99,11 @@ return (
       <Route
         path="/trip/:id/weather"
         element={<WeatherPage />}
+      />
+
+      <Route
+        path="/trip/:id/packing"
+        element={<PackingPage />}
       />
 
       <Route
