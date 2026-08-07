@@ -6,6 +6,8 @@ export default function MemberModal({
 
   trip,
 
+  owner,
+
   onClose,
 
 }) {
@@ -15,6 +17,8 @@ export default function MemberModal({
   const [email, setEmail] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+  const [role, setRole] = useState("editor");
 
   async function handleInvite() {
 
@@ -27,8 +31,11 @@ export default function MemberModal({
     }
 
     if (
+
       email.trim().toLowerCase() ===
+
       user.email.toLowerCase()
+
     ) {
 
       alert("不能邀請自己");
@@ -40,13 +47,14 @@ export default function MemberModal({
     try {
 
       setLoading(true);
- 
 
       await createInvite(
 
         trip.id,
 
-        email.trim()
+        email.trim(),
+
+        role
 
       );
 
@@ -122,7 +130,19 @@ export default function MemberModal({
 
           </div>
 
-          <div className="mt-2 text-sm text-gray-600">
+          <div className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">
+
+            {owner
+
+              ? "👑 你是 Owner，可邀請、修改權限及移除成員。"
+
+              : "✏️ 你是 Editor，可邀請成員，但不能修改權限或移除成員。"
+
+            }
+
+          </div>
+
+          <div className="mt-3 text-sm text-gray-600">
 
             {trip.members?.length || 1} 人
 
@@ -131,6 +151,7 @@ export default function MemberModal({
         </div>
 
         <div className="mt-6">
+
           <div className="text-sm font-semibold text-gray-500">
 
             邀請 Google 帳號
@@ -175,6 +196,56 @@ export default function MemberModal({
 
           </div>
 
+          {owner && (
+
+            <div className="mt-6">
+
+              <div className="text-sm font-semibold text-gray-500">
+
+                權限
+
+              </div>
+
+              <div className="mt-3 space-y-2">
+
+                <label className="flex items-center gap-2">
+
+                  <input
+
+                    type="radio"
+
+                    checked={role === "editor"}
+
+                    onChange={() => setRole("editor")}
+
+                  />
+
+                  ✏️ 可編輯
+
+                </label>
+
+                <label className="flex items-center gap-2">
+
+                  <input
+
+                    type="radio"
+
+                    checked={role === "viewer"}
+
+                    onChange={() => setRole("viewer")}
+
+                  />
+
+                  👀 僅觀看
+
+                </label>
+
+              </div>
+
+            </div>
+
+          )}
+
         </div>
 
         <div className="mt-8 flex justify-end gap-3">
@@ -207,7 +278,11 @@ export default function MemberModal({
 
                 ? "送出中..."
 
-                : "📨 發送邀請"
+                : owner
+
+                  ? "📨 發送邀請"
+
+                  : "📨 邀請成員"
 
             }
 

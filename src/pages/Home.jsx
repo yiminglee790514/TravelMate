@@ -6,22 +6,68 @@ import TripModal from "../components/TripModal";
 import TripCard from "../components/TripCard";
 
 import {
-  listenTrips,
-  createTrip,
-  deleteTrip,
+listenTrips,
+createTrip,
+updateTrip,
+deleteTrip,
 } from "../services/tripCloudService";
 
 export default function Home() {
 
   const [showModal, setShowModal] = useState(false);
 
+  const [editingTrip, setEditingTrip] = useState(null);
+
   const [trips, setTrips] = useState([]);
+
+  function sortTrips(list) {
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return [...list].sort((a, b) => {
+
+    const aStart = new Date(a.startDate);
+    const aEnd = new Date(a.endDate);
+
+    const bStart = new Date(b.startDate);
+    const bEnd = new Date(b.endDate);
+
+    const aStatus =
+      today < aStart ? 1 :
+      today <= aEnd ? 0 : 2;
+
+    const bStatus =
+      today < bStart ? 1 :
+      today <= bEnd ? 0 : 2;
+
+    // 進行中 > 即將出發 > 已完成
+    if (aStatus !== bStatus) {
+      return aStatus - bStatus;
+    }
+
+    // 進行中
+    if (aStatus === 0) {
+      return aStart - bStart;
+    }
+
+    // 即將出發
+    if (aStatus === 1) {
+      return aStart - bStart;
+    }
+
+    // 已完成（最新完成排前面）
+    return bEnd - aEnd;
+
+  });
+
+}
 
   useEffect(() => {
 
     const unsubscribe = listenTrips((data) => {
 
-      setTrips(data);
+      setTrips(sortTrips(data));
 
     });
 
@@ -46,6 +92,26 @@ export default function Home() {
     }
 
   }
+
+  async function handleEditTrip(trip) {
+
+  try {
+
+    await updateTrip(trip);
+
+    setEditingTrip(null);
+
+    setShowModal(false);
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(err.message);
+
+  }
+
+}
 
   async function handleDeleteTrip(id) {
 
@@ -74,7 +140,13 @@ export default function Home() {
         <Header />
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+
+            setEditingTrip(null);
+
+            setShowModal(true);
+
+          }}
           className="
             w-full
             rounded-3xl
@@ -122,9 +194,16 @@ export default function Home() {
             {trips.map((trip) => (
 
               <TripCard
-                key={trip.id}
-                trip={trip}
-                onDelete={handleDeleteTrip}
+                  key={trip.id}
+                  trip={trip}
+                  onDelete={handleDeleteTrip}
+                  onEdit={(trip)=>{
+
+                      setEditingTrip(trip);
+
+                      setShowModal(true);
+
+                  }}
               />
 
             ))}
@@ -138,9 +217,16 @@ export default function Home() {
       {showModal && (
 
         <TripModal
-          onClose={() => setShowModal(false)}
-          onSave={handleAddTrip}
-        />
+              trip={editingTrip}
+              onClose={() => {
+
+                  setEditingTrip(null);
+
+                  setShowModal(false);
+
+              }}
+              onSave={editingTrip ? handleEditTrip : handleAddTrip}
+          />
 
       )}
 

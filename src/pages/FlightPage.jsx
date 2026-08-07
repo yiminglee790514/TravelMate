@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 
+import { canEdit } from "../services/permissionService";
+
 import FlightCard from "../components/flight/FlightCard";
 import FlightModal from "../components/flight/FlightModal";
 
 export default function FlightPage() {
 
   const { id, shareId } = useParams();
-
-  const readonly = !!shareId;
 
   const {
     trip: cloudTrip,
@@ -20,25 +20,33 @@ export default function FlightPage() {
 
   const [trip, setTrip] = useState(null);
 
+    const readonly =
+
+    !!shareId ||
+
+    (trip ? !canEdit(trip) : true);
+
   const [showModal, setShowModal] = useState(false);
 
   const [flightType, setFlightType] = useState("outbound");
+
+  const [editingFlight, setEditingFlight] = useState(null);
 
   useEffect(() => {
 
     async function loadTrip() {
 
-      if (readonly) {
+      if (shareId) {
 
         const data = await getShare(shareId);
 
         setTrip(data);
 
-      } else {
+        } else {
 
         setTrip(cloudTrip);
 
-      }
+        }
 
     }
 
@@ -60,37 +68,103 @@ export default function FlightPage() {
 
   }
 
-  async function saveFlight(flight) {
+async function saveFlight(flight) {
 
-    const updatedTrip = {
+  const flights = {
 
-      ...trip,
+    outbound: Array.isArray(trip.flights?.outbound)
+      ? [...trip.flights.outbound]
+      : trip.flights?.outbound
+        ? [trip.flights.outbound]
+        : [],
 
-      flights: trip.flights || {
+    inbound: Array.isArray(trip.flights?.inbound)
+      ? [...trip.flights.inbound]
+      : trip.flights?.inbound
+        ? [trip.flights.inbound]
+        : [],
 
-        outbound: null,
+  };
 
-        inbound: null,
+  const list = flights[flightType];
 
-      },
+  const index = list.findIndex(
+    (item) => item.id === flight.id
+  );
 
-    };
+  if (index >= 0) {
 
-    updatedTrip.flights[flightType] = flight;
+    list[index] = flight;
 
-    if (readonly) {
+  } else {
 
-      setTrip(updatedTrip);
+    list.push(flight);
 
-      return;
+  }
 
-    }
+  const updatedTrip = {
+
+    ...trip,
+
+    flights,
+
+  };
+
+  if (!shareId) {
 
     await updateTrip(updatedTrip);
 
-    setShowModal(false);
+  }
+
+  setTrip(updatedTrip);
+
+  setShowModal(false);
+
+}
+
+
+
+async function deleteFlight(type, id) {
+
+  if (!window.confirm("確定刪除此航班？")) return;
+
+  const flights = {
+
+    outbound: Array.isArray(trip.flights?.outbound)
+      ? [...trip.flights.outbound]
+      : trip.flights?.outbound
+        ? [trip.flights.outbound]
+        : [],
+
+    inbound: Array.isArray(trip.flights?.inbound)
+      ? [...trip.flights.inbound]
+      : trip.flights?.inbound
+        ? [trip.flights.inbound]
+        : [],
+
+  };
+
+  flights[type] = flights[type].filter(
+    (item) => item.id !== id
+  );
+
+  const updatedTrip = {
+
+    ...trip,
+
+    flights,
+
+  };
+
+  if (!shareId) {
+
+    await updateTrip(updatedTrip);
 
   }
+
+  setTrip(updatedTrip);
+
+}
 
   return (
 
@@ -119,43 +193,111 @@ export default function FlightPage() {
 
           <FlightCard
             title="🛫 去程"
-            flight={trip.flights?.outbound}
+            flights={trip.flights?.outbound || []}
             readonly={readonly}
             onAdd={() => {
 
-              setFlightType("outbound");
+                setEditingFlight(null);
 
-              setShowModal(true);
+                setFlightType("outbound");
 
-            }}
-            onEdit={() => {
-
-              setFlightType("outbound");
-
-              setShowModal(true);
+                setShowModal(true);
 
             }}
-          />
+            onEdit={(flight) => {
+
+                setEditingFlight(flight);
+
+                setFlightType("outbound");
+
+                setShowModal(true);
+
+            }}
+            onDelete={(flightId) => {
+
+                deleteFlight("outbound", flightId);
+
+            }}
+            onReorder={async (newFlights) => {
+
+                const updatedTrip = {
+
+                    ...trip,
+
+                    flights: {
+
+                    ...(trip.flights || {}),
+
+                    outbound: newFlights,
+
+                    },
+
+                };
+
+                if (!shareId) {
+
+                    await updateTrip(updatedTrip);
+
+                }
+
+                setTrip(updatedTrip);
+
+                }}
+            />
 
           <FlightCard
             title="🛬 回程"
-            flight={trip.flights?.inbound}
+            flights={trip.flights?.inbound || []}
             readonly={readonly}
             onAdd={() => {
 
-              setFlightType("inbound");
+                setEditingFlight(null);
 
-              setShowModal(true);
+                setFlightType("inbound");
 
-            }}
-            onEdit={() => {
-
-              setFlightType("inbound");
-
-              setShowModal(true);
+                setShowModal(true);
 
             }}
-          />
+            onEdit={(flight) => {
+
+                setEditingFlight(flight);
+
+                setFlightType("outbound");
+
+                setShowModal(true);
+
+            }}
+            onDelete={() => {
+
+                deleteFlight("outbound", flightId);
+
+            }}
+            onReorder={async (newFlights) => {
+
+                const updatedTrip = {
+
+                    ...trip,
+
+                    flights: {
+
+                    ...(trip.flights || {}),
+
+                    inbound: newFlights,
+
+                    },
+
+                };
+
+                if (!shareId) {
+
+                    await updateTrip(updatedTrip);
+
+                }
+
+                setTrip(updatedTrip);
+
+                }}
+            />
 
         </div>
 
@@ -169,7 +311,7 @@ export default function FlightPage() {
               ? "建立去程航班"
               : "建立回程航班"
           }
-          flight={trip.flights?.[flightType]}
+          flight={editingFlight}
           onClose={() => setShowModal(false)}
           onSave={saveFlight}
         />

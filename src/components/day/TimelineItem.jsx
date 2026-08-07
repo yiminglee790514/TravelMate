@@ -8,10 +8,10 @@ export default function TimelineItem({
   onEdit,
   onDelete,
   readonly = false,
+  owner = false,
 }) {
 
   // 支援兩種傳法：
-  // <TimelineItem item={...} />
   // <TimelineItem time="" title="" ... />
   if (item) {
 
@@ -38,6 +38,7 @@ export default function TimelineItem({
 
           <div className="flex items-center gap-1">
 
+            {/* 修改：Owner、Editor 都可以 */}
             <button
               onClick={onEdit}
               className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-blue-100 hover:text-blue-500"
@@ -46,6 +47,7 @@ export default function TimelineItem({
               ✏️
             </button>
 
+            {/* 刪除：只有 Owner 可以 */}
             <button
               onClick={onDelete}
               className="rounded-lg p-1.5 text-base text-gray-400 transition hover:bg-red-100 hover:text-red-500"

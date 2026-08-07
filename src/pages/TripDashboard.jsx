@@ -6,6 +6,10 @@ import TripModal from "../components/TripModal";
 import MemberModal from "../components/MemberModal";
 
 import { createShare } from "../services/shareService";
+import {
+  canEdit,
+  isOwner,
+} from "../services/permissionService";
 
 export default function TripDashboard() {
 
@@ -16,6 +20,24 @@ export default function TripDashboard() {
   const [showMemberModal, setShowMemberModal] = useState(false);
 
   const { trip, updateTrip } = useTrip(id);
+
+  if (!trip) {
+
+    return (
+
+      <div className="min-h-screen flex items-center justify-center">
+
+        載入中...
+
+      </div>
+
+    );
+
+  }
+
+  const editable = canEdit(trip);
+
+  const owner = isOwner(trip);
 
   async function handleShare() {
 
@@ -35,20 +57,6 @@ export default function TripDashboard() {
 
   }
 
-    if (!trip) {
-
-    return (
-
-        <div className="min-h-screen flex items-center justify-center">
-
-        載入中...
-
-        </div>
-
-    );
-
-    }
-
   return (
 
     <div className="min-h-screen bg-gray-100">
@@ -64,44 +72,46 @@ export default function TripDashboard() {
             ← 回首頁
           </Link>
 
-          <button
-            onClick={() => setShowTripModal(true)}
-            className="rounded-xl p-2 text-xl transition hover:bg-gray-100"
-            title="修改旅程"
-          >
-            ✏️
-          </button>
-
         </div>
 
         <h1 className="mt-6 text-4xl font-bold">
+
           {trip.title}
+
         </h1>
 
-        <div className="mt-5 flex gap-3">
+        {editable && (
 
-          <button
-            onClick={handleShare}
-            className="flex-1 rounded-xl bg-green-500 py-3 text-white transition hover:bg-green-600"
-          >
-            🔗 分享
-          </button>
+          <div className="mt-5 flex gap-3">
 
-          <button
-            onClick={() => setShowMemberModal(true)}
-            className="flex-1 rounded-xl bg-blue-500 py-3 text-white transition hover:bg-blue-600"
-          >
-            👥 成員
-          </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 rounded-xl bg-green-500 py-3 text-white transition hover:bg-green-600"
+            >
+              🔗 分享
+            </button>
 
-        </div>
+            <button
+              onClick={() => setShowMemberModal(true)}
+              className="flex-1 rounded-xl bg-blue-500 py-3 text-white transition hover:bg-blue-600"
+            >
+              👥 成員
+            </button>
+
+          </div>
+
+        )}
 
         <p className="mt-4 text-gray-500">
+
           📍 {trip.country}｜{trip.city}
+
         </p>
 
         <p className="mt-2 text-gray-500">
+
           📅 {trip.startDate} ~ {trip.endDate}
+
         </p>
 
         <div className="mt-10 space-y-4">
@@ -157,26 +167,27 @@ export default function TripDashboard() {
 
       </div>
 
-      {showTripModal && (
+      {editable && showTripModal && (
 
         <TripModal
-        trip={trip}
-        onClose={() => setShowTripModal(false)}
-        onSave={async (updatedTrip) => {
+          trip={trip}
+          onClose={() => setShowTripModal(false)}
+          onSave={async (updatedTrip) => {
 
             await updateTrip(updatedTrip);
 
             setShowTripModal(false);
 
-        }}
+          }}
         />
 
       )}
 
-      {showMemberModal && (
+      {editable && showMemberModal && (
 
         <MemberModal
           trip={trip}
+          owner={owner}
           onClose={() => setShowMemberModal(false)}
         />
 

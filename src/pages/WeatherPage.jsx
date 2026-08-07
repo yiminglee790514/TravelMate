@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 import { getWeather } from "../services/weatherService";
+import { canEdit } from "../services/permissionService";
 
 import WeatherDayCard from "../components/WeatherDayCard";
 
 export default function WeatherPage() {
 
   const { id, shareId } = useParams();
-
-  const readonly = !!shareId;
 
   const {
     trip: cloudTrip,
@@ -20,149 +19,182 @@ export default function WeatherPage() {
 
   const [trip, setTrip] = useState(null);
 
+  const readonly =
+    !!shareId ||
+    (trip ? !canEdit(trip) : true);
+
   const [, forceUpdate] = useState(0);
 
   const [loading, setLoading] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
 
-  async function loadTrip() {
+    async function loadTrip() {
 
-    let data;
+      let data;
 
-    if (readonly) {
+      if (shareId) {
 
-      data = await getShare(shareId);
+        data = await getShare(shareId);
 
-    } else {
+      } else {
 
-      data = cloudTrip;
+        data = cloudTrip;
 
-    }
+      }
 
-    if (!data) return;
+      if (!data) return;
 
-    if (!data.weather) {
+      if (!data.weather) {
 
-      data.weather = [];
+        data.weather = [];
 
-    }
-
-    if (data.weather.length === 0) {
+      }
 
       const start = new Date(data.startDate);
+const end = new Date(data.endDate);
 
-      const end = new Date(data.endDate);
+const weather = [];
 
-      const weather = [];
+const current = new Date(start);
 
-      const current = new Date(start);
+while (current <= end) {
 
-      while (current <= end) {
+  const date = current.toISOString().split("T")[0];
 
-        weather.push({
+  const old = data.weather.find(
+    (item) => item.date === date
+  );
 
-          id: Date.now() + weather.length,
+  weather.push(
 
-          date: current.toISOString().split("T")[0],
+    old || {
 
-          city: data.city,
+      id: Date.now() + weather.length,
 
-        });
+      date,
 
-        current.setDate(current.getDate() + 1);
-
-      }
-
-      data = {
-
-        ...data,
-
-        weather,
-
-      };
-
-      if (!readonly) {
-
-        await updateTrip(data);
-
-      }
+      city: data.city,
 
     }
-
-    setTrip(data);
-
-    data.weather.forEach((day) => {
-
-      if (!day.forecast) {
-
-        loadForecast(day, data);
-
-      }
-
-    });
-
-  }
-
-  loadTrip();
-
-}, [cloudTrip, shareId, readonly]);
-
-async function loadForecast(day, currentTrip) {
-
-  const data = await getWeather(day.city);
-
-  if (!data?.forecast?.forecastday?.length) return;
-
-  const forecast = data.forecast.forecastday.find(
-
-    (f) => f.date === day.date
 
   );
 
-  day.forecast = forecast || data.forecast.forecastday[0];
+  current.setDate(current.getDate() + 1);
 
-  if (!readonly) {
+}
 
-    await updateTrip({
+const changed =
+  weather.length !== data.weather.length ||
+  weather.some((w, i) => w.date !== data.weather[i]?.date);
 
-      ...currentTrip,
+if (changed) {
 
-      weather: [...currentTrip.weather],
+  data = {
 
-    });
+    ...data,
+
+    weather,
+
+  };
+
+  if (!shareId) {
+
+    await updateTrip(data);
 
   }
 
-  forceUpdate((v) => v + 1);
-
 }
+
+      setTrip(data);
+
+      data.weather.forEach((day) => {
+
+        if (!day.forecast) {
+
+          loadForecast(day, data);
+
+        }
+
+      });
+
+    }
+
+    loadTrip();
+
+  }, [cloudTrip, shareId]);
+
+  async function loadForecast(day, currentTrip) {
+
+    const data = await getWeather(day.city);
+
+    if (!data?.forecast?.forecastday?.length) return;
+
+    const forecast = data.forecast.forecastday.find(
+
+      (f) => f.date === day.date
+
+    );
+
+    day.forecast = forecast || data.forecast.forecastday[0];
+
+    if (!shareId) {
+
+      await updateTrip({
+
+        ...currentTrip,
+
+        weather: [...currentTrip.weather],
+
+      });
+
+    }
+
+    forceUpdate((v) => v + 1);
+
+  }
 
 async function handleEdit(day, newCity) {
 
   if (readonly) return;
 
-  day.city = newCity;
+  const weather = trip.weather.map((item) => ({
 
-  day.forecast = null;
+    ...item,
 
-  await updateTrip({
+    city: newCity,
 
-    ...trip,
+    forecast: null,
 
-    weather: [...trip.weather],
+  }));
 
-  });
-
-  await loadForecast(day, {
+  const updatedTrip = {
 
     ...trip,
 
-    weather: [...trip.weather],
+    city: newCity,
 
-  });
+    weather,
+
+  };
+
+  setTrip(updatedTrip);
+
+  if (!shareId) {
+
+    await updateTrip(updatedTrip);
+
+  }
+
+  for (const item of weather) {
+
+    await loadForecast(item, updatedTrip);
+
+  }
 
 }
+
+  
 
   if (!trip) {
 
@@ -178,59 +210,59 @@ async function handleEdit(day, newCity) {
 
   }
 
-return (
+  return (
 
-  <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100">
 
-    <div className="mx-auto max-w-md px-6 py-10">
+      <div className="mx-auto max-w-md px-6 py-10">
 
-      <Link
-        to={
-          readonly
-            ? `/share/${shareId}`
-            : `/trip/${id}`
-        }
-        className="text-blue-500"
-      >
-        ← 返回旅程
-      </Link>
+        <Link
+          to={
+            shareId
+              ? `/share/${shareId}`
+              : `/trip/${id}`
+          }
+          className="text-blue-500"
+        >
+          ← 返回旅程
+        </Link>
 
-      <h1 className="mt-6 text-4xl font-bold">
-        🌤️ 天氣
-      </h1>
+        <h1 className="mt-6 text-4xl font-bold">
+          🌤️ 天氣
+        </h1>
 
-      <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-4">
 
-        {loading ? (
+          {loading ? (
 
-          <div className="rounded-2xl bg-white p-8 text-center shadow">
+            <div className="rounded-2xl bg-white p-8 text-center shadow">
 
-            讀取天氣中...
+              讀取天氣中...
 
-          </div>
+            </div>
 
-        ) : (
+          ) : (
 
-          trip.weather.map((day) => (
+            trip.weather.map((day) => (
 
-            <WeatherDayCard
-              key={day.id}
-              day={day}
-              weather={day.forecast}
-              readonly={readonly}
-              onEdit={handleEdit}
-            />
+              <WeatherDayCard
+                key={day.id}
+                day={day}
+                weather={day.forecast}
+                readonly={readonly}
+                onEdit={handleEdit}
+              />
 
-          ))
+            ))
 
-        )}
+          )}
+
+        </div>
 
       </div>
 
     </div>
 
-  </div>
-
-);
+  );
 
 }

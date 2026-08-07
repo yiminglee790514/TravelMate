@@ -21,7 +21,11 @@ const userRef = collection(db, "users");
    建立邀請
 =========================== */
 
-export async function createInvite(tripId, email) {
+export async function createInvite(
+  tripId,
+  email,
+  role = "editor"
+) {
 
   const user = auth.currentUser;
 
@@ -112,23 +116,25 @@ export async function createInvite(tripId, email) {
 
   await addDoc(inviteRef, {
 
-    tripId,
+  tripId,
 
-    tripTitle: trip.title,
+  tripTitle: trip.title,
 
-    ownerUid: user.uid,
+  ownerUid: user.uid,
 
-    ownerEmail: user.email,
+  ownerEmail: user.email,
 
-    inviteUid: inviteUser.id,
+  inviteUid: inviteUser.id,
 
-    inviteEmail: email,
+  inviteEmail: email,
 
-    status: "pending",
+  role,
 
-    createdAt: serverTimestamp(),
+  status: "pending",
 
-  });
+  createdAt: serverTimestamp(),
+
+});
 
 }
 
@@ -188,6 +194,8 @@ export async function acceptInvite(invite) {
 
   }
 
+  const trip = tripSnapshot.data();
+
   await updateDoc(
 
     tripRef,
@@ -195,6 +203,14 @@ export async function acceptInvite(invite) {
     {
 
       members: arrayUnion(invite.inviteUid),
+
+      memberRoles: {
+
+        ...(trip.memberRoles || {}),
+
+        [invite.inviteUid]: invite.role || "editor",
+
+      },
 
       updatedAt: serverTimestamp(),
 

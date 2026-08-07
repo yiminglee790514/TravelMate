@@ -32,19 +32,25 @@ export async function createTrip(trip) {
 
   const docRef = await addDoc(tripsRef, {
 
-    ...trip,
+  ...trip,
 
-    owner: user.uid,
+  owner: user.uid,
 
-    members: [
-      user.uid,
-    ],
+  members: [
+    user.uid,
+  ],
 
-    createdAt: serverTimestamp(),
+  memberRoles: {
 
-    updatedAt: serverTimestamp(),
+    [user.uid]: "owner",
 
-  });
+  },
+
+  createdAt: serverTimestamp(),
+
+  updatedAt: serverTimestamp(),
+
+});
 
   return docRef.id;
 

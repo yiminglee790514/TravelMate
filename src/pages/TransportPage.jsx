@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
+import { canEdit } from "../services/permissionService";
 
 import TransportModal from "../components/TransportModal";
 import TransportCard from "../components/TransportCard";
@@ -11,14 +12,16 @@ export default function TransportPage() {
 
   const { id, shareId } = useParams();
 
-  const readonly = !!shareId;
-
   const {
     trip: cloudTrip,
     updateTrip,
   } = useTrip(id);
 
   const [trip, setTrip] = useState(null);
+
+  const readonly =
+    !!shareId ||
+    (trip ? !canEdit(trip) : true);
 
   const [showModal, setShowModal] = useState(false);
 
@@ -28,7 +31,7 @@ export default function TransportPage() {
 
     async function loadTrip() {
 
-      if (readonly) {
+      if (shareId) {
 
         const data = await getShare(shareId);
 
@@ -44,14 +47,18 @@ export default function TransportPage() {
 
     loadTrip();
 
-  }, [cloudTrip, shareId, readonly]);
+  }, [cloudTrip, shareId]);
 
   if (!trip) {
 
     return (
+
       <div className="min-h-screen flex items-center justify-center">
+
         載入中...
+
       </div>
+
     );
 
   }
@@ -82,13 +89,7 @@ export default function TransportPage() {
 
     };
 
-    if (readonly) {
-
-      setTrip(updatedTrip);
-
-      return;
-
-    }
+    if (shareId) return;
 
     await updateTrip(updatedTrip);
 
@@ -102,6 +103,8 @@ export default function TransportPage() {
 
     if (!confirm("確定刪除此交通？")) return;
 
+    if (shareId) return;
+
     const updatedTrip = {
 
       ...trip,
@@ -111,14 +114,6 @@ export default function TransportPage() {
       ),
 
     };
-
-    if (readonly) {
-
-      setTrip(updatedTrip);
-
-      return;
-
-    }
 
     await updateTrip(updatedTrip);
 
@@ -134,7 +129,7 @@ export default function TransportPage() {
 
         <Link
           to={
-            readonly
+            shareId
               ? `/share/${shareId}`
               : `/trip/${id}`
           }
@@ -185,7 +180,7 @@ export default function TransportPage() {
 
           ) : (
 
-            trip.transports?.map((transport) => (
+            trip.transports.map((transport) => (
 
               <TransportCard
                 key={transport.id}

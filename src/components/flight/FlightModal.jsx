@@ -57,6 +57,8 @@ export default function FlightModal({
 
     onSave({
 
+      id: flight?.id || Date.now(),
+        
       airline,
 
       flightNo,

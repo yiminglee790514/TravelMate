@@ -23,6 +23,14 @@ function handleSave() {
     return;
 
   }
+  const weather =
+  city !== trip?.city
+    ? (trip?.weather || []).map((day) => ({
+        ...day,
+        city,
+        forecast: null,
+      }))
+    : trip?.weather || [];
 
   onSave({
 
@@ -54,7 +62,7 @@ function handleSave() {
 
     transports: trip?.transports || [],
 
-    weather: trip?.weather || [],
+    weather,
 
     expenses: trip?.expenses || [],
 
