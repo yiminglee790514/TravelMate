@@ -1,16 +1,56 @@
 import { useState } from "react";
 
 const CURRENCIES = [
-  { code: "JPY", name: "日圓", symbol: "¥" },
-  { code: "TWD", name: "台幣", symbol: "NT$" },
-  { code: "USD", name: "美元", symbol: "$" },
-  { code: "HKD", name: "港幣", symbol: "HK$" },
-  { code: "KRW", name: "韓元", symbol: "₩" },
-  { code: "CNY", name: "人民幣", symbol: "¥" },
-  { code: "EUR", name: "歐元", symbol: "€" },
-  { code: "GBP", name: "英鎊", symbol: "£" },
-  { code: "SGD", name: "新加坡幣", symbol: "S$" },
-  { code: "THB", name: "泰銖", symbol: "฿" },
+  {
+    code: "JPY",
+    name: "日圓",
+    symbol: "¥",
+  },
+  {
+    code: "TWD",
+    name: "台幣",
+    symbol: "NT$",
+  },
+  {
+    code: "USD",
+    name: "美元",
+    symbol: "$",
+  },
+  {
+    code: "HKD",
+    name: "港幣",
+    symbol: "HK$",
+  },
+  {
+    code: "KRW",
+    name: "韓元",
+    symbol: "₩",
+  },
+  {
+    code: "CNY",
+    name: "人民幣",
+    symbol: "¥",
+  },
+  {
+    code: "EUR",
+    name: "歐元",
+    symbol: "€",
+  },
+  {
+    code: "GBP",
+    name: "英鎊",
+    symbol: "£",
+  },
+  {
+    code: "SGD",
+    name: "新加坡幣",
+    symbol: "S$",
+  },
+  {
+    code: "THB",
+    name: "泰銖",
+    symbol: "฿",
+  },
 ];
 
 export default function HotelModal({
@@ -18,127 +58,198 @@ export default function HotelModal({
   onClose,
   onSave,
   copyMode = false,
+  hotelGroups = [],
+  currentGroupId = "",
 }) {
 
-  const isEdit = !!hotel && !copyMode;
+  const isEdit =
+    !!hotel && !copyMode;
 
-  const [name, setName] = useState(
-    hotel?.name || ""
-  );
 
-  const [checkIn, setCheckIn] = useState(
-    hotel?.checkIn || ""
-  );
+  // =========================
+  // 目標群組
+  // =========================
 
-  const [checkOut, setCheckOut] = useState(
-    hotel?.checkOut || ""
-  );
+  const [targetGroupId, setTargetGroupId] =
+    useState(
+      currentGroupId || ""
+    );
 
-  const [checkInTime, setCheckInTime] = useState(
-    hotel?.checkInTime || ""
-  );
 
-  const [checkOutTime, setCheckOutTime] = useState(
-    hotel?.checkOutTime || ""
-  );
+  const currentGroup =
+    hotelGroups.find(
+      (group) =>
+        group.id === targetGroupId
+    );
 
-  const [address, setAddress] = useState(
-    hotel?.address || ""
-  );
 
-  const [phone, setPhone] = useState(
-    hotel?.phone || ""
-  );
+  // =========================
+  // 飯店資料
+  // =========================
 
-  const [website, setWebsite] = useState(
-    hotel?.website || ""
-  );
+  const [checkIn, setCheckIn] =
+    useState(
+      hotel?.checkIn || ""
+    );
 
-  const [booking, setBooking] = useState(
-    hotel?.booking || ""
-  );
+  const [checkOut, setCheckOut] =
+    useState(
+      hotel?.checkOut || ""
+    );
 
-  const [confirmation, setConfirmation] = useState(
-    hotel?.confirmation || ""
-  );
+  const [checkInTime, setCheckInTime] =
+    useState(
+      hotel?.checkInTime || ""
+    );
 
-  const [bookingName, setBookingName] = useState(
-    hotel?.bookingName || ""
-  );
+  const [checkOutTime, setCheckOutTime] =
+    useState(
+      hotel?.checkOutTime || ""
+    );
 
-  const [roomType, setRoomType] = useState(
-    hotel?.roomType || ""
-  );
+  const [address, setAddress] =
+    useState(
+      hotel?.address || ""
+    );
 
-  const [price, setPrice] = useState(
-    hotel?.price || ""
-  );
+  const [phone, setPhone] =
+    useState(
+      hotel?.phone || ""
+    );
 
-  const [currency, setCurrency] = useState(
-    hotel?.currency || ""
-  );
+  const [website, setWebsite] =
+    useState(
+      hotel?.website || ""
+    );
 
-  const [note, setNote] = useState(
-    hotel?.note || ""
-  );
+  const [booking, setBooking] =
+    useState(
+      hotel?.booking || ""
+    );
+
+  const [confirmation, setConfirmation] =
+    useState(
+      hotel?.confirmation || ""
+    );
+
+  const [bookingName, setBookingName] =
+    useState(
+      hotel?.bookingName || ""
+    );
+
+  const [roomType, setRoomType] =
+    useState(
+      hotel?.roomType || ""
+    );
+
+  const [price, setPrice] =
+    useState(
+      hotel?.price || ""
+    );
+
+  const [currency, setCurrency] =
+    useState(
+      hotel?.currency || ""
+    );
+
+  const [note, setNote] =
+    useState(
+      hotel?.note || ""
+    );
+
+
+  // =========================
+  // 儲存
+  // =========================
 
   function handleSave() {
 
-    if (!name.trim()) {
+    if (!targetGroupId) {
 
-      alert("請輸入飯店名稱");
-
-      return;
-
-    }
-
-    if (!currency && price) {
-
-      alert("請選擇價格幣別");
+      alert(
+        "請選擇住宿群組"
+      );
 
       return;
 
     }
 
-    onSave({
 
-      id: copyMode ? Date.now() : (hotel?.id || Date.now()),
+    if (
+      !currency &&
+      price
+    ) {
 
-      name,
+      alert(
+        "請選擇價格幣別"
+      );
 
-      checkIn,
+      return;
 
-      checkOut,
+    }
 
-      checkInTime,
 
-      checkOutTime,
+    // =========================
+    // 群組名稱就是飯店名稱
+    // =========================
 
-      address,
+    const hotelName =
+      currentGroup?.title ||
+      hotel?.name ||
+      "";
 
-      phone,
 
-      website,
+    onSave(
 
-      booking,
+      {
 
-      confirmation,
+        id:
+          copyMode
+            ? Date.now()
+            : (
+                hotel?.id ||
+                Date.now()
+              ),
 
-      bookingName,
+        name:
+          hotelName,
 
-      roomType,
+        checkIn,
 
-      price,
+        checkOut,
 
-      currency,
+        checkInTime,
 
-      note,
+        checkOutTime,
 
-    });
+        address,
 
-    onClose();
+        phone,
+
+        website,
+
+        booking,
+
+        confirmation,
+
+        bookingName,
+
+        roomType,
+
+        price,
+
+        currency,
+
+        note,
+
+      },
+
+      targetGroupId
+
+    );
 
   }
+
 
   return (
 
@@ -166,14 +277,31 @@ export default function HotelModal({
         shadow-2xl
       ">
 
+
         {/* =========================
             標題
         ========================= */}
 
-        <div className="shrink-0 px-5 pt-5 sm:px-8 sm:pt-7">
+        <div className="
+          shrink-0
+          px-5
+          pt-5
+          sm:px-8
+          sm:pt-7
+        ">
 
-          <h2 className="text-2xl font-bold">
-            {isEdit ? "修改飯店" : "新增飯店"}
+          <h2 className="
+            text-xl
+            font-bold
+            sm:text-2xl
+          ">
+
+            {copyMode
+              ? "複製住宿"
+              : isEdit
+                ? "修改飯店"
+                : "新增飯店"}
+
           </h2>
 
         </div>
@@ -194,34 +322,112 @@ export default function HotelModal({
 
           <div className="space-y-4">
 
+
             {/* =========================
-                飯店名稱
+                複製到哪個群組
             ========================= */}
 
-            <input
-              className="
-                w-full
+            {copyMode && (
+
+              <div>
+
+                <label className="
+                  mb-1
+                  block
+                  text-xs
+                  font-medium
+                  text-gray-600
+                  sm:text-sm
+                ">
+                  複製到住宿群組
+                </label>
+
+                <select
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    px-3
+                    py-2.5
+                    text-[15px]
+                    sm:p-3
+                    sm:text-base
+                  "
+                  value={targetGroupId}
+                  onChange={(e) =>
+                    setTargetGroupId(
+                      e.target.value
+                    )
+                  }
+                >
+
+                  <option value="">
+                    請選擇住宿群組
+                  </option>
+
+                  {hotelGroups.map(
+                    (group) => (
+
+                      <option
+                        key={group.id}
+                        value={group.id}
+                      >
+                        {group.title}
+                      </option>
+
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+            )}
+
+
+            {/* =========================
+                目前群組
+            ========================= */}
+
+            {!copyMode && (
+
+              <div className="
                 rounded-xl
-                border
+                bg-gray-50
                 px-3
                 py-2.5
-                text-[15px]
-                sm:p-3
-                sm:text-base
-              "
-              placeholder="飯店名稱"
-              value={name}
-              onChange={(e) =>
-                setName(e.target.value)
-              }
-            />
+                text-sm
+                text-gray-600
+              ">
+
+                🏨
+
+                <span className="
+                  ml-1
+                  font-semibold
+                  text-gray-800
+                ">
+                  {currentGroup?.title ||
+                    hotel?.name ||
+                    "住宿群組"}
+                </span>
+
+              </div>
+
+            )}
 
 
             {/* =========================
-                入住
+                入住日期 / 時間
             ========================= */}
 
-            <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3">
+            <div className="
+              grid
+              min-w-0
+              grid-cols-2
+              gap-2
+              sm:gap-3
+            ">
 
               <div className="min-w-0">
 
@@ -240,21 +446,22 @@ export default function HotelModal({
                   type="date"
                   className="
                     block
-                    h-11
+                    h-10
                     w-full
                     min-w-0
-                    appearance-auto
                     rounded-xl
                     border
-                    px-2
-                    text-[13px]
+                    px-1.5
+                    text-[12px]
                     sm:h-auto
                     sm:p-3
                     sm:text-base
                   "
                   value={checkIn}
                   onChange={(e) =>
-                    setCheckIn(e.target.value)
+                    setCheckIn(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -278,20 +485,22 @@ export default function HotelModal({
                   type="time"
                   className="
                     block
-                    h-11
+                    h-10
                     w-full
                     min-w-0
                     rounded-xl
                     border
-                    px-2
-                    text-[13px]
+                    px-1.5
+                    text-[12px]
                     sm:h-auto
                     sm:p-3
                     sm:text-base
                   "
                   value={checkInTime}
                   onChange={(e) =>
-                    setCheckInTime(e.target.value)
+                    setCheckInTime(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -301,10 +510,16 @@ export default function HotelModal({
 
 
             {/* =========================
-                退房
+                退房日期 / 時間
             ========================= */}
 
-            <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3">
+            <div className="
+              grid
+              min-w-0
+              grid-cols-2
+              gap-2
+              sm:gap-3
+            ">
 
               <div className="min-w-0">
 
@@ -323,21 +538,22 @@ export default function HotelModal({
                   type="date"
                   className="
                     block
-                    h-11
+                    h-10
                     w-full
                     min-w-0
-                    appearance-auto
                     rounded-xl
                     border
-                    px-2
-                    text-[13px]
+                    px-1.5
+                    text-[12px]
                     sm:h-auto
                     sm:p-3
                     sm:text-base
                   "
                   value={checkOut}
                   onChange={(e) =>
-                    setCheckOut(e.target.value)
+                    setCheckOut(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -361,20 +577,22 @@ export default function HotelModal({
                   type="time"
                   className="
                     block
-                    h-11
+                    h-10
                     w-full
                     min-w-0
                     rounded-xl
                     border
-                    px-2
-                    text-[13px]
+                    px-1.5
+                    text-[12px]
                     sm:h-auto
                     sm:p-3
                     sm:text-base
                   "
                   value={checkOutTime}
                   onChange={(e) =>
-                    setCheckOutTime(e.target.value)
+                    setCheckOutTime(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -401,7 +619,9 @@ export default function HotelModal({
               placeholder="訂位姓名"
               value={bookingName}
               onChange={(e) =>
-                setBookingName(e.target.value)
+                setBookingName(
+                  e.target.value
+                )
               }
             />
 
@@ -424,7 +644,9 @@ export default function HotelModal({
               placeholder="房型，例如：雙人房、單人房"
               value={roomType}
               onChange={(e) =>
-                setRoomType(e.target.value)
+                setRoomType(
+                  e.target.value
+                )
               }
             />
 
@@ -447,7 +669,9 @@ export default function HotelModal({
               placeholder="地址"
               value={address}
               onChange={(e) =>
-                setAddress(e.target.value)
+                setAddress(
+                  e.target.value
+                )
               }
             />
 
@@ -470,13 +694,15 @@ export default function HotelModal({
               placeholder="電話"
               value={phone}
               onChange={(e) =>
-                setPhone(e.target.value)
+                setPhone(
+                  e.target.value
+                )
               }
             />
 
 
             {/* =========================
-                官方網站
+                官網
             ========================= */}
 
             <input
@@ -493,7 +719,9 @@ export default function HotelModal({
               placeholder="官方網站"
               value={website}
               onChange={(e) =>
-                setWebsite(e.target.value)
+                setWebsite(
+                  e.target.value
+                )
               }
             />
 
@@ -515,7 +743,9 @@ export default function HotelModal({
               "
               value={booking}
               onChange={(e) =>
-                setBooking(e.target.value)
+                setBooking(
+                  e.target.value
+                )
               }
             >
 
@@ -523,15 +753,41 @@ export default function HotelModal({
                 訂房平台
               </option>
 
-              <option>Agoda</option>
-              <option>Booking.com</option>
-              <option>Trip.com</option>
-              <option>Hotels.com</option>
-              <option>Expedia</option>
-              <option>Airbnb</option>
-              <option>Rakuten</option>
-              <option>官方網站</option>
-              <option>其他</option>
+              <option>
+                Agoda
+              </option>
+
+              <option>
+                Booking.com
+              </option>
+
+              <option>
+                Trip.com
+              </option>
+
+              <option>
+                Hotels.com
+              </option>
+
+              <option>
+                Expedia
+              </option>
+
+              <option>
+                Airbnb
+              </option>
+
+              <option>
+                Rakuten
+              </option>
+
+              <option>
+                官方網站
+              </option>
+
+              <option>
+                其他
+              </option>
 
             </select>
 
@@ -554,7 +810,9 @@ export default function HotelModal({
               placeholder="訂房編號"
               value={confirmation}
               onChange={(e) =>
-                setConfirmation(e.target.value)
+                setConfirmation(
+                  e.target.value
+                )
               }
             />
 
@@ -590,7 +848,9 @@ export default function HotelModal({
                 placeholder="例如：11800"
                 value={price}
                 onChange={(e) =>
-                  setPrice(e.target.value)
+                  setPrice(
+                    e.target.value
+                  )
                 }
               />
 
@@ -614,7 +874,9 @@ export default function HotelModal({
               "
               value={currency}
               onChange={(e) =>
-                setCurrency(e.target.value)
+                setCurrency(
+                  e.target.value
+                )
               }
             >
 
@@ -622,16 +884,20 @@ export default function HotelModal({
                 請選擇幣別
               </option>
 
-              {CURRENCIES.map((item) => (
+              {CURRENCIES.map(
+                (item) => (
 
-                <option
-                  key={item.code}
-                  value={item.code}
-                >
-                  {item.code}｜{item.name} {item.symbol}
-                </option>
+                  <option
+                    key={item.code}
+                    value={item.code}
+                  >
+                    {item.code}｜
+                    {item.name}{" "}
+                    {item.symbol}
+                  </option>
 
-              ))}
+                )
+              )}
 
             </select>
 
@@ -655,7 +921,9 @@ export default function HotelModal({
               placeholder="備註"
               value={note}
               onChange={(e) =>
-                setNote(e.target.value)
+                setNote(
+                  e.target.value
+                )
               }
             />
 
@@ -665,7 +933,7 @@ export default function HotelModal({
 
 
         {/* =========================
-            按鈕
+            底部按鈕
         ========================= */}
 
         <div className="
@@ -692,6 +960,7 @@ export default function HotelModal({
             取消
           </button>
 
+
           <button
             onClick={handleSave}
             className="
@@ -702,7 +971,11 @@ export default function HotelModal({
               text-white
             "
           >
-            {isEdit ? "儲存" : "新增"}
+            {copyMode
+              ? "複製"
+              : isEdit
+                ? "儲存"
+                : "新增"}
           </button>
 
         </div>

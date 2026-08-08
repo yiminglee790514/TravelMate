@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 export default function HotelCard({
   hotel,
   onEdit,
@@ -6,17 +8,69 @@ export default function HotelCard({
   readonly = false,
 }) {
 
+  const [showMenu, setShowMenu] =
+    useState(false);
+
+  const menuRef = useRef(null);
+
+
   const nights =
-    hotel.checkIn && hotel.checkOut
+    hotel.checkIn &&
+    hotel.checkOut
       ? Math.max(
           0,
           Math.round(
-            (new Date(hotel.checkOut) -
-              new Date(hotel.checkIn)) /
+            (
+              new Date(
+                hotel.checkOut
+              ) -
+              new Date(
+                hotel.checkIn
+              )
+            ) /
               (1000 * 60 * 60 * 24)
           )
         )
       : 0;
+
+
+  // =========================
+  // 點其他地方收起選單
+  // =========================
+
+  useEffect(() => {
+
+    function handleOutsideClick(e) {
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(
+          e.target
+        )
+      ) {
+
+        setShowMenu(false);
+
+      }
+
+    }
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+    };
+
+  }, []);
+
 
   // =========================
   // 幣別
@@ -76,83 +130,160 @@ export default function HotelCard({
 
   };
 
-  // 舊資料沒有 currency
-  // 預設台幣
+
   const currency =
-    currencyMap[hotel.currency] ||
+    currencyMap[
+      hotel.currency
+    ] ||
     currencyMap.TWD;
+
 
   return (
 
-    <div className="rounded-2xl bg-white p-5 shadow">
+    <div className="
+      rounded-2xl
+      border
+      border-gray-100
+      bg-white
+      p-4
+      shadow-sm
+    ">
+
 
       {/* =========================
-          標題
+          頂部
       ========================= */}
 
-      <div className="flex items-start justify-between">
+      <div className="
+        flex
+        items-center
+        justify-between
+      ">
 
-        <div className="break-words text-xl font-semibold">
-          🏨 {hotel.name}
+        <div className="
+          text-sm
+          font-semibold
+          text-gray-500
+        ">
+          🛏️ 住宿資料
         </div>
+
 
         {!readonly && (
 
-          <div className="flex gap-1">
-
-            {/* 編輯 */}
-
-            <button
-              onClick={onEdit}
-              className="
-                rounded-lg
-                p-1.5
-                text-base
-                text-gray-400
-                transition
-                hover:bg-blue-100
-                hover:text-blue-500
-              "
-              title="編輯"
-            >
-              ✏️
-            </button>
-
-            {/* 複製 */}
+          <div
+            ref={menuRef}
+            className="relative"
+          >
 
             <button
-              onClick={onCopy}
+              type="button"
+              onClick={() =>
+                setShowMenu(
+                  (prev) => !prev
+                )
+              }
               className="
                 rounded-lg
-                p-1.5
-                text-base
-                text-gray-400
-                transition
-                hover:bg-green-100
-                hover:text-green-500
+                px-2
+                py-1
+                text-xl
+                font-bold
+                leading-none
+                text-gray-500
+                hover:bg-gray-100
               "
-              title="複製"
             >
-              📋
+              ⋯
             </button>
 
-            {/* 刪除 */}
 
-            <button
-              onClick={onDelete}
-              className="
-                rounded-lg
-                p-1.5
-                text-base
-                text-gray-400
-                transition
-                hover:bg-red-100
-                hover:text-red-500
-              "
-              title="刪除"
-            >
-              🗑️
-            </button>
+            {showMenu && (
+
+              <div className="
+                absolute
+                right-0
+                top-full
+                z-40
+                mt-1
+                w-28
+                overflow-hidden
+                rounded-xl
+                bg-white
+                shadow-xl
+                ring-1
+                ring-black/5
+              ">
+
+                <button
+                  type="button"
+                  onClick={() => {
+
+                    setShowMenu(false);
+
+                    onEdit();
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    hover:bg-gray-100
+                  "
+                >
+                  ✏️ 編輯
+                </button>
+
+
+                <button
+                  type="button"
+                  onClick={() => {
+
+                    setShowMenu(false);
+
+                    onCopy();
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    hover:bg-gray-100
+                  "
+                >
+                  📋 複製
+                </button>
+
+
+                <button
+                  type="button"
+                  onClick={() => {
+
+                    setShowMenu(false);
+
+                    onDelete();
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    text-red-600
+                    hover:bg-red-50
+                  "
+                >
+                  🗑️ 刪除
+                </button>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -165,13 +296,24 @@ export default function HotelCard({
           日期
       ========================= */}
 
-      <div className="mt-4 text-sm text-gray-600">
-        📅 {hotel.checkIn || "--"} → {hotel.checkOut || "--"}
+      <div className="
+        mt-3
+        text-sm
+        text-gray-600
+      ">
+        📅 {hotel.checkIn || "--"}
+        {" → "}
+        {hotel.checkOut || "--"}
       </div>
+
 
       {nights > 0 && (
 
-        <div className="mt-1 text-sm text-indigo-600">
+        <div className="
+          mt-1
+          text-sm
+          text-indigo-600
+        ">
           🌙 {nights} 晚
         </div>
 
@@ -184,13 +326,25 @@ export default function HotelCard({
 
       {hotel.bookingName && (
 
-        <div className="mt-4 rounded-xl bg-blue-50 p-3">
+        <div className="
+          mt-4
+          rounded-xl
+          bg-blue-50
+          p-3
+        ">
 
-          <div className="text-xs text-gray-500">
+          <div className="
+            text-xs
+            text-gray-500
+          ">
             訂位姓名
           </div>
 
-          <div className="mt-1 font-semibold text-gray-800">
+          <div className="
+            mt-1
+            font-semibold
+            text-gray-800
+          ">
             👤 {hotel.bookingName}
           </div>
 
@@ -205,11 +359,18 @@ export default function HotelCard({
 
       {hotel.roomType && (
 
-        <div className="mt-3 text-sm text-gray-700">
+        <div className="
+          mt-3
+          text-sm
+          text-gray-700
+        ">
 
           🛏️
 
-          <span className="ml-1 font-medium">
+          <span className="
+            ml-1
+            font-medium
+          ">
             房型：
           </span>
 
@@ -221,19 +382,28 @@ export default function HotelCard({
 
 
       {/* =========================
-          入住 / 退房時間
+          入住 / 退房
       ========================= */}
 
-      {(hotel.checkInTime || hotel.checkOutTime) && (
+      {(hotel.checkInTime ||
+        hotel.checkOutTime) && (
 
-        <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
+        <div className="
+          mt-3
+          rounded-xl
+          bg-slate-50
+          p-3
+          text-sm
+        ">
 
           {hotel.checkInTime && (
 
             <div>
               🕒
 
-              <span className="font-medium">
+              <span className="
+                font-medium
+              ">
                 Check in：
               </span>
 
@@ -242,16 +412,21 @@ export default function HotelCard({
 
           )}
 
+
           {hotel.checkOutTime && (
 
             <div className="mt-1">
+
               🕚
 
-              <span className="font-medium">
+              <span className="
+                font-medium
+              ">
                 Check out：
               </span>
 
               {hotel.checkOutTime}
+
             </div>
 
           )}
@@ -267,7 +442,11 @@ export default function HotelCard({
 
       {hotel.booking && (
 
-        <div className="mt-3 text-sm text-indigo-600">
+        <div className="
+          mt-3
+          text-sm
+          text-indigo-600
+        ">
           🏷 {hotel.booking}
         </div>
 
@@ -280,7 +459,11 @@ export default function HotelCard({
 
       {hotel.confirmation && (
 
-        <div className="mt-1 text-sm text-gray-600">
+        <div className="
+          mt-1
+          text-sm
+          text-gray-600
+        ">
           🔑 {hotel.confirmation}
         </div>
 
@@ -327,6 +510,7 @@ export default function HotelCard({
           className="
             mt-2
             block
+            break-words
             text-sm
             text-green-600
             hover:underline
@@ -346,28 +530,30 @@ export default function HotelCard({
         hotel.price !== null &&
         hotel.price !== undefined && (
 
-          <div className="
-            mt-4
-            text-lg
-            font-semibold
-            text-emerald-600
+        <div className="
+          mt-4
+          text-lg
+          font-semibold
+          text-emerald-600
+        ">
+
+          💰 {currency.symbol}
+          {Number(
+            hotel.price
+          ).toLocaleString()}
+
+          <span className="
+            ml-2
+            text-sm
+            font-normal
+            text-gray-500
           ">
+            {currency.name}
+          </span>
 
-            💰 {currency.symbol}
-            {Number(hotel.price).toLocaleString()}
+        </div>
 
-            <span className="
-              ml-2
-              text-sm
-              font-normal
-              text-gray-500
-            ">
-              {currency.name}
-            </span>
-
-          </div>
-
-        )}
+      )}
 
 
       {/* =========================

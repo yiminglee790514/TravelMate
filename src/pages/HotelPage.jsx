@@ -1,8 +1,8 @@
 import {
   Link,
   useParams,
-  useSearchParams,
 } from "react-router-dom";
+
 import { useEffect, useState } from "react";
 
 import useTrip from "../hooks/useTrip";
@@ -17,11 +17,6 @@ export default function HotelPage() {
 
   const { id, shareId } = useParams();
 
-  const [searchParams] = useSearchParams();
-
-  const targetGroupName =
-    searchParams.get("group") || "";
-
   const {
     trip: cloudTrip,
     updateTrip,
@@ -33,11 +28,21 @@ export default function HotelPage() {
     !!shareId ||
     (trip ? !canEdit(trip) : true);
 
+
+  // =========================
+  // Modal
+  // =========================
+
   const [showHotelModal, setShowHotelModal] =
     useState(false);
 
   const [showGroupModal, setShowGroupModal] =
     useState(false);
+
+
+  // =========================
+  // 飯店
+  // =========================
 
   const [editingHotel, setEditingHotel] =
     useState(null);
@@ -45,24 +50,34 @@ export default function HotelPage() {
   const [copyingHotel, setCopyingHotel] =
     useState(false);
 
+
+  // =========================
+  // 群組
+  // =========================
+
   const [editingGroup, setEditingGroup] =
     useState(null);
 
   const [currentGroupId, setCurrentGroupId] =
     useState(null);
 
+
   // =========================
-  // 飯店群組收合狀態
-  // =========================
-  // true = 展開
-  // false = 收合
+  // 群組收合
   //
-  // 不寫入 Firebase
-  // 只控制目前畫面
+  // true = 收合
+  // false = 展開
+  //
+  // 預設全部收合
   // =========================
 
   const [collapsedGroups, setCollapsedGroups] =
     useState({});
+
+
+  // =========================
+  // 載入旅程
+  // =========================
 
   useEffect(() => {
 
@@ -86,58 +101,51 @@ export default function HotelPage() {
 
   }, [cloudTrip, shareId]);
 
+
   // =========================
-// 飯店群組
-// =========================
+  // 群組
+  // =========================
 
-const hotelGroups = Array.isArray(trip?.hotelGroups)
-  ? trip.hotelGroups
-  : [];
+  const hotelGroups =
+    Array.isArray(trip?.hotelGroups)
+      ? trip.hotelGroups
+      : [];
 
-useEffect(() => {
 
-  if (!trip || !targetGroupName) return;
+  // =========================
+  // 第一次看到群組時
+  // 全部預設收合
+  // =========================
 
-  const hotelGroups = Array.isArray(trip.hotelGroups)
-    ? trip.hotelGroups
-    : [];
+  useEffect(() => {
 
-  const targetGroup = hotelGroups.find(
-    (group) =>
-      group.title?.trim() ===
-      targetGroupName.trim()
-  );
+    if (!trip) return;
 
-  if (!targetGroup) return;
+    setCollapsedGroups((prev) => {
 
-  // 自動展開指定群組
-  setCollapsedGroups((prev) => ({
-    ...prev,
-    [targetGroup.id]: false,
-  }));
+      const next = { ...prev };
 
-  // 等畫面更新後捲到指定群組
-  setTimeout(() => {
+      hotelGroups.forEach((group) => {
 
-    const element = document.getElementById(
-      `hotel-group-${targetGroup.id}`
-    );
+        if (
+          next[group.id] === undefined
+        ) {
 
-    if (element) {
+          next[group.id] = true;
 
-      element.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+        }
+
       });
 
-    }
+      return next;
 
-  }, 150);
+    });
 
-}, [trip, targetGroupName]);
+  }, [trip]);
+
 
   // =========================
-  // 展開 / 收合群組
+  // 展開 / 收合
   // =========================
 
   function toggleGroup(groupId) {
@@ -146,11 +154,13 @@ useEffect(() => {
 
       ...prev,
 
-      [groupId]: !prev[groupId],
+      [groupId]:
+        !prev[groupId],
 
     }));
 
   }
+
 
   // =========================
   // 新增 / 修改群組
@@ -160,11 +170,14 @@ useEffect(() => {
 
     if (shareId) return;
 
-    const groups = [...hotelGroups];
+    const groups = [
+      ...hotelGroups,
+    ];
 
-    const index = groups.findIndex(
-      (g) => g.id === group.id
-    );
+    const index =
+      groups.findIndex(
+        (g) => g.id === group.id
+      );
 
     if (index === -1) {
 
@@ -194,43 +207,62 @@ useEffect(() => {
 
   }
 
+
   // =========================
   // 刪除群組
   // =========================
 
-  async function handleDeleteGroup(groupId) {
+  async function handleDeleteGroup(
+    groupId
+  ) {
 
     if (shareId) return;
 
-    const group = hotelGroups.find(
-      (g) => g.id === groupId
-    );
+    const group =
+      hotelGroups.find(
+        (g) => g.id === groupId
+      );
 
     if (!group) return;
 
-    if (
-      group.hotels?.length > 0 &&
-      !window.confirm(
-        "這個群組裡還有飯店，確定要連同群組一起刪除嗎？"
-      )
-    ) {
-      return;
-    }
 
     if (
-      group.hotels?.length === 0 &&
-      !window.confirm("確定刪除此住宿群組？")
+      (group.hotels || []).length > 0
     ) {
-      return;
+
+      if (
+        !window.confirm(
+          "這個群組裡還有飯店，確定要連同群組一起刪除嗎？"
+        )
+      ) {
+
+        return;
+
+      }
+
+    } else {
+
+      if (
+        !window.confirm(
+          "確定刪除此住宿群組？"
+        )
+      ) {
+
+        return;
+
+      }
+
     }
+
 
     const updatedTrip = {
 
       ...trip,
 
-      hotelGroups: hotelGroups.filter(
-        (g) => g.id !== groupId
-      ),
+      hotelGroups:
+        hotelGroups.filter(
+          (g) => g.id !== groupId
+        ),
 
     };
 
@@ -238,10 +270,12 @@ useEffect(() => {
 
     setTrip(updatedTrip);
 
-    // 順便移除收合狀態
+
     setCollapsedGroups((prev) => {
 
-      const next = { ...prev };
+      const next = {
+        ...prev,
+      };
 
       delete next[groupId];
 
@@ -251,45 +285,150 @@ useEffect(() => {
 
   }
 
+
   // =========================
-  // 新增 / 修改群組內飯店
+  // 新增 / 修改 / 複製飯店
+  //
+  // targetGroupId：
+  // 複製時可以指定其他群組
   // =========================
 
-  async function handleSaveHotel(hotel) {
+  async function handleSaveHotel(
+    hotel,
+    targetGroupId
+  ) {
 
     if (shareId) return;
 
-    const groups = hotelGroups.map((group) => {
 
-      if (group.id !== currentGroupId) {
-        return group;
-      }
+    const saveGroupId =
+      targetGroupId ||
+      currentGroupId;
 
-      const hotels = [...(group.hotels || [])];
 
-      const index = hotels.findIndex(
-        (h) => h.id === hotel.id
+    if (!saveGroupId) {
+
+      alert(
+        "找不到住宿群組"
       );
 
-      if (index === -1) {
+      return;
 
-        hotels.push(hotel);
+    }
 
-      } else {
 
-        hotels[index] = hotel;
+    const targetGroup =
+    hotelGroups.find(
+        (group) =>
+        String(group.id) ===
+        String(saveGroupId)
+    );
 
-      }
 
-      return {
+    if (!targetGroup) {
 
-        ...group,
+      alert(
+        "找不到指定的住宿群組"
+      );
 
-        hotels,
+      return;
 
-      };
+    }
 
-    });
+
+    const groups =
+    hotelGroups.map((group) => {
+
+        if (
+        String(group.id) !==
+        String(saveGroupId)
+        ) {
+
+        return group;
+
+        }
+
+
+        const hotels = [
+          ...(group.hotels || []),
+        ];
+
+
+        // =========================
+        // 複製
+        // =========================
+
+        if (copyingHotel) {
+
+          const newHotel = {
+
+            ...hotel,
+
+            id: Date.now(),
+
+            // 群組名稱就是飯店名稱
+            name:
+              group.title || hotel.name,
+
+          };
+
+          hotels.push(newHotel);
+
+
+          return {
+
+            ...group,
+
+            hotels,
+
+          };
+
+        }
+
+
+        // =========================
+        // 新增 / 編輯
+        // =========================
+
+        const index =
+          hotels.findIndex(
+            (h) => h.id === hotel.id
+          );
+
+
+        const savedHotel = {
+
+          ...hotel,
+
+          // 群組名稱就是飯店名稱
+          name:
+            group.title || hotel.name,
+
+        };
+
+
+        if (index === -1) {
+
+          hotels.push(savedHotel);
+
+        } else {
+
+          hotels[index] =
+            savedHotel;
+
+        }
+
+
+        return {
+
+          ...group,
+
+          hotels,
+
+        };
+
+      });
+
 
     const updatedTrip = {
 
@@ -299,11 +438,15 @@ useEffect(() => {
 
     };
 
+
     await updateTrip(updatedTrip);
 
     setTrip(updatedTrip);
 
+
     setEditingHotel(null);
+
+    setCopyingHotel(false);
 
     setCurrentGroupId(null);
 
@@ -311,8 +454,9 @@ useEffect(() => {
 
   }
 
+
   // =========================
-  // 刪除群組內飯店
+  // 刪除飯店
   // =========================
 
   async function handleDeleteHotel(
@@ -322,27 +466,45 @@ useEffect(() => {
 
     if (shareId) return;
 
-    if (!window.confirm("確定刪除此飯店？")) {
+
+    if (
+      !window.confirm(
+        "確定刪除此飯店？"
+      )
+    ) {
+
       return;
+
     }
 
-    const groups = hotelGroups.map((group) => {
 
-      if (group.id !== groupId) {
-        return group;
-      }
+    const groups =
+      hotelGroups.map((group) => {
 
-      return {
+        if (
+          group.id !== groupId
+        ) {
 
-        ...group,
+          return group;
 
-        hotels: (group.hotels || []).filter(
-          (hotel) => hotel.id !== hotelId
-        ),
+        }
 
-      };
 
-    });
+        return {
+
+          ...group,
+
+          hotels:
+            (group.hotels || [])
+              .filter(
+                (hotel) =>
+                  hotel.id !== hotelId
+              ),
+
+        };
+
+      });
+
 
     const updatedTrip = {
 
@@ -352,17 +514,114 @@ useEffect(() => {
 
     };
 
+
     await updateTrip(updatedTrip);
 
     setTrip(updatedTrip);
 
   }
 
+
+  // =========================
+  // 新增飯店
+  // =========================
+
+  function openAddHotel(
+    groupId
+  ) {
+
+    setCurrentGroupId(groupId);
+
+    setEditingHotel(null);
+
+    setCopyingHotel(false);
+
+    setShowHotelModal(true);
+
+  }
+
+
+  // =========================
+  // 編輯飯店
+  // =========================
+
+  function openEditHotel(
+    groupId,
+    hotel
+  ) {
+
+    setCurrentGroupId(groupId);
+
+    setEditingHotel(hotel);
+
+    setCopyingHotel(false);
+
+    setShowHotelModal(true);
+
+  }
+
+
+  // =========================
+  // 複製飯店
+  // =========================
+
+  function openCopyHotel(
+    groupId,
+    hotel
+  ) {
+
+    setCurrentGroupId(groupId);
+
+    setEditingHotel({
+
+      ...hotel,
+
+      id: Date.now(),
+
+    });
+
+    setCopyingHotel(true);
+
+    setShowHotelModal(true);
+
+  }
+
+
+  // =========================
+  // 載入中
+  // =========================
+
+  if (!trip) {
+
+    return (
+
+      <div className="
+        flex
+        min-h-screen
+        items-center
+        justify-center
+      ">
+        載入中...
+      </div>
+
+    );
+
+  }
+
+
   return (
 
     <div className="min-h-screen bg-gray-100">
 
-      <div className="mx-auto max-w-md px-6 py-10">
+      <div className="
+        mx-auto
+        max-w-md
+        px-4
+        py-8
+        sm:px-6
+        sm:py-10
+      ">
+
 
         {/* =========================
             返回
@@ -384,7 +643,12 @@ useEffect(() => {
             標題
         ========================= */}
 
-        <h1 className="mt-6 text-4xl font-bold">
+        <h1 className="
+          mt-6
+          text-3xl
+          font-bold
+          sm:text-4xl
+        ">
           🏨 飯店
         </h1>
 
@@ -404,15 +668,18 @@ useEffect(() => {
 
             }}
             className="
-              mt-8
+              mt-6
               w-full
               rounded-2xl
               bg-blue-500
-              py-4
-              text-lg
+              py-3.5
+              text-base
               font-semibold
               text-white
               hover:bg-blue-600
+              sm:mt-8
+              sm:py-4
+              sm:text-lg
             "
           >
             ＋ 新增住宿群組
@@ -425,7 +692,11 @@ useEffect(() => {
             群組
         ========================= */}
 
-        <div className="mt-8 space-y-6">
+        <div className="
+          mt-6
+          space-y-4
+          sm:mt-8
+        ">
 
           {hotelGroups.length === 0 ? (
 
@@ -447,18 +718,20 @@ useEffect(() => {
               const isCollapsed =
                 collapsedGroups[group.id] === true;
 
+
               return (
 
                 <div
-                id={`hotel-group-${group.id}`}
-                key={group.id}
-                className="
-                    overflow-hidden
+                  key={group.id}
+                  id={`hotel-group-${group.id}`}
+                  className="
+                    overflow-visible
                     rounded-2xl
                     bg-white
                     shadow
-                "
+                  "
                 >
+
 
                   {/* =========================
                       群組標題
@@ -466,98 +739,111 @@ useEffect(() => {
 
                   <div
                     onClick={() =>
-                      toggleGroup(group.id)
+                      toggleGroup(
+                        group.id
+                      )
                     }
                     className="
                       flex
                       cursor-pointer
                       items-center
                       justify-between
-                      p-5
+                      p-4
                       transition
                       hover:bg-gray-50
+                      sm:p-5
                     "
                   >
 
-                    <div className="min-w-0">
+                    <div className="
+                      min-w-0
+                      flex-1
+                    ">
 
                       <div className="
                         flex
+                        min-w-0
                         items-center
                         gap-2
-                        text-xl
+                        text-lg
                         font-bold
+                        sm:text-xl
                       ">
 
-                        <span className="text-base">
-                          {isCollapsed ? "▶" : "▼"}
+                        <span className="
+                          shrink-0
+                          text-sm
+                        ">
+                          {isCollapsed
+                            ? "▶"
+                            : "▼"}
                         </span>
 
-                        <span>
+
+                        <span className="
+                          min-w-0
+                          break-words
+                        ">
                           🏨 {group.title}
                         </span>
 
                       </div>
 
+
                       <div className="
-                        mt-2
-                        text-sm
+                        mt-1.5
+                        pl-6
+                        text-xs
                         text-gray-600
+                        sm:text-sm
                       ">
-                        📅 {group.checkIn || "--"} →{" "}
-                        {group.checkOut || "--"}
+                        📅{" "}
+                        {group.checkIn ||
+                          "--"}
+                        {" → "}
+                        {group.checkOut ||
+                          "--"}
                       </div>
 
                     </div>
 
 
                     {/* =========================
-                        編輯 / 刪除
+                        群組操作
                     ========================= */}
 
                     {!readonly && (
 
                       <div
                         className="
-                          ml-3
-                          flex
+                          ml-2
                           shrink-0
-                          gap-1
                         "
                         onClick={(e) =>
                           e.stopPropagation()
                         }
                       >
 
-                        <button
-                          onClick={() => {
+                        <GroupMenu
+                          onEdit={() => {
 
-                            setEditingGroup(group);
+                            setEditingGroup(
+                              group
+                            );
 
-                            setShowGroupModal(true);
+                            setShowGroupModal(
+                              true
+                            );
 
                           }}
-                          className="
-                            rounded-lg
-                            p-2
-                            hover:bg-gray-100
-                          "
-                        >
-                          ✏️
-                        </button>
 
-                        <button
-                          onClick={() =>
-                            handleDeleteGroup(group.id)
+                          onDelete={() =>
+                            handleDeleteGroup(
+                              group.id
+                            )
                           }
-                          className="
-                            rounded-lg
-                            p-2
-                            hover:bg-red-100
-                          "
-                        >
-                          🗑️
-                        </button>
+
+                        />
 
                       </div>
 
@@ -575,18 +861,20 @@ useEffect(() => {
                     <div className="
                       border-t
                       border-gray-100
-                      px-5
-                      pb-5
+                      px-4
+                      pb-4
+                      sm:px-5
+                      sm:pb-5
                     ">
 
-                      {/* 群組內飯店 */}
 
                       <div className="
-                        mt-5
+                        mt-4
                         space-y-4
                       ">
 
-                        {(group.hotels || []).length === 0 ? (
+                        {(group.hotels || [])
+                          .length === 0 ? (
 
                           <div className="
                             rounded-xl
@@ -601,51 +889,38 @@ useEffect(() => {
 
                         ) : (
 
-                          group.hotels.map((hotel) => (
+                          group.hotels.map(
+                            (hotel) => (
 
-                            <HotelCard
-                              key={hotel.id}
-                              hotel={hotel}
-                              readonly={readonly}
+                              <HotelCard
+                                key={hotel.id}
+                                hotel={hotel}
+                                readonly={readonly}
 
-                              onEdit={() => {
+                                onEdit={() =>
+                                  openEditHotel(
+                                    group.id,
+                                    hotel
+                                  )
+                                }
 
-                                setCurrentGroupId(
-                                  group.id
-                                );
+                                onCopy={() =>
+                                  openCopyHotel(
+                                    group.id,
+                                    hotel
+                                  )
+                                }
 
-                                setEditingHotel(hotel);
+                                onDelete={() =>
+                                  handleDeleteHotel(
+                                    group.id,
+                                    hotel.id
+                                  )
+                                }
+                              />
 
-                                setShowHotelModal(true);
-
-                              }}
-
-                              onCopy={() => {
-
-                                setCurrentGroupId(group.id);
-
-                                setEditingHotel({
-                                    ...hotel,
-                                    id: Date.now(),
-                                });
-
-                                setCopyingHotel(true);
-
-                                setShowHotelModal(true);
-
-                                }}
-
-                              onDelete={() => {
-
-                                handleDeleteHotel(
-                                  group.id,
-                                  hotel.id
-                                );
-
-                              }}
-                            />
-
-                          ))
+                            )
+                          )
 
                         )}
 
@@ -659,25 +934,20 @@ useEffect(() => {
                       {!readonly && (
 
                         <button
-                          onClick={() => {
-
-                            setCurrentGroupId(group.id);
-
-                            setEditingHotel(null);
-
-                            setCopyingHotel(false);
-
-                            setShowHotelModal(true);
-
-                            }}
+                          onClick={() =>
+                            openAddHotel(
+                              group.id
+                            )
+                          }
                           className="
-                            mt-5
+                            mt-4
                             w-full
                             rounded-xl
                             border
                             border-blue-200
                             bg-blue-50
                             py-3
+                            text-sm
                             font-semibold
                             text-blue-600
                             hover:bg-blue-100
@@ -705,85 +975,125 @@ useEffect(() => {
 
         {/* =========================
             舊版飯店資料
-            保留，不刪除
+            暫時保留
         ========================= */}
 
-{Array.isArray(trip?.hotels) &&
-  trip.hotels.length > 0 && (
+        {Array.isArray(trip?.hotels) &&
+          trip.hotels.length > 0 && (
 
-  <div className="mt-8">
+          <div className="mt-8">
 
-    <div className="
-      mb-3
-      text-sm
-      font-semibold
-      text-gray-500
-    ">
-      舊版住宿資料
-    </div>
+            <div className="
+              mb-3
+              text-sm
+              font-semibold
+              text-gray-500
+            ">
+              舊版住宿資料
+            </div>
 
-    <div className="space-y-4">
 
-      {trip.hotels.map((hotel) => (
+            <div className="space-y-4">
 
-        <HotelCard
-          key={hotel.id}
-          hotel={hotel}
-          readonly={readonly}
+              {trip.hotels.map(
+                (hotel) => (
 
-          onEdit={() => {
+                  <HotelCard
+                    key={hotel.id}
+                    hotel={hotel}
+                    readonly={readonly}
 
-            setCurrentGroupId(null);
+                    onEdit={() => {
 
-            setEditingHotel(hotel);
+                      setCurrentGroupId(null);
 
-            setCopyingHotel(false);
+                      setEditingHotel(
+                        hotel
+                      );
 
-            setShowHotelModal(true);
+                      setCopyingHotel(
+                        false
+                      );
 
-          }}
+                      setShowHotelModal(
+                        true
+                      );
 
-          onDelete={() => {
+                    }}
 
-            if (shareId) return;
+                    onCopy={() => {
 
-            if (
-              !window.confirm(
-                "確定刪除此飯店？"
-              )
-            ) {
-              return;
-            }
+                      setCurrentGroupId(
+                        null
+                      );
 
-            const updatedTrip = {
+                      setEditingHotel({
 
-              ...trip,
+                        ...hotel,
 
-              hotels:
-                trip.hotels.filter(
-                  (h) => h.id !== hotel.id
-                ),
+                        id: Date.now(),
 
-            };
+                      });
 
-            updateTrip(updatedTrip)
-              .then(() => {
+                      setCopyingHotel(
+                        true
+                      );
 
-                setTrip(updatedTrip);
+                      setShowHotelModal(
+                        true
+                      );
 
-              });
+                    }}
 
-          }}
+                    onDelete={() => {
 
-        />
+                      if (shareId) return;
 
-      ))}
+                      if (
+                        !window.confirm(
+                          "確定刪除此飯店？"
+                        )
+                      ) {
 
-    </div>
+                        return;
 
-  </div>
+                      }
 
-)}
+                      const updatedTrip = {
+
+                        ...trip,
+
+                        hotels:
+                          trip.hotels.filter(
+                            (h) =>
+                              h.id !==
+                              hotel.id
+                          ),
+
+                      };
+
+                      updateTrip(
+                        updatedTrip
+                      ).then(() => {
+
+                        setTrip(
+                          updatedTrip
+                        );
+
+                      });
+
+                    }}
+
+                  />
+
+                )
+              )}
+
+            </div>
+
+          </div>
+
+        )}
 
 
       </div>
@@ -793,7 +1103,8 @@ useEffect(() => {
           群組 Modal
       ========================= */}
 
-      {!readonly && showGroupModal && (
+      {!readonly &&
+        showGroupModal && (
 
         <HotelGroupModal
           group={editingGroup}
@@ -802,11 +1113,14 @@ useEffect(() => {
 
             setEditingGroup(null);
 
-            setShowGroupModal(false);
+            setShowGroupModal(
+              false
+            );
 
           }}
 
           onSave={handleSaveGroup}
+
         />
 
       )}
@@ -816,26 +1130,182 @@ useEffect(() => {
           飯店 Modal
       ========================= */}
 
-      {!readonly && showHotelModal && (
+      {!readonly &&
+        showHotelModal && (
 
         <HotelModal
-            hotel={editingHotel}
-            copyMode={copyingHotel}
+          hotel={editingHotel}
+          copyMode={copyingHotel}
 
-            onClose={() => {
+          hotelGroups={hotelGroups}
+          currentGroupId={
+            currentGroupId
+          }
 
-                setEditingHotel(null);
+          onClose={() => {
 
-                setCopyingHotel(false);
+            setEditingHotel(null);
 
-                setCurrentGroupId(null);
+            setCopyingHotel(false);
 
-                setShowHotelModal(false);
+            setCurrentGroupId(null);
+
+            setShowHotelModal(
+              false
+            );
+
+          }}
+
+          onSave={handleSaveHotel}
+
+        />
+
+      )}
+
+    </div>
+
+  );
+
+}
+
+
+// ==================================================
+// 群組 ⋯ 選單
+// ==================================================
+
+function GroupMenu({
+  onEdit,
+  onDelete,
+}) {
+
+  const [open, setOpen] =
+    useState(false);
+
+
+  useEffect(() => {
+
+    function handleOutsideClick(e) {
+
+      if (
+        !e.target.closest(
+          "[data-group-menu]"
+        )
+      ) {
+
+        setOpen(false);
+
+      }
+
+    }
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+    };
+
+  }, []);
+
+
+  return (
+
+    <div
+      data-group-menu
+      className="relative"
+    >
+
+      <button
+        type="button"
+        onClick={() =>
+          setOpen(
+            (prev) => !prev
+          )
+        }
+        className="
+          rounded-lg
+          px-2
+          py-1
+          text-xl
+          font-bold
+          leading-none
+          text-gray-500
+          hover:bg-gray-100
+        "
+      >
+        ⋯
+      </button>
+
+
+      {open && (
+
+        <div className="
+          absolute
+          right-0
+          top-full
+          z-40
+          mt-1
+          w-28
+          overflow-hidden
+          rounded-xl
+          bg-white
+          shadow-xl
+          ring-1
+          ring-black/5
+        ">
+
+          <button
+            type="button"
+            onClick={() => {
+
+              setOpen(false);
+
+              onEdit();
 
             }}
+            className="
+              w-full
+              px-4
+              py-3
+              text-left
+              text-sm
+              hover:bg-gray-100
+            "
+          >
+            ✏️ 編輯
+          </button>
 
-            onSave={handleSaveHotel}
-            />
+
+          <button
+            type="button"
+            onClick={() => {
+
+              setOpen(false);
+
+              onDelete();
+
+            }}
+            className="
+              w-full
+              px-4
+              py-3
+              text-left
+              text-sm
+              text-red-600
+              hover:bg-red-50
+            "
+          >
+            🗑️ 刪除
+          </button>
+
+        </div>
 
       )}
 
