@@ -10,19 +10,43 @@ export default function SortableFlightCard({
 }) {
 
   const {
-  attributes,
-  listeners,
-  setNodeRef,
-  transform,
-  transition,
-} = useSortable({
-  id: segment.id || `flight-${index}`,
-});
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({
+    id: segment.id || `flight-${index}`,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  // 航班日期格式
+  function formatFlightDate(date) {
+
+    if (!date) return "未設定日期";
+
+    const d = new Date(`${date}T00:00:00`);
+
+    if (Number.isNaN(d.getTime())) {
+      return "未設定日期";
+    }
+
+    const weekdays = [
+      "週日",
+      "週一",
+      "週二",
+      "週三",
+      "週四",
+      "週五",
+      "週六",
+    ];
+
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${weekdays[d.getDay()]}）`;
+  }
 
   return (
 
@@ -32,10 +56,12 @@ export default function SortableFlightCard({
       className="mb-6 rounded-2xl border bg-white p-5 shadow-sm"
     >
 
-      <div className="mb-4 flex items-center justify-between">
+      {/* 標題 */}
+
+      <div className="mb-3 flex items-center justify-between">
 
         <div
-          className="flex cursor-grab items-center gap-2 font-bold text-lg"
+          className="flex cursor-grab items-center gap-2 text-lg font-bold"
           {...attributes}
           {...listeners}
         >
@@ -66,6 +92,22 @@ export default function SortableFlightCard({
 
       </div>
 
+      {/* 航班日期 */}
+
+      <div className="mb-4 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3">
+
+        <span className="text-lg">
+          📅
+        </span>
+
+        <span className="font-semibold text-blue-700">
+          {formatFlightDate(segment.date)}
+        </span>
+
+      </div>
+
+      {/* 航空公司 / 航班號 */}
+
       <div className="mb-3 flex items-start justify-between">
 
         <div>
@@ -82,20 +124,22 @@ export default function SortableFlightCard({
 
       </div>
 
+      {/* 出發 / 抵達 */}
+
       <div className="flex items-center justify-between">
 
         <div className="text-center">
 
           <div className="text-3xl font-bold">
-            {segment.departure.time}
+            {segment.departure?.time || "--"}
           </div>
 
           <div className="mt-2 text-xl font-bold">
-            {segment.departure.code}
+            {segment.departure?.code || "--"}
           </div>
 
           <div className="mt-1 text-sm text-gray-500">
-            {segment.departure.name}
+            {segment.departure?.name || "--"}
           </div>
 
         </div>
@@ -107,20 +151,22 @@ export default function SortableFlightCard({
         <div className="text-center">
 
           <div className="text-3xl font-bold">
-            {segment.arrival.time}
+            {segment.arrival?.time || "--"}
           </div>
 
           <div className="mt-2 text-xl font-bold">
-            {segment.arrival.code}
+            {segment.arrival?.code || "--"}
           </div>
 
           <div className="mt-1 text-sm text-gray-500">
-            {segment.arrival.name}
+            {segment.arrival?.name || "--"}
           </div>
 
         </div>
 
       </div>
+
+      {/* Seat / Gate / Terminal */}
 
       <div className="mt-5 grid grid-cols-3 gap-3 rounded-2xl border bg-gray-50 p-4">
 

@@ -20,10 +20,8 @@ export default function FlightPage() {
 
   const [trip, setTrip] = useState(null);
 
-    const readonly =
-
+  const readonly =
     !!shareId ||
-
     (trip ? !canEdit(trip) : true);
 
   const [showModal, setShowModal] = useState(false);
@@ -42,129 +40,123 @@ export default function FlightPage() {
 
         setTrip(data);
 
-        } else {
+      } else {
 
         setTrip(cloudTrip);
 
-        }
+      }
 
     }
 
     loadTrip();
 
-  }, [cloudTrip, shareId, readonly]);
+  }, [cloudTrip, shareId]);
 
   if (!trip) {
 
     return (
-
       <div className="min-h-screen flex items-center justify-center">
-
         載入中...
-
       </div>
-
     );
 
   }
 
-async function saveFlight(flight) {
+  async function saveFlight(flight) {
 
-  const flights = {
+    const flights = {
 
-    outbound: Array.isArray(trip.flights?.outbound)
-      ? [...trip.flights.outbound]
-      : trip.flights?.outbound
-        ? [trip.flights.outbound]
-        : [],
+      outbound: Array.isArray(trip.flights?.outbound)
+        ? [...trip.flights.outbound]
+        : trip.flights?.outbound
+          ? [trip.flights.outbound]
+          : [],
 
-    inbound: Array.isArray(trip.flights?.inbound)
-      ? [...trip.flights.inbound]
-      : trip.flights?.inbound
-        ? [trip.flights.inbound]
-        : [],
+      inbound: Array.isArray(trip.flights?.inbound)
+        ? [...trip.flights.inbound]
+        : trip.flights?.inbound
+          ? [trip.flights.inbound]
+          : [],
 
-  };
+    };
 
-  const list = flights[flightType];
+    const list = flights[flightType];
 
-  const index = list.findIndex(
-    (item) => item.id === flight.id
-  );
+    const index = list.findIndex(
+      (item) => item.id === flight.id
+    );
 
-  if (index >= 0) {
+    if (index >= 0) {
 
-    list[index] = flight;
+      list[index] = flight;
 
-  } else {
+    } else {
 
-    list.push(flight);
+      list.push(flight);
 
-  }
+    }
 
-  const updatedTrip = {
+    const updatedTrip = {
 
-    ...trip,
+      ...trip,
 
-    flights,
+      flights,
 
-  };
+    };
 
-  if (!shareId) {
+    if (!shareId) {
 
-    await updateTrip(updatedTrip);
+      await updateTrip(updatedTrip);
 
-  }
+    }
 
-  setTrip(updatedTrip);
+    setTrip(updatedTrip);
 
-  setShowModal(false);
-
-}
-
-
-
-async function deleteFlight(type, id) {
-
-  if (!window.confirm("確定刪除此航班？")) return;
-
-  const flights = {
-
-    outbound: Array.isArray(trip.flights?.outbound)
-      ? [...trip.flights.outbound]
-      : trip.flights?.outbound
-        ? [trip.flights.outbound]
-        : [],
-
-    inbound: Array.isArray(trip.flights?.inbound)
-      ? [...trip.flights.inbound]
-      : trip.flights?.inbound
-        ? [trip.flights.inbound]
-        : [],
-
-  };
-
-  flights[type] = flights[type].filter(
-    (item) => item.id !== id
-  );
-
-  const updatedTrip = {
-
-    ...trip,
-
-    flights,
-
-  };
-
-  if (!shareId) {
-
-    await updateTrip(updatedTrip);
+    setShowModal(false);
 
   }
 
-  setTrip(updatedTrip);
+  async function deleteFlight(type, flightId) {
 
-}
+    if (!window.confirm("確定刪除此航班？")) return;
+
+    const flights = {
+
+      outbound: Array.isArray(trip.flights?.outbound)
+        ? [...trip.flights.outbound]
+        : trip.flights?.outbound
+          ? [trip.flights.outbound]
+          : [],
+
+      inbound: Array.isArray(trip.flights?.inbound)
+        ? [...trip.flights.inbound]
+        : trip.flights?.inbound
+          ? [trip.flights.inbound]
+          : [],
+
+    };
+
+    flights[type] = flights[type].filter(
+      (item) => item.id !== flightId
+    );
+
+    const updatedTrip = {
+
+      ...trip,
+
+      flights,
+
+    };
+
+    if (!shareId) {
+
+      await updateTrip(updatedTrip);
+
+    }
+
+    setTrip(updatedTrip);
+
+  }
 
   return (
 
@@ -184,120 +176,136 @@ async function deleteFlight(type, id) {
         </Link>
 
         <h1 className="mt-6 text-4xl font-bold">
-
           ✈️ 航班
-
         </h1>
 
         <div className="mt-8 space-y-6">
+
+          {/* =========================
+              去程
+          ========================= */}
 
           <FlightCard
             title="🛫 去程"
             flights={trip.flights?.outbound || []}
             readonly={readonly}
+
             onAdd={() => {
 
-                setEditingFlight(null);
+              setEditingFlight(null);
 
-                setFlightType("outbound");
+              setFlightType("outbound");
 
-                setShowModal(true);
+              setShowModal(true);
 
             }}
+
             onEdit={(flight) => {
 
-                setEditingFlight(flight);
+              setEditingFlight(flight);
 
-                setFlightType("outbound");
+              setFlightType("outbound");
 
-                setShowModal(true);
+              setShowModal(true);
 
             }}
+
             onDelete={(flightId) => {
 
-                deleteFlight("outbound", flightId);
+              deleteFlight("outbound", flightId);
 
             }}
+
             onReorder={async (newFlights) => {
 
-                const updatedTrip = {
+              const updatedTrip = {
 
-                    ...trip,
+                ...trip,
 
-                    flights: {
+                flights: {
 
-                    ...(trip.flights || {}),
+                  ...(trip.flights || {}),
 
-                    outbound: newFlights,
+                  outbound: newFlights,
 
-                    },
+                },
 
-                };
+              };
 
-                if (!shareId) {
+              if (!shareId) {
 
-                    await updateTrip(updatedTrip);
+                await updateTrip(updatedTrip);
 
-                }
+              }
 
-                setTrip(updatedTrip);
+              setTrip(updatedTrip);
 
-                }}
-            />
+            }}
+
+          />
+
+          {/* =========================
+              回程
+          ========================= */}
 
           <FlightCard
             title="🛬 回程"
             flights={trip.flights?.inbound || []}
             readonly={readonly}
+
             onAdd={() => {
 
-                setEditingFlight(null);
+              setEditingFlight(null);
 
-                setFlightType("inbound");
+              setFlightType("inbound");
 
-                setShowModal(true);
+              setShowModal(true);
 
             }}
+
             onEdit={(flight) => {
 
-                setEditingFlight(flight);
+              setEditingFlight(flight);
 
-                setFlightType("outbound");
+              setFlightType("inbound");
 
-                setShowModal(true);
-
-            }}
-            onDelete={() => {
-
-                deleteFlight("outbound", flightId);
+              setShowModal(true);
 
             }}
+
+            onDelete={(flightId) => {
+
+              deleteFlight("inbound", flightId);
+
+            }}
+
             onReorder={async (newFlights) => {
 
-                const updatedTrip = {
+              const updatedTrip = {
 
-                    ...trip,
+                ...trip,
 
-                    flights: {
+                flights: {
 
-                    ...(trip.flights || {}),
+                  ...(trip.flights || {}),
 
-                    inbound: newFlights,
+                  inbound: newFlights,
 
-                    },
+                },
 
-                };
+              };
 
-                if (!shareId) {
+              if (!shareId) {
 
-                    await updateTrip(updatedTrip);
+                await updateTrip(updatedTrip);
 
-                }
+              }
 
-                setTrip(updatedTrip);
+              setTrip(updatedTrip);
 
-                }}
-            />
+            }}
+
+          />
 
         </div>
 
@@ -306,14 +314,19 @@ async function deleteFlight(type, id) {
       {!readonly && showModal && (
 
         <FlightModal
+
           title={
             flightType === "outbound"
               ? "建立去程航班"
               : "建立回程航班"
           }
+
           flight={editingFlight}
+
           onClose={() => setShowModal(false)}
+
           onSave={saveFlight}
+
         />
 
       )}

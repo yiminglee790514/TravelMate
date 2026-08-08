@@ -14,72 +14,81 @@ export default function TripModal({
   const [startDate, setStartDate] = useState(trip?.startDate || "");
   const [endDate, setEndDate] = useState(trip?.endDate || "");
 
-function handleSave() {
+  async function handleSave() {
 
-  if (!title.trim()) {
+    if (!title.trim()) {
+      alert("請輸入旅程名稱");
+      return;
+    }
 
-    alert("請輸入旅程名稱");
+    if (!startDate || !endDate) {
+      alert("請選擇完整的旅程日期");
+      return;
+    }
 
-    return;
+    if (endDate < startDate) {
+      alert("結束日期不能早於開始日期");
+      return;
+    }
 
+    // 城市改變時重新整理天氣
+    const weather =
+      city !== trip?.city
+        ? (trip?.weather || []).map((day) => ({
+            ...day,
+            city,
+            forecast: null,
+          }))
+        : trip?.weather || [];
+
+    const updatedTrip = {
+      ...(trip || {}),
+
+      // 保留原本 id
+      id: trip?.id || Date.now(),
+
+      title: title.trim(),
+      country: country.trim(),
+      city: city.trim(),
+
+      startDate,
+      endDate,
+
+      items: trip?.items || [],
+
+      flights: trip?.flights || {
+        outbound: null,
+        inbound: null,
+      },
+
+      hotels: trip?.hotels || [],
+
+      transports: trip?.transports || [],
+
+      weather,
+
+      expenses: trip?.expenses || [],
+
+      tickets: trip?.tickets || [],
+
+      packing: trip?.packing || [],
+    };
+
+    // 確定真的有資料才送出去
+    if (!updatedTrip) {
+      alert("旅程資料不存在，請重新開啟");
+      return;
+    }
+
+    await onSave(updatedTrip);
+
+    onClose();
   }
-  const weather =
-  city !== trip?.city
-    ? (trip?.weather || []).map((day) => ({
-        ...day,
-        city,
-        forecast: null,
-      }))
-    : trip?.weather || [];
-
-  onSave({
-
-    // 保留 Firestore 原本所有欄位
-    ...trip,
-
-    // 新增旅程沒有 trip 時建立 id
-    id: trip?.id || Date.now(),
-
-    title,
-
-    country,
-
-    city,
-
-    startDate,
-
-    endDate,
-
-    // 相容舊資料
-    items: trip?.items || [],
-
-    flights: trip?.flights || {
-      outbound: null,
-      inbound: null,
-    },
-
-    hotels: trip?.hotels || [],
-
-    transports: trip?.transports || [],
-
-    weather,
-
-    expenses: trip?.expenses || [],
-
-    tickets: trip?.tickets || [],
-
-    packing: trip?.packing || [],
-
-  });
-
-  onClose();
-
-}
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
 
-      <div className="w-[420px] rounded-3xl bg-white p-8 shadow-2xl">
+      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
 
         <h2 className="mb-6 text-2xl font-bold">
           {isEdit ? "修改旅程" : "新增旅程"}

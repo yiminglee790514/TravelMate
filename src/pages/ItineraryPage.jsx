@@ -321,6 +321,25 @@ useEffect(() => {
                             item={timelineItem}
                             readonly={readonly}
                             owner={owner}
+
+                            onClick={
+                              timelineItem.type === "hotel"
+                                ? () => {
+
+                                    const groupName =
+                                      timelineItem.title?.trim();
+
+                                    if (!groupName) return;
+
+                                    window.location.href =
+                                      `/trip/${id}/hotel?group=${encodeURIComponent(
+                                        groupName
+                                      )}`;
+
+                                  }
+                                : undefined
+                            }
+
                             onEdit={() => {
 
                               setEditItem(timelineItem);

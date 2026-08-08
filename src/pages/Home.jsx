@@ -93,11 +93,14 @@ export default function Home() {
 
   }
 
-  async function handleEditTrip(trip) {
+async function handleEditTrip(trip) {
 
   try {
 
-    await updateTrip(trip);
+    await updateTrip(
+      trip.id,
+      trip
+    );
 
     setEditingTrip(null);
 

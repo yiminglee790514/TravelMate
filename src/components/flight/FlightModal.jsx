@@ -9,8 +9,21 @@ export default function FlightModal({
   onSave,
 }) {
 
-  const [airline, setAirline] = useState(flight?.airline || "");
-  const [flightNo, setFlightNo] = useState(flight?.flightNo || "");
+  // =========================
+  // 航班日期
+  // =========================
+
+  const [date, setDate] = useState(
+    flight?.date || ""
+  );
+
+  const [airline, setAirline] = useState(
+    flight?.airline || ""
+  );
+
+  const [flightNo, setFlightNo] = useState(
+    flight?.flightNo || ""
+  );
 
   const [departureCode, setDepartureCode] = useState(
     flight?.departure?.code || ""
@@ -48,7 +61,16 @@ export default function FlightModal({
     flight?.seat || ""
   );
 
+  // =========================
+  // 儲存
+  // =========================
+
   function handleSave() {
+
+    if (!date) {
+      alert("請選擇航班日期");
+      return;
+    }
 
     if (!airline || !flightNo) {
       alert("請輸入航空公司與航班號");
@@ -58,7 +80,10 @@ export default function FlightModal({
     onSave({
 
       id: flight?.id || Date.now(),
-        
+
+      // ⭐ 航班自己的日期
+      date,
+
       airline,
 
       flightNo,
@@ -90,186 +115,247 @@ export default function FlightModal({
 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
 
-        <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-8 shadow-2xl">    
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-8 shadow-2xl">
 
         <h2 className="mb-6 text-2xl font-bold">
-
           {title}
-
         </h2>
 
         <div className="space-y-4">
+
+          {/* =========================
+              航班日期
+          ========================= */}
+
+          <div>
+
+            <div className="mb-2 font-semibold">
+              📅 航班日期
+            </div>
+
+            <input
+              type="date"
+              className="w-full rounded-xl border p-3"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+
+          </div>
+
+          {/* =========================
+              航空公司
+          ========================= */}
 
           <select
             className="w-full rounded-xl border p-3"
             value={airline}
             onChange={(e) => setAirline(e.target.value)}
-            >
-            <option value="">請選擇航空公司</option>
+          >
+
+            <option value="">
+              請選擇航空公司
+            </option>
 
             {AIRLINES.map((item) => (
-                <option
+
+              <option
                 key={item.code}
                 value={item.name}
-                >
+              >
                 {item.code}｜{item.name}
-                </option>
+              </option>
+
             ))}
-            </select>
+
+          </select>
 
           <input
             className="w-full rounded-xl border p-3"
             placeholder="航班號 (CI919)"
             value={flightNo}
-            onChange={(e)=>setFlightNo(e.target.value)}
+            onChange={(e) => setFlightNo(e.target.value)}
           />
 
-          <hr/>
+          <hr />
+
+          {/* =========================
+              出發
+          ========================= */}
 
           <div className="font-semibold">
             🛫 出發
           </div>
 
-            <select
+          <select
             className="w-full rounded-xl border p-3"
             value={departureCode}
             onChange={(e) => {
 
-                    const airport = AIRPORTS.find(
-                    (a) => a.code === e.target.value
-                    );
+              const airport = AIRPORTS.find(
+                (a) => a.code === e.target.value
+              );
 
-                    if (!airport) return;
+              if (!airport) return;
 
-                    setDepartureCode(airport.code);
+              setDepartureCode(airport.code);
 
-                    if (airport.code !== "CUSTOM") {
-                    setDepartureName(airport.name);
-                    } else {
-                    setDepartureName("");
-                    }
+              if (airport.code !== "CUSTOM") {
+                setDepartureName(airport.name);
+              } else {
+                setDepartureName("");
+              }
 
             }}
-            >
+          >
 
             <option value="">
-                請選擇出發機場
+              請選擇出發機場
             </option>
 
             {AIRPORTS.map((airport) => (
 
-                <option
+              <option
                 key={airport.code}
                 value={airport.code}
-                >
+              >
                 {airport.code}｜{airport.name}
-                </option>
+              </option>
 
             ))}
 
-            </select>
+          </select>
 
-            {departureCode === "CUSTOM" && (
+          {departureCode === "CUSTOM" && (
+
             <input
-                className="w-full rounded-xl border p-3"
-                placeholder="請輸入出發機場"
-                value={departureName}
-                onChange={(e) => setDepartureName(e.target.value)}
+              className="w-full rounded-xl border p-3"
+              placeholder="請輸入出發機場"
+              value={departureName}
+              onChange={(e) =>
+                setDepartureName(e.target.value)
+              }
             />
-            )}
 
-            <input
+          )}
+
+          <input
             type="time"
             className="w-full rounded-xl border p-3"
             value={departureTime}
-            onChange={(e)=>setDepartureTime(e.target.value)}
-            />
+            onChange={(e) =>
+              setDepartureTime(e.target.value)
+            }
+          />
 
-          <hr/>
+          <hr />
+
+          {/* =========================
+              抵達
+          ========================= */}
 
           <div className="font-semibold">
             🛬 抵達
           </div>
 
-            <select
+          <select
             className="w-full rounded-xl border p-3"
             value={arrivalCode}
             onChange={(e) => {
 
-                const airport = AIRPORTS.find(
-                    (a) => a.code === e.target.value
-                );
+              const airport = AIRPORTS.find(
+                (a) => a.code === e.target.value
+              );
 
-                if (!airport) return;
+              if (!airport) return;
 
-                setArrivalCode(airport.code);
+              setArrivalCode(airport.code);
 
-                if (airport.code !== "CUSTOM") {
-                    setArrivalName(airport.name);
-                } else {
-                    setArrivalName("");
-                }
+              if (airport.code !== "CUSTOM") {
+                setArrivalName(airport.name);
+              } else {
+                setArrivalName("");
+              }
 
             }}
-            >
+          >
 
             <option value="">
-                請選擇抵達機場
+              請選擇抵達機場
             </option>
 
             {AIRPORTS.map((airport) => (
 
-                <option
+              <option
                 key={airport.code}
                 value={airport.code}
-                >
+              >
                 {airport.code}｜{airport.name}
-                </option>
+              </option>
 
             ))}
 
-            </select>
+          </select>
 
-            {arrivalCode === "CUSTOM" && (
+          {arrivalCode === "CUSTOM" && (
+
             <input
-                className="w-full rounded-xl border p-3"
-                placeholder="請輸入抵達機場"
-                value={arrivalName}
-                onChange={(e) => setArrivalName(e.target.value)}
+              className="w-full rounded-xl border p-3"
+              placeholder="請輸入抵達機場"
+              value={arrivalName}
+              onChange={(e) =>
+                setArrivalName(e.target.value)
+              }
             />
-            )}
 
-            <input
+          )}
+
+          <input
             type="time"
             className="w-full rounded-xl border p-3"
             value={arrivalTime}
-            onChange={(e)=>setArrivalTime(e.target.value)}
-            />
+            onChange={(e) =>
+              setArrivalTime(e.target.value)
+            }
+          />
 
-          <hr/>
+          <hr />
+
+          {/* =========================
+              其他資訊
+          ========================= */}
 
           <input
             className="w-full rounded-xl border p-3"
             placeholder="Terminal"
             value={terminal}
-            onChange={(e)=>setTerminal(e.target.value)}
+            onChange={(e) =>
+              setTerminal(e.target.value)
+            }
           />
 
           <input
             className="w-full rounded-xl border p-3"
             placeholder="Gate"
             value={gate}
-            onChange={(e)=>setGate(e.target.value)}
+            onChange={(e) =>
+              setGate(e.target.value)
+            }
           />
 
           <input
             className="w-full rounded-xl border p-3"
             placeholder="Seat"
             value={seat}
-            onChange={(e)=>setSeat(e.target.value)}
+            onChange={(e) =>
+              setSeat(e.target.value)
+            }
           />
 
         </div>
+
+        {/* =========================
+            按鈕
+        ========================= */}
 
         <div className="mt-8 flex justify-end gap-3">
 
