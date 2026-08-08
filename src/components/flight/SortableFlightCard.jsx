@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useEffect, useRef, useState } from "react";
 
 export default function SortableFlightCard({
   segment,
@@ -23,6 +24,50 @@ export default function SortableFlightCard({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  // =========================
+  // 更多選單
+  // =========================
+
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // 旅客資訊預設關閉，點擊後才展開
+  const [showPassengers, setShowPassengers] = useState(false);
+
+  const passengers = Array.isArray(segment.passengers)
+    ? segment.passengers
+    : [];
+
+  // 點其他地方 → 關閉選單
+  useEffect(() => {
+
+    function handleClickOutside(event) {
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
+        setShowMenu(false);
+      }
+
+    }
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+    };
+
+  }, []);
 
   // 航班日期格式
   function formatFlightDate(date) {
@@ -56,7 +101,9 @@ export default function SortableFlightCard({
       className="mb-6 rounded-2xl border bg-white p-5 shadow-sm"
     >
 
-      {/* 標題 */}
+      {/* =========================
+          標題
+      ========================= */}
 
       <div className="mb-3 flex items-center justify-between">
 
@@ -68,23 +115,127 @@ export default function SortableFlightCard({
           ☰ 第 {index + 1} 段
         </div>
 
+
         {!readonly && (
 
-          <div className="flex gap-2">
+          <div
+            ref={menuRef}
+            className="relative"
+          >
+
+            {/* ... 按鈕 */}
 
             <button
-              onClick={() => onEdit(segment)}
-              className="rounded-lg p-2 hover:bg-gray-100"
+              type="button"
+              onClick={(event) => {
+
+                event.stopPropagation();
+
+                setShowMenu((value) => !value);
+
+              }}
+              className="
+                rounded-lg
+                px-2
+                py-1
+                text-xl
+                leading-none
+                text-gray-500
+                hover:bg-gray-100
+              "
+              title="更多"
             >
-              ✏️
+              ⋯
             </button>
 
-            <button
-              onClick={() => onDelete(segment.id)}
-              className="rounded-lg p-2 hover:bg-red-100"
-            >
-              🗑️
-            </button>
+
+            {/* =========================
+                下拉選單
+            ========================= */}
+
+            {showMenu && (
+
+              <div
+                className="
+                  absolute
+                  right-0
+                  top-full
+                  z-50
+                  mt-1
+                  w-28
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-gray-200
+                  bg-white
+                  shadow-lg
+                "
+              >
+
+                {/* 編輯 */}
+
+                <button
+                  type="button"
+                  onClick={(event) => {
+
+                    event.stopPropagation();
+
+                    setShowMenu(false);
+
+                    onEdit(segment);
+
+                  }}
+                  className="
+                    flex
+                    w-full
+                    items-center
+                    gap-2
+                    px-3
+                    py-2.5
+                    text-left
+                    text-sm
+                    text-gray-700
+                    hover:bg-blue-50
+                  "
+                >
+                  ✏️
+                  <span>編輯</span>
+                </button>
+
+
+                {/* 刪除 */}
+
+                <button
+                  type="button"
+                  onClick={(event) => {
+
+                    event.stopPropagation();
+
+                    setShowMenu(false);
+
+                    onDelete(segment.id);
+
+                  }}
+                  className="
+                    flex
+                    w-full
+                    items-center
+                    gap-2
+                    px-3
+                    py-2.5
+                    text-left
+                    text-sm
+                    text-red-600
+                    hover:bg-red-50
+                  "
+                >
+                  🗑️
+                  <span>刪除</span>
+                </button>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -92,7 +243,10 @@ export default function SortableFlightCard({
 
       </div>
 
-      {/* 航班日期 */}
+
+      {/* =========================
+          航班日期
+      ========================= */}
 
       <div className="mb-4 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3">
 
@@ -106,7 +260,10 @@ export default function SortableFlightCard({
 
       </div>
 
-      {/* 航空公司 / 航班號 */}
+
+      {/* =========================
+          航空公司 / 航班號
+      ========================= */}
 
       <div className="mb-3 flex items-start justify-between">
 
@@ -124,7 +281,10 @@ export default function SortableFlightCard({
 
       </div>
 
-      {/* 出發 / 抵達 */}
+
+      {/* =========================
+          出發 / 抵達
+      ========================= */}
 
       <div className="flex items-center justify-between">
 
@@ -166,50 +326,125 @@ export default function SortableFlightCard({
 
       </div>
 
-      {/* Seat / Gate / Terminal */}
 
-      <div className="mt-5 grid grid-cols-3 gap-3 rounded-2xl border bg-gray-50 p-4">
+      {/* =========================
+          旅客資訊
+          預設關閉，點擊後展開
+      ========================= */}
 
-        <div>
+      <button
+        type="button"
+        onClick={() =>
+          setShowPassengers((value) => !value)
+        }
+        className="
+          mt-5
+          flex
+          w-full
+          items-center
+          justify-between
+          rounded-xl
+          border
+          bg-gray-50
+          px-4
+          py-3
+          text-left
+          transition
+          hover:bg-gray-100
+        "
+      >
 
-          <div className="text-xs text-gray-500">
-            Seat
-          </div>
+        <span className="text-sm font-semibold text-gray-700">
+          👥 旅客資訊
 
-          <div className="font-bold">
-            {segment.seat || "--"}
-          </div>
+          {passengers.length > 0 && (
+            <span className="ml-2 text-xs font-normal text-gray-400">
+              {passengers.length} 人
+            </span>
+          )}
+        </span>
+
+        <span className="text-sm text-gray-400">
+          {showPassengers ? "▲" : "▼"}
+        </span>
+
+      </button>
+
+      {showPassengers && (
+
+        <div className="
+          mt-2
+          overflow-hidden
+          rounded-xl
+          border
+          bg-white
+        ">
+
+          {passengers.length === 0 ? (
+
+            <div className="
+              px-4
+              py-4
+              text-center
+              text-sm
+              text-gray-400
+            ">
+              尚未新增旅客
+            </div>
+
+          ) : (
+
+            passengers.map((passenger, passengerIndex) => (
+
+              <div
+                key={
+                  passenger.id ||
+                  `${passenger.name}-${passengerIndex}`
+                }
+                className="
+                  flex
+                  min-w-0
+                  items-center
+                  justify-between
+                  gap-3
+                  border-b
+                  border-gray-100
+                  px-4
+                  py-3
+                  last:border-b-0
+                "
+              >
+
+                <div className="
+                  min-w-0
+                  truncate
+                  text-sm
+                  font-semibold
+                  text-gray-800
+                ">
+                  👤 {passenger.name || "未設定姓名"}
+                </div>
+
+                <div className="
+                  shrink-0
+                  whitespace-nowrap
+                  text-sm
+                  text-gray-600
+                ">
+                  🧳 {passenger.baggage ?? 0} 公斤
+                </div>
+
+              </div>
+
+            ))
+
+          )}
 
         </div>
 
-        <div>
-
-          <div className="text-xs text-gray-500">
-            Gate
-          </div>
-
-          <div className="font-bold">
-            {segment.gate || "--"}
-          </div>
-
-        </div>
-
-        <div>
-
-          <div className="text-xs text-gray-500">
-            Terminal
-          </div>
-
-          <div className="font-bold">
-            {segment.terminal || "--"}
-          </div>
-
-        </div>
-
-      </div>
+      )}
 
     </div>
 
   );
-
 }

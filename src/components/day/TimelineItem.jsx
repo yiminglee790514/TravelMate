@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 export default function TimelineItem({
   item,
   time,
@@ -23,57 +25,176 @@ export default function TimelineItem({
 
   }
 
+
+  // =========================
+  // 更多選單
+  // =========================
+
+  const [showMenu, setShowMenu] = useState(false);
+
+  const menuRef = useRef(null);
+
+
+  // 點其他地方 → 收起選單
+  useEffect(() => {
+
+    function handleClickOutside(event) {
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
+        setShowMenu(false);
+      }
+
+    }
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+    };
+
+  }, []);
+
+
   return (
 
-    <div className="py-4">
+    <div className="py-3">
 
-      {/* 第一行：時間 + 操作 */}
+      {/* =========================
+          第一行：時間 + 操作
+      ========================= */}
 
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between">
 
-        <div className="text-base font-semibold text-gray-700">
+        <div className="
+          text-sm
+          font-medium
+          text-gray-500
+        ">
           {time}
         </div>
 
+
         {!readonly && (
 
-          <div className="flex items-center gap-1">
+          <div
+            ref={menuRef}
+            className="relative"
+          >
 
-            {/* 修改 */}
-
-            <button
-              onClick={onEdit}
-              className="
-                rounded-lg
-                p-1.5
-                text-base
-                text-gray-400
-                transition
-                hover:bg-blue-100
-                hover:text-blue-500
-              "
-              title="修改"
-            >
-              ✏️
-            </button>
-
-            {/* 刪除 */}
+            {/* ... */}
 
             <button
-              onClick={onDelete}
+              type="button"
+              onClick={(event) => {
+
+                event.stopPropagation();
+
+                setShowMenu((prev) => !prev);
+
+              }}
               className="
                 rounded-lg
-                p-1.5
-                text-base
+                px-2
+                py-1
+                text-lg
+                font-bold
+                leading-none
                 text-gray-400
-                transition
-                hover:bg-red-100
-                hover:text-red-500
+                hover:bg-gray-100
               "
-              title="刪除"
+              title="更多"
             >
-              🗑️
+              ⋯
             </button>
+
+
+            {/* =========================
+                選單
+            ========================= */}
+
+            {showMenu && (
+
+              <div className="
+                absolute
+                right-0
+                top-full
+                z-40
+                mt-1
+                w-28
+                overflow-hidden
+                rounded-xl
+                bg-white
+                shadow-xl
+                ring-1
+                ring-black/5
+              ">
+
+                {/* 編輯 */}
+
+                <button
+                  type="button"
+                  onClick={(event) => {
+
+                    event.stopPropagation();
+
+                    setShowMenu(false);
+
+                    onEdit();
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    hover:bg-gray-100
+                  "
+                >
+                  ✏️ 編輯
+                </button>
+
+
+                {/* 刪除 */}
+
+                <button
+                  type="button"
+                  onClick={(event) => {
+
+                    event.stopPropagation();
+
+                    setShowMenu(false);
+
+                    onDelete();
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    text-red-600
+                    hover:bg-red-50
+                  "
+                >
+                  🗑️ 刪除
+                </button>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -82,17 +203,33 @@ export default function TimelineItem({
       </div>
 
 
-      {/* 第二行：Timeline + 內容 */}
+      {/* =========================
+          第二行：Timeline + 內容
+      ========================= */}
 
-      <div className="flex gap-4">
+      <div className="flex gap-3">
 
         {/* Timeline */}
 
         <div className="flex flex-col items-center">
 
-          <div className="mt-2 h-3 w-3 rounded-full bg-blue-500" />
+          <div className="
+            mt-1
+            h-2.5
+            w-2.5
+            min-h-2.5
+            min-w-2.5
+            shrink-0
+            rounded-full
+            bg-blue-500
+          " />
 
-          <div className="mt-2 h-full w-[2px] bg-gray-300" />
+          <div className="
+            mt-2
+            h-full
+            w-[2px]
+            bg-gray-200
+          " />
 
         </div>
 
@@ -114,8 +251,9 @@ export default function TimelineItem({
                 block
                 max-w-full
                 text-left
-                text-xl
+                text-lg
                 font-semibold
+                leading-6
                 text-gray-900
                 hover:text-blue-600
               "
@@ -125,20 +263,32 @@ export default function TimelineItem({
 
           ) : (
 
-            <div className="break-words text-xl font-semibold">
+            <div className="
+              break-words
+              text-lg
+              font-semibold
+              leading-6
+              text-gray-900
+            ">
               {icon} {title}
             </div>
 
           )}
 
 
-          {/* 地址 */}
+          {/* =========================
+              地址
+          ========================= */}
 
           {address && (
 
-            <div className="mt-3">
+            <div className="mt-2">
 
-              <div className="text-[11px] font-semibold text-gray-400">
+              <div className="
+                text-[10px]
+                font-semibold
+                text-gray-400
+              ">
                 📍 地址
               </div>
 
@@ -149,7 +299,7 @@ export default function TimelineItem({
                 target="_blank"
                 rel="noreferrer"
                 className="
-                  mt-1
+                  mt-0.5
                   block
                   break-words
                   text-xs
@@ -166,13 +316,19 @@ export default function TimelineItem({
           )}
 
 
-          {/* 備註 */}
+          {/* =========================
+              備註
+          ========================= */}
 
           {note && (
 
-            <div className="mt-3">
+            <div className="mt-2">
 
-              <div className="text-[11px] font-semibold text-gray-400">
+              <div className="
+                text-[10px]
+                font-semibold
+                text-gray-400
+              ">
                 📝 備註
               </div>
 
@@ -180,7 +336,7 @@ export default function TimelineItem({
                 mt-1
                 rounded-xl
                 bg-yellow-50
-                p-3
+                p-2.5
                 text-xs
                 leading-5
                 text-gray-700

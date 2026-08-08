@@ -3,7 +3,7 @@ import AddItemModal from "../components/day/AddItemModal";
 import TripModal from "../components/TripModal";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
@@ -12,6 +12,9 @@ import {
   canEdit,
   isOwner,
 } from "../services/permissionService";
+
+
+
 
 function getDays(startDate, endDate) {
 
@@ -48,6 +51,8 @@ function getDays(startDate, endDate) {
 export default function TripDetail() {
 
   const { id, shareId } = useParams();
+
+  const navigate = useNavigate();
 
   const {
 
@@ -196,30 +201,7 @@ useEffect(() => {
 
     <>
 
-      <div className="mx-auto max-w-md px-6 py-10">
 
-        <Link
-          to={
-            readonly
-              ? `/share/${shareId}`
-              : `/trip/${id}`
-          }
-          className="text-blue-500"
-        >
-          ← 回旅程
-        </Link>
-
-        <h1 className="mt-6 text-4xl font-bold">
-          {trip.title}
-        </h1>
-
-        <p className="mt-4 text-gray-500">
-          📍 {trip.country}｜{trip.city}
-        </p>
-
-        <p className="mt-2 text-gray-500">
-          📅 {trip.startDate} ~ {trip.endDate}
-        </p>
 
         <div className="mt-8 space-y-4">
 
@@ -326,18 +308,46 @@ useEffect(() => {
                               timelineItem.type === "hotel"
                                 ? () => {
 
-                                    const groupName =
-                                      timelineItem.title?.trim();
+                                    if (shareId) {
 
-                                    if (!groupName) return;
+                                      navigate(`/share/${shareId}/hotel`);
 
-                                    window.location.href =
-                                      `/trip/${id}/hotel?group=${encodeURIComponent(
-                                        groupName
-                                      )}`;
+                                    } else {
+
+                                      navigate(`/trip/${id}/hotel`);
+
+                                    }
 
                                   }
-                                : undefined
+                                : timelineItem.type === "flight"
+                                  ? () => {
+
+                                      if (shareId) {
+
+                                        navigate(`/share/${shareId}/flight`);
+
+                                      } else {
+
+                                        navigate(`/trip/${id}/flight`);
+
+                                      }
+
+                                    }
+                                  : timelineItem.type === "transport"
+                                    ? () => {
+
+                                        if (shareId) {
+
+                                          navigate(`/share/${shareId}/transport`);
+
+                                        } else {
+
+                                          navigate(`/trip/${id}/transport`);
+
+                                        }
+
+                                      }
+                                    : undefined
                             }
 
                             onEdit={() => {
@@ -405,7 +415,7 @@ useEffect(() => {
 
           })}
 
-        </div>
+        
 
       </div>
 

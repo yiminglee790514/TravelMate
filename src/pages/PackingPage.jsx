@@ -42,23 +42,14 @@ export default function PackingPage() {
     <>
       <div className="min-h-screen bg-gray-100">
 
-        <div className="mx-auto max-w-md px-6 py-10">
+        <div className="mx-auto max-w-md px-6 pt-2">
 
-          <Link
-            to={`/trip/${id}`}
-            className="text-blue-500"
-          >
-            ← 回旅程
-          </Link>
-
-          <h1 className="mt-6 text-4xl font-bold">
-            🧳 行李清單
-          </h1>
+          
 
           <button
             onClick={() => setShowGroupModal(true)}
-            className="mt-8 mb-6 w-full rounded-2xl bg-blue-500 py-3 font-semibold text-white hover:bg-blue-600"
-          >
+            className="mt-6 mb-6 w-full rounded-2xl bg-blue-500 py-3 font-semibold text-white hover:bg-blue-600"
+            >
             ＋ 新增群組
           </button>
 

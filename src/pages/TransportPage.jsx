@@ -27,6 +27,7 @@ export default function TransportPage() {
 
   const [editingTransport, setEditingTransport] = useState(null);
 
+
   useEffect(() => {
 
     async function loadTrip() {
@@ -49,6 +50,7 @@ export default function TransportPage() {
 
   }, [cloudTrip, shareId]);
 
+
   if (!trip) {
 
     return (
@@ -63,9 +65,46 @@ export default function TransportPage() {
 
   }
 
+
+  // 與花費頁共用付款人名單
+  const people = Array.isArray(trip.expensePeople)
+    ? trip.expensePeople
+    : [];
+
+
+  async function handleAddPerson(name) {
+
+    if (readonly) return;
+
+    const cleanName = name.trim();
+
+    if (!cleanName) return;
+
+    if (people.includes(cleanName)) return;
+
+    const updatedTrip = {
+
+      ...trip,
+
+      expensePeople: [
+        ...people,
+        cleanName,
+      ],
+
+    };
+
+    setTrip(updatedTrip);
+
+    await updateTrip(updatedTrip);
+
+  }
+
+
   async function handleSaveTransport(transport) {
 
-    const updatedTransports = [...(trip.transports || [])];
+    const updatedTransports = [
+      ...(trip.transports || []),
+    ];
 
     const index = updatedTransports.findIndex(
       (t) => t.id === transport.id
@@ -93,15 +132,18 @@ export default function TransportPage() {
 
     await updateTrip(updatedTrip);
 
+    setTrip(updatedTrip);
+
     setEditingTransport(null);
 
     setShowModal(false);
 
   }
 
+
   async function handleDeleteTransport(transportId) {
 
-    if (!confirm("確定刪除此交通？")) return;
+    if (!window.confirm("確定刪除此交通？")) return;
 
     if (shareId) return;
 
@@ -109,7 +151,7 @@ export default function TransportPage() {
 
       ...trip,
 
-      transports: trip.transports.filter(
+      transports: (trip.transports || []).filter(
         (t) => t.id !== transportId
       ),
 
@@ -117,30 +159,18 @@ export default function TransportPage() {
 
     await updateTrip(updatedTrip);
 
+    setTrip(updatedTrip);
+
     setEditingTransport(null);
 
   }
+
 
   return (
 
     <div className="min-h-screen bg-gray-100">
 
       <div className="mx-auto max-w-md px-6 py-10">
-
-        <Link
-          to={
-            shareId
-              ? `/share/${shareId}`
-              : `/trip/${id}`
-          }
-          className="text-blue-500"
-        >
-          ← 返回旅程
-        </Link>
-
-        <h1 className="mt-6 text-4xl font-bold">
-          🚆 交通
-        </h1>
 
         {!readonly && (
 
@@ -168,14 +198,20 @@ export default function TransportPage() {
 
         )}
 
+
         <div className="mt-8 space-y-4">
 
           {trip.transports?.length === 0 ? (
 
-            <div className="rounded-2xl bg-white p-8 text-center text-gray-400 shadow">
-
+            <div className="
+              rounded-2xl
+              bg-white
+              p-8
+              text-center
+              text-gray-400
+              shadow
+            ">
               尚未新增交通
-
             </div>
 
           ) : (
@@ -195,7 +231,9 @@ export default function TransportPage() {
                 }}
                 onDelete={() => {
 
-                  handleDeleteTransport(transport.id);
+                  handleDeleteTransport(
+                    transport.id
+                  );
 
                 }}
               />
@@ -208,10 +246,16 @@ export default function TransportPage() {
 
       </div>
 
+
       {!readonly && showModal && (
 
         <TransportModal
           transport={editingTransport}
+
+          people={people}
+
+          onAddPerson={handleAddPerson}
+
           onClose={() => {
 
             setEditingTransport(null);
@@ -219,7 +263,9 @@ export default function TransportPage() {
             setShowModal(false);
 
           }}
+
           onSave={handleSaveTransport}
+
         />
 
       )}

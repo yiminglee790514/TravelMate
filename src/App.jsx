@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import TripLayout from "./pages/TripLayout";
 
 import Home from "./pages/Home";
 import TripDashboard from "./pages/TripDashboard";
@@ -14,6 +20,7 @@ import WeatherPage from "./pages/WeatherPage";
 import SharePage from "./pages/SharePage";
 import { createUserProfile } from "./services/userService";
 import PackingPage from "./pages/PackingPage";
+import ExpensePage from "./pages/ExpensePage";
 
 export default function App() {
 
@@ -97,39 +104,58 @@ return (
       />
 
       <Route
-        path="/trip/:id/weather"
-        element={<WeatherPage />}
-      />
-
-      <Route
-        path="/trip/:id/packing"
-        element={<PackingPage />}
-      />
-
-      <Route
         path="/trip/:id"
-        element={<TripDashboard />}
-      />
+        element={<TripLayout />}
+      >
 
       <Route
-        path="/trip/:id/transport"
-        element={<TransportPage />}
-      />
+        path="/trip/:id/expense"
+        element={<ExpensePage />}
+      />  
+              
+        {/* 一進旅程直接進行程 */}
 
-      <Route
-        path="/trip/:id/flight"
-        element={<FlightPage />}
-      />
+        <Route
+          index
+          element={
+            <Navigate
+              to="itinerary"
+              replace
+            />
+          }
+        />
 
-      <Route
-        path="/trip/:id/hotel"
-        element={<HotelPage />}
-      />
+        <Route
+          path="itinerary"
+          element={<ItineraryPage />}
+        />
 
-      <Route
-        path="/trip/:id/itinerary"
-        element={<ItineraryPage />}
-      />
+        <Route
+          path="flight"
+          element={<FlightPage />}
+        />
+
+        <Route
+          path="hotel"
+          element={<HotelPage />}
+        />
+
+        <Route
+          path="transport"
+          element={<TransportPage />}
+        />
+
+        <Route
+          path="weather"
+          element={<WeatherPage />}
+        />
+
+        <Route
+          path="packing"
+          element={<PackingPage />}
+        />
+
+      </Route>
 
     </Routes>
   </BrowserRouter>

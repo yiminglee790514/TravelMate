@@ -214,24 +214,11 @@ async function handleEdit(day, newCity) {
 
     <div className="min-h-screen bg-gray-100">
 
-      <div className="mx-auto max-w-md px-6 py-10">
+      <div className="mx-auto max-w-md px-6 pt-2">
 
-        <Link
-          to={
-            shareId
-              ? `/share/${shareId}`
-              : `/trip/${id}`
-          }
-          className="text-blue-500"
-        >
-          ← 返回旅程
-        </Link>
+        
 
-        <h1 className="mt-6 text-4xl font-bold">
-          🌤️ 天氣
-        </h1>
-
-        <div className="mt-8 space-y-4">
+        <div className="space-y-4">
 
           {loading ? (
 

@@ -158,28 +158,23 @@ export default function FlightPage() {
 
   }
 
+  // =========================
+  // 共用花費的人名
+  // =========================
+
+  const people = Array.isArray(trip.expensePeople)
+    ? trip.expensePeople
+    : [];
+
   return (
 
     <div className="min-h-screen bg-gray-100">
 
       <div className="mx-auto max-w-md px-6 py-10">
 
-        <Link
-          to={
-            readonly
-              ? `/share/${shareId}`
-              : `/trip/${id}`
-          }
-          className="text-blue-500"
-        >
-          ← 回旅程
-        </Link>
 
-        <h1 className="mt-6 text-4xl font-bold">
-          ✈️ 航班
-        </h1>
 
-        <div className="mt-8 space-y-6">
+        <div className="space-y-6">
 
           {/* =========================
               去程
@@ -314,20 +309,47 @@ export default function FlightPage() {
       {!readonly && showModal && (
 
         <FlightModal
+            title={
+                flightType === "outbound"
+                ? "建立去程航班"
+                : "建立回程航班"
+            }
 
-          title={
-            flightType === "outbound"
-              ? "建立去程航班"
-              : "建立回程航班"
-          }
+            flight={editingFlight}
 
-          flight={editingFlight}
+            people={people}
 
-          onClose={() => setShowModal(false)}
+            onClose={() => setShowModal(false)}
 
-          onSave={saveFlight}
+            onSave={saveFlight}
 
-        />
+            onAddPerson={async (name) => {
+
+                const cleanName = name.trim();
+
+                if (!cleanName) return;
+
+                if (people.includes(cleanName)) {
+                alert("這個名字已經存在");
+                return;
+                }
+
+                const updatedTrip = {
+                ...trip,
+
+                expensePeople: [
+                    ...people,
+                    cleanName,
+                ],
+                };
+
+                if (!shareId) {
+                await updateTrip(updatedTrip);
+                }
+
+                setTrip(updatedTrip);
+            }}
+            />
 
       )}
 

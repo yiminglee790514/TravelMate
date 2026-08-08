@@ -112,6 +112,40 @@ export default function HotelPage() {
       : [];
 
 
+  // 與花費、交通共用付款人名單
+  const people = Array.isArray(trip?.expensePeople)
+    ? trip.expensePeople
+    : [];
+
+
+  async function handleAddPerson(name) {
+
+    if (shareId) return;
+
+    const cleanName = name.trim();
+
+    if (!cleanName) return;
+
+    if (people.includes(cleanName)) return;
+
+    const updatedTrip = {
+
+      ...trip,
+
+      expensePeople: [
+        ...people,
+        cleanName,
+      ],
+
+    };
+
+    setTrip(updatedTrip);
+
+    await updateTrip(updatedTrip);
+
+  }
+
+
   // =========================
   // 第一次看到群組時
   // 全部預設收合
@@ -617,40 +651,12 @@ export default function HotelPage() {
         mx-auto
         max-w-md
         px-4
-        py-8
+        pt-2
         sm:px-6
-        sm:py-10
-      ">
-
-
-        {/* =========================
-            返回
-        ========================= */}
-
-        <Link
-          to={
-            shareId
-              ? `/share/${shareId}`
-              : `/trip/${id}`
-          }
-          className="text-blue-500"
-        >
-          ← 返回旅程
-        </Link>
-
-
-        {/* =========================
-            標題
-        ========================= */}
-
-        <h1 className="
-          mt-6
-          text-3xl
-          font-bold
-          sm:text-4xl
         ">
-          🏨 飯店
-        </h1>
+
+
+        
 
 
         {/* =========================
@@ -1135,6 +1141,8 @@ export default function HotelPage() {
 
         <HotelModal
           hotel={editingHotel}
+          people={people}
+          onAddPerson={handleAddPerson}
           copyMode={copyingHotel}
 
           hotelGroups={hotelGroups}

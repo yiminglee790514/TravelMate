@@ -156,12 +156,13 @@ export default function TripDashboard() {
             <span>›</span>
           </Link>
 
-          <button
-            className="flex w-full items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
-          >
+          <Link
+            to={`/trip/${id}/expense`}
+            className="flex items-center justify-between rounded-2xl bg-white p-5 shadow transition hover:shadow-lg"
+            >
             <span>💰 花費</span>
             <span>›</span>
-          </button>
+          </Link>
 
           <Link
             to={`/trip/${id}/packing`}

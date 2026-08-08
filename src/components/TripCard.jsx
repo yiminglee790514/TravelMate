@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { isOwner } from "../services/permissionService";
+import { useEffect, useRef, useState } from "react";
 
 function getTripStatus(startDate, endDate) {
 
@@ -18,13 +19,11 @@ function getTripStatus(startDate, endDate) {
     const days = Math.ceil((start - today) / oneDay);
 
     return `⏳ 還有 ${days} 天`;
-
   }
 
   if (today > end) {
 
     return "✅ 已完成";
-
   }
 
   const day = Math.floor((today - start) / oneDay) + 1;
@@ -32,7 +31,6 @@ function getTripStatus(startDate, endDate) {
   const total = Math.floor((end - start) / oneDay) + 1;
 
   return `✈️ Day ${day} / Day ${total}`;
-
 }
 
 function formatDate(date) {
@@ -72,53 +70,196 @@ export default function TripCard({
 
   const owner = isOwner(trip);
 
+  const [showMenu, setShowMenu] = useState(false);
+
+  const menuRef = useRef(null);
+
+
+  // =========================
+  // 點其他地方 → 收起
+  // =========================
+
+  useEffect(() => {
+
+    function handleClickOutside(event) {
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
+        setShowMenu(false);
+      }
+
+    }
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+    };
+
+  }, []);
+
+
   return (
 
     <Link to={`/trip/${trip.id}`}>
 
-      <div className="relative mt-6 rounded-3xl bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <div className="
+        relative
+        mt-6
+        rounded-3xl
+        bg-white
+        p-6
+        shadow-md
+        transition-all
+        duration-300
+        hover:-translate-y-1
+        hover:shadow-xl
+      ">
 
-      {owner && (
+        {/* =========================
+            右上角更多
+        ========================= */}
 
-  <div className="absolute right-5 top-5 flex gap-1">
+        {owner && (
 
-    <button
-      onClick={(e) => {
+          <div
+            ref={menuRef}
+            className="absolute right-4 top-4"
+          >
 
-        e.preventDefault();
-        e.stopPropagation();
+            {/* ⋯ */}
 
-        onEdit(trip);
+            <button
+              type="button"
+              onClick={(e) => {
 
-      }}
-      className="rounded-xl p-2 text-lg transition hover:bg-blue-100"
-      title="修改旅程"
-    >
-      ✏️
-    </button>
+                e.preventDefault();
+                e.stopPropagation();
 
-    <button
-      onClick={(e) => {
+                setShowMenu((prev) => !prev);
 
-        e.preventDefault();
-        e.stopPropagation();
+              }}
+              className="
+                rounded-lg
+                px-2
+                py-1
+                text-xl
+                font-bold
+                leading-none
+                text-gray-500
+                hover:bg-gray-100
+              "
+              title="更多"
+            >
+              ⋯
+            </button>
 
-        if (window.confirm(`確定要刪除「${trip.title}」嗎？`)) {
 
-          onDelete(trip.id);
+            {/* =========================
+                選單
+            ========================= */}
 
-        }
+            {showMenu && (
 
-      }}
-      className="rounded-xl p-2 text-lg transition hover:bg-red-100"
-      title="刪除旅程"
-    >
-      🗑️
-    </button>
+              <div className="
+                absolute
+                right-0
+                top-full
+                z-50
+                mt-1
+                w-28
+                overflow-hidden
+                rounded-xl
+                bg-white
+                shadow-xl
+                ring-1
+                ring-black/5
+              ">
 
-  </div>
+                {/* 編輯 */}
 
-)}
+                <button
+                  type="button"
+                  onClick={(e) => {
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    setShowMenu(false);
+
+                    onEdit(trip);
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    hover:bg-blue-50
+                  "
+                >
+                  ✏️ 編輯
+                </button>
+
+
+                {/* 刪除 */}
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    setShowMenu(false);
+
+                    if (
+                      window.confirm(
+                        `確定要刪除「${trip.title}」嗎？`
+                      )
+                    ) {
+
+                      onDelete(trip.id);
+
+                    }
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    text-red-600
+                    hover:bg-red-50
+                  "
+                >
+                  🗑️ 刪除
+                </button>
+
+              </div>
+
+            )}
+
+          </div>
+
+        )}
+
+
+        {/* =========================
+            旅程資訊
+        ========================= */}
 
         <div className="flex items-start justify-between">
 
@@ -138,13 +279,10 @@ export default function TripCard({
 
           </div>
 
-          <div className="text-2xl text-gray-300">
-
-            ›
-
-          </div>
-
         </div>
+
+
+        {/* 日期 / 狀態 */}
 
         <div className="mt-5 rounded-2xl bg-gray-50 p-4">
 
@@ -156,9 +294,20 @@ export default function TripCard({
 
           <div className="mt-3 flex items-center justify-between">
 
-            <div className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
+            <div className="
+              rounded-full
+              bg-blue-100
+              px-3
+              py-1
+              text-sm
+              font-semibold
+              text-blue-700
+            ">
 
-              {getTripStatus(trip.startDate, trip.endDate)}
+              {getTripStatus(
+                trip.startDate,
+                trip.endDate
+              )}
 
             </div>
 

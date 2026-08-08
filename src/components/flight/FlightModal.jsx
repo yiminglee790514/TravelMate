@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { AIRLINES } from "../../constants/airlines";
 import { AIRPORTS } from "../../constants/airports";
+import FlightPassengerEditor from "./FlightPassengerEditor";
 
 export default function FlightModal({
   title,
   flight,
+  people = [],
   onClose,
   onSave,
+  onAddPerson,
 }) {
 
   // =========================
@@ -49,16 +52,14 @@ export default function FlightModal({
     flight?.arrival?.time || ""
   );
 
-  const [terminal, setTerminal] = useState(
-    flight?.terminal || ""
-  );
+  // =========================
+  // 旅客資訊
+  // =========================
 
-  const [gate, setGate] = useState(
-    flight?.gate || ""
-  );
-
-  const [seat, setSeat] = useState(
-    flight?.seat || ""
+  const [passengers, setPassengers] = useState(
+    Array.isArray(flight?.passengers)
+      ? flight.passengers
+      : []
   );
 
   // =========================
@@ -100,11 +101,7 @@ export default function FlightModal({
         time: arrivalTime,
       },
 
-      terminal,
-
-      gate,
-
-      seat,
+      passengers,
 
     });
 
@@ -321,35 +318,15 @@ export default function FlightModal({
           <hr />
 
           {/* =========================
-              其他資訊
+              旅客資訊
           ========================= */}
 
-          <input
-            className="w-full rounded-xl border p-3"
-            placeholder="Terminal"
-            value={terminal}
-            onChange={(e) =>
-              setTerminal(e.target.value)
-            }
-          />
-
-          <input
-            className="w-full rounded-xl border p-3"
-            placeholder="Gate"
-            value={gate}
-            onChange={(e) =>
-              setGate(e.target.value)
-            }
-          />
-
-          <input
-            className="w-full rounded-xl border p-3"
-            placeholder="Seat"
-            value={seat}
-            onChange={(e) =>
-              setSeat(e.target.value)
-            }
-          />
+          <FlightPassengerEditor
+            passengers={passengers}
+            people={people}
+            onChange={setPassengers}
+            onAddPerson={onAddPerson}
+            />
 
         </div>
 

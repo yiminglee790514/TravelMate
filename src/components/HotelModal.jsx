@@ -60,6 +60,8 @@ export default function HotelModal({
   copyMode = false,
   hotelGroups = [],
   currentGroupId = "",
+  people = [],
+  onAddPerson,
 }) {
 
   const isEdit =
@@ -137,6 +139,9 @@ export default function HotelModal({
       hotel?.bookingName || ""
     );
 
+  const [newPerson, setNewPerson] = useState("");
+  const [showPersonInput, setShowPersonInput] = useState(false);
+
   const [roomType, setRoomType] =
     useState(
       hotel?.roomType || ""
@@ -161,6 +166,33 @@ export default function HotelModal({
   // =========================
   // 儲存
   // =========================
+
+  function handleAddPerson() {
+
+    const name = newPerson.trim();
+
+    if (!name) return;
+
+    if (people.includes(name)) {
+
+      setBookingName(name);
+      setNewPerson("");
+      setShowPersonInput(false);
+
+      return;
+
+    }
+
+    if (onAddPerson) {
+      onAddPerson(name);
+    }
+
+    setBookingName(name);
+    setNewPerson("");
+    setShowPersonInput(false);
+
+  }
+
 
   function handleSave() {
 
@@ -417,213 +449,312 @@ export default function HotelModal({
             )}
 
 
-            {/* =========================
-                入住日期 / 時間
-            ========================= */}
+                {/* =========================
+                    入住日期 / 時間
+                ========================= */}
 
-            <div className="
-              grid
-              min-w-0
-              grid-cols-2
-              gap-2
-              sm:gap-3
-            ">
-
-              <div className="min-w-0">
-
-                <label className="
-                  mb-1
-                  block
-                  text-xs
-                  font-medium
-                  text-gray-600
-                  sm:text-sm
-                ">
-                  入住日期
-                </label>
-
-                <input
-                  type="date"
-                  className="
-                    block
-                    h-10
-                    w-full
-                    min-w-0
-                    rounded-xl
-                    border
-                    px-1.5
-                    text-[12px]
-                    sm:h-auto
-                    sm:p-3
-                    sm:text-base
-                  "
-                  value={checkIn}
-                  onChange={(e) =>
-                    setCheckIn(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-
-              <div className="min-w-0">
-
-                <label className="
-                  mb-1
-                  block
-                  text-xs
-                  font-medium
-                  text-gray-600
-                  sm:text-sm
-                ">
-                  入住時間
-                </label>
-
-                <input
-                  type="time"
-                  className="
-                    block
-                    h-10
-                    w-full
-                    min-w-0
-                    rounded-xl
-                    border
-                    px-1.5
-                    text-[12px]
-                    sm:h-auto
-                    sm:p-3
-                    sm:text-base
-                  "
-                  value={checkInTime}
-                  onChange={(e) =>
-                    setCheckInTime(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* =========================
-                退房日期 / 時間
-            ========================= */}
-
-            <div className="
-              grid
-              min-w-0
-              grid-cols-2
-              gap-2
-              sm:gap-3
-            ">
-
-              <div className="min-w-0">
-
-                <label className="
-                  mb-1
-                  block
-                  text-xs
-                  font-medium
-                  text-gray-600
-                  sm:text-sm
-                ">
-                  退房日期
-                </label>
-
-                <input
-                  type="date"
-                  className="
-                    block
-                    h-10
-                    w-full
-                    min-w-0
-                    rounded-xl
-                    border
-                    px-1.5
-                    text-[12px]
-                    sm:h-auto
-                    sm:p-3
-                    sm:text-base
-                  "
-                  value={checkOut}
-                  onChange={(e) =>
-                    setCheckOut(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-
-              <div className="min-w-0">
-
-                <label className="
-                  mb-1
-                  block
-                  text-xs
-                  font-medium
-                  text-gray-600
-                  sm:text-sm
-                ">
-                  退房時間
-                </label>
-
-                <input
-                  type="time"
-                  className="
-                    block
-                    h-10
-                    w-full
-                    min-w-0
-                    rounded-xl
-                    border
-                    px-1.5
-                    text-[12px]
-                    sm:h-auto
-                    sm:p-3
-                    sm:text-base
-                  "
-                  value={checkOutTime}
-                  onChange={(e) =>
-                    setCheckOutTime(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* =========================
-                訂位姓名
-            ========================= */}
-
-            <input
-              className="
+                <div className="
+                mx-auto
+                grid
                 w-full
-                rounded-xl
-                border
-                px-3
-                py-2.5
-                text-[15px]
-                sm:p-3
-                sm:text-base
-              "
-              placeholder="訂位姓名"
-              value={bookingName}
-              onChange={(e) =>
-                setBookingName(
-                  e.target.value
-                )
-              }
-            />
+                max-w-[360px]
+                grid-cols-2
+                gap-3
+                ">
+
+                <div className="min-w-0">
+
+                    <label className="
+                    mb-1
+                    block
+                    text-xs
+                    font-medium
+                    text-gray-600
+                    sm:text-sm
+                    ">
+                    入住日期
+                    </label>
+
+                    <input
+                    type="date"
+                    className="
+                        block
+                        w-full
+                        min-w-0
+                        rounded-xl
+                        border
+                        px-3
+                        py-3
+                        text-base
+                        leading-normal
+                    "
+                    value={checkIn}
+                    onChange={(e) =>
+                        setCheckIn(e.target.value)
+                    }
+                    />
+
+                </div>
+
+
+                <div className="min-w-0">
+
+                    <label className="
+                    mb-1
+                    block
+                    text-xs
+                    font-medium
+                    text-gray-600
+                    sm:text-sm
+                    ">
+                    入住時間
+                    </label>
+
+                    <input
+                    type="time"
+                    className="
+                        block
+                        w-full
+                        min-w-0
+                        rounded-xl
+                        border
+                        px-3
+                        py-3
+                        text-base
+                        leading-normal
+                    "
+                    value={checkInTime}
+                    onChange={(e) =>
+                        setCheckInTime(e.target.value)
+                    }
+                    />
+
+                </div>
+
+                </div>
+
+
+                {/* =========================
+                    退房日期 / 時間
+                ========================= */}
+
+                <div className="
+                mx-auto
+                grid
+                w-full
+                max-w-[360px]
+                grid-cols-2
+                gap-3
+                ">
+
+                <div className="min-w-0">
+
+                    <label className="
+                    mb-1
+                    block
+                    text-xs
+                    font-medium
+                    text-gray-600
+                    sm:text-sm
+                    ">
+                    退房日期
+                    </label>
+
+                    <input
+                    type="date"
+                    className="
+                        block
+                        w-full
+                        min-w-0
+                        rounded-xl
+                        border
+                        px-3
+                        py-3
+                        text-base
+                        leading-normal
+                    "
+                    value={checkOut}
+                    onChange={(e) =>
+                        setCheckOut(e.target.value)
+                    }
+                    />
+
+                </div>
+
+
+                <div className="min-w-0">
+
+                    <label className="
+                    mb-1
+                    block
+                    text-xs
+                    font-medium
+                    text-gray-600
+                    sm:text-sm
+                    ">
+                    退房時間
+                    </label>
+
+                    <input
+                    type="time"
+                    className="
+                        block
+                        w-full
+                        min-w-0
+                        rounded-xl
+                        border
+                        px-3
+                        py-3
+                        text-base
+                        leading-normal
+                    "
+                    value={checkOutTime}
+                    onChange={(e) =>
+                        setCheckOutTime(e.target.value)
+                    }
+                    />
+
+                </div>
+
+                </div>
+
+
+            {/* =========================
+                訂位／付款人
+            ========================= */}
+
+            <div>
+
+              <label className="
+                mb-1
+                block
+                text-xs
+                font-medium
+                text-gray-600
+                sm:text-sm
+              ">
+                訂位／付款人
+              </label>
+
+              <div className="flex gap-2">
+
+                <select
+                  className="
+                    min-w-0
+                    flex-1
+                    rounded-xl
+                    border
+                    px-3
+                    py-2.5
+                    text-[15px]
+                    sm:p-3
+                    sm:text-base
+                  "
+                  value={bookingName}
+                  onChange={(e) =>
+                    setBookingName(e.target.value)
+                  }
+                >
+
+                  <option value="">
+                    請選擇訂位／付款人
+                  </option>
+
+                  {people.map((person) => (
+
+                    <option
+                      key={person}
+                      value={person}
+                    >
+                      {person}
+                    </option>
+
+                  ))}
+
+                  {/* 保留舊資料中可能存在、但尚未在 people 名單的人名 */}
+                  {bookingName &&
+                    !people.includes(bookingName) && (
+
+                      <option value={bookingName}>
+                        {bookingName}
+                      </option>
+
+                    )}
+
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPersonInput(
+                      (value) => !value
+                    )
+                  }
+                  className="
+                    shrink-0
+                    rounded-xl
+                    bg-gray-100
+                    px-3
+                    text-sm
+                    font-semibold
+                    text-gray-700
+                    hover:bg-gray-200
+                  "
+                >
+                  ＋人名
+                </button>
+
+              </div>
+
+              {showPersonInput && (
+
+                <div className="mt-2 flex gap-2">
+
+                  <input
+                    autoFocus
+                    className="
+                      min-w-0
+                      flex-1
+                      rounded-xl
+                      border
+                      px-3
+                      py-2.5
+                      text-sm
+                    "
+                    placeholder="輸入人名"
+                    value={newPerson}
+                    onChange={(e) =>
+                      setNewPerson(e.target.value)
+                    }
+                    onKeyDown={(e) => {
+
+                      if (e.key === "Enter") {
+                        handleAddPerson();
+                      }
+
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleAddPerson}
+                    className="
+                      rounded-xl
+                      bg-blue-500
+                      px-4
+                      text-sm
+                      font-semibold
+                      text-white
+                    "
+                  >
+                    新增
+                  </button>
+
+                </div>
+
+              )}
+
+            </div>
 
 
             {/* =========================
