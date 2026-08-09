@@ -174,64 +174,117 @@ export async function getMyInvites() {
    接受邀請
 =========================== */
 
+/* ===========================
+   接受邀請
+=========================== */
+
 export async function acceptInvite(invite) {
 
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("請先登入");
+  }
+
+  if (!invite || !invite.id) {
+    throw new Error("邀請資料無效");
+  }
+
+  if (invite.inviteUid !== user.uid) {
+    throw new Error("這個邀請不是給你的");
+  }
+
   const tripRef = doc(
-
     db,
-
     "trips",
-
     invite.tripId
-
   );
 
   const tripSnapshot = await getDoc(tripRef);
 
   if (!tripSnapshot.exists()) {
-
     throw new Error("旅程不存在");
-
   }
 
   const trip = tripSnapshot.data();
 
+  // ===========================
+  // 成員 Email
+  // ===========================
+
+  const memberEmails = {
+    ...(trip.memberEmails || {}),
+    [invite.inviteUid]:
+      user.email ||
+      invite.inviteEmail ||
+      "",
+  };
+
+  // ===========================
+  // 成員基本資料
+  // ===========================
+
+  const memberProfiles = {
+    ...(trip.memberProfiles || {}),
+    [invite.inviteUid]: {
+      email:
+        user.email ||
+        invite.inviteEmail ||
+        "",
+
+      displayName:
+        user.displayName ||
+        "",
+    },
+  };
+
+  // ===========================
+  // 成員權限
+  // ===========================
+
+  const memberRoles = {
+    ...(trip.memberRoles || {}),
+    [invite.inviteUid]:
+      invite.role || "editor",
+  };
+
+  // ===========================
+  // 加入成員
+  // ===========================
+
   await updateDoc(
-
     tripRef,
-
     {
+      members: arrayUnion(
+        invite.inviteUid
+      ),
 
-      members: arrayUnion(invite.inviteUid),
+      memberRoles,
 
-      memberRoles: {
+      memberEmails,
 
-        ...(trip.memberRoles || {}),
-
-        [invite.inviteUid]: invite.role || "editor",
-
-      },
+      memberProfiles,
 
       updatedAt: serverTimestamp(),
-
     }
-
   );
+
+  // ===========================
+  // 刪除已接受的邀請
+  // ===========================
 
   await deleteDoc(
-
     doc(
-
       db,
-
       "invites",
-
       invite.id
-
     )
-
   );
 
+  return {
+    success: true,
+    tripId: invite.tripId,
+  };
 }
 
 /* ===========================

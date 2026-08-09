@@ -61,7 +61,7 @@ export default function TripDashboard() {
 
     <div className="min-h-screen bg-gray-100">
 
-      <div className="mx-auto max-w-md px-6 py-10">
+      <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 sm:py-8">
 
         <div className="flex items-center justify-between">
 
@@ -74,7 +74,7 @@ export default function TripDashboard() {
 
         </div>
 
-        <h1 className="mt-6 text-4xl font-bold">
+        <h1 className="mt-4 text-4xl font-bold sm:mt-6 sm:text-5xl">
 
           {trip.title}
 
@@ -82,7 +82,7 @@ export default function TripDashboard() {
 
         {editable && (
 
-          <div className="mt-5 flex gap-3">
+          <div className="mt-4 flex gap-3 sm:mt-5">
 
             <button
               onClick={handleShare}
@@ -102,19 +102,19 @@ export default function TripDashboard() {
 
         )}
 
-        <p className="mt-4 text-gray-500">
+        <p className="mt-3 text-gray-500">
 
           📍 {trip.country}｜{trip.city}
 
         </p>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-1 whitespace-nowrap text-gray-500">
 
           📅 {trip.startDate} ~ {trip.endDate}
 
         </p>
 
-        <div className="mt-10 space-y-4">
+        <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
 
           <Link
             to={`/trip/${id}/flight`}

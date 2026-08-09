@@ -151,6 +151,7 @@ export default function TripLayout() {
 
     <div className="
       min-h-screen
+      overflow-x-hidden
       bg-gray-100
     ">
 
@@ -161,9 +162,11 @@ export default function TripLayout() {
 
       <div className="
         mx-auto
-        max-w-md
-        px-6
-        pt-6
+        w-full
+        max-w-6xl
+        px-4
+        pt-4
+        sm:px-6
       ">
 
 
@@ -183,7 +186,7 @@ export default function TripLayout() {
         {/* 標題 */}
 
         <h1 className="
-          mt-5
+          mt-4
           break-words
           text-3xl
           font-bold
@@ -271,10 +274,12 @@ export default function TripLayout() {
 
       <main className="
         mx-auto
-        max-w-md
-        px-6
+        w-full
+        max-w-6xl
+        px-4
         pb-28
-        pt-5
+        pt-2
+        sm:px-6
       ">
 
         <Outlet />
@@ -301,7 +306,8 @@ export default function TripLayout() {
         <div className="
           mx-auto
           flex
-          max-w-md
+          w-full
+          max-w-6xl
           overflow-x-auto
           px-2
           py-2

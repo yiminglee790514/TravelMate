@@ -168,9 +168,9 @@ export default function FlightPage() {
 
   return (
 
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
 
-      <div className="mx-auto max-w-md px-6 py-10">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-2 pb-2 sm:px-6">
 
 
 

@@ -4,6 +4,11 @@
     box-sizing:border-box;
 }
 
+html, body, #root{
+    width:100%;
+    min-height:100%;
+}
+
 body{
     background:#F2F2F7;
     font-family:"Microsoft JhengHei",sans-serif;

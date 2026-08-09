@@ -645,11 +645,12 @@ export default function HotelPage() {
 
   return (
 
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
 
       <div className="
         mx-auto
-        max-w-md
+        w-full
+        max-w-6xl
         px-4
         pt-2
         sm:px-6

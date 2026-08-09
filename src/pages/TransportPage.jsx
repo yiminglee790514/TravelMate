@@ -168,9 +168,9 @@ export default function TransportPage() {
 
   return (
 
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
 
-      <div className="mx-auto max-w-md px-6 py-10">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-2 pb-2 sm:px-6">
 
         {!readonly && (
 
@@ -183,7 +183,7 @@ export default function TransportPage() {
 
             }}
             className="
-              mt-8
+              mt-2
               w-full
               rounded-2xl
               bg-blue-500
@@ -199,7 +199,7 @@ export default function TransportPage() {
         )}
 
 
-        <div className="mt-8 space-y-4">
+        <div className="mt-4 space-y-4">
 
           {trip.transports?.length === 0 ? (
 

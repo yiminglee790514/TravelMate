@@ -212,9 +212,9 @@ async function handleEdit(day, newCity) {
 
   return (
 
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
 
-      <div className="mx-auto max-w-md px-6 pt-2">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-2 sm:px-6">
 
         
 
