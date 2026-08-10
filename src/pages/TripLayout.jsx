@@ -313,11 +313,23 @@ export default function TripLayout() {
           backdrop-blur-md
           sm:left-1/2
           sm:right-auto
-          sm:w-[680px]
+          sm:w-max
+          sm:max-w-[calc(100vw-1.5rem)]
           sm:-translate-x-1/2
         "
       >
-        <div className="grid grid-cols-7 gap-1">
+        {/* 一直維持單行，手機可左右滑動 */}
+        <div className="
+          flex
+          w-max
+          min-w-0
+          max-w-full
+          gap-1
+          overflow-x-auto
+          overflow-y-hidden
+          overscroll-x-contain
+          scrollbar-none
+        ">
           {menuItems.map((item) => {
             const active = location.pathname === item.path;
 
@@ -327,12 +339,13 @@ export default function TripLayout() {
                 to={item.path}
                 className={`
                   flex
-                  min-w-0
+                  w-[68px]
+                  shrink-0
                   flex-col
                   items-center
                   justify-center
                   rounded-2xl
-                  px-0.5
+                  px-1
                   py-2
                   text-center
                   transition

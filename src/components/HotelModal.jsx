@@ -288,7 +288,7 @@ export default function HotelModal({
     <div className="
       fixed
       inset-0
-      z-50
+      z-[100]
       flex
       items-center
       justify-center

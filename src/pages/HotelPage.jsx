@@ -232,6 +232,10 @@ export default function HotelPage() {
 
     };
 
+    // 群組日期變更時也要立即重建飯店連動，
+    // 否則 1 晚住宿（例如 10/21 → 10/22）可能留下舊的行程資料。
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
+
     await updateTrip(updatedTrip);
 
     setTrip(updatedTrip);
@@ -338,9 +342,17 @@ export default function HotelPage() {
     if (shareId) return;
 
 
-    const saveGroupId =
+    let saveGroupId =
       targetGroupId ||
       currentGroupId;
+
+    // 舊版飯店資料沒有 groupId 時，直接從住宿群組反查。
+    if (!saveGroupId && hotel?.id != null) {
+      const ownerGroup = hotelGroups.find((group) =>
+        (group.hotels || []).some((h) => String(h.id) === String(hotel.id))
+      );
+      saveGroupId = ownerGroup?.id || null;
+    }
 
 
     if (!saveGroupId) {
@@ -1017,7 +1029,14 @@ export default function HotelPage() {
 
                     onEdit={() => {
 
-                      setCurrentGroupId(null);
+                      setCurrentGroupId(
+                        hotel.groupId ||
+                        hotel.hotelGroupId ||
+                        hotelGroups.find((g) =>
+                          (g.hotels || []).some((h) => String(h.id) === String(hotel.id))
+                        )?.id ||
+                        null
+                      );
 
                       setEditingHotel(
                         hotel

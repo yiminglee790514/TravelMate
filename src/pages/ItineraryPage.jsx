@@ -7,6 +7,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
+import { syncAutoItineraryItems } from "../services/itinerarySync";
 
 import {
   canEdit,
@@ -124,21 +125,34 @@ export default function TripDetail() {
       // 一般旅程
       if (!cloudTrip) return;
 
+      // 重新整理自動連動資料，讓舊版重複的飯店資料也能自動修正。
+      // 同一住宿群組只保留 1 筆 auto item，跨住宿日期時由畫面重複顯示。
       const t = {
 
         ...cloudTrip,
 
       };
 
-      if (!t.items) {
+      const syncedItems =
+        syncAutoItineraryItems(t);
 
-        t.items = [];
-
-      }
+      t.items = syncedItems;
 
       setTrip(t);
+      setItems(syncedItems);
 
-      setItems(t.items);
+      const oldItems = Array.isArray(cloudTrip.items)
+        ? cloudTrip.items
+        : [];
+
+      // 把雲端舊版重複資料整理掉。
+      if (JSON.stringify(oldItems) !== JSON.stringify(syncedItems)) {
+        try {
+          await updateTrip(t);
+        } catch (error) {
+          console.error("同步行程表失敗", error);
+        }
+      }
 
     }
 
@@ -286,12 +300,10 @@ useEffect(() => {
 
                       {items
                         .filter((timelineItem) => {
-
-                          const itemDay =
-                            timelineItem.day ?? 1;
-
+                          // 飯店同步時已經為每一個住宿日建立唯一的一筆資料，
+                          // 這裡直接依 Day 篩選即可。
+                          const itemDay = timelineItem.day ?? 1;
                           return itemDay === item.day;
-
                         })
                         .sort((a, b) =>
                           a.time.localeCompare(b.time)
