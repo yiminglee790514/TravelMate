@@ -741,7 +741,6 @@ export default function ExpensePage() {
               {allPeople.map((person, index) => {
 
                 const totals = personTotals[person] || {};
-
                 const entries = Object.entries(totals);
 
                 return (
@@ -751,14 +750,9 @@ export default function ExpensePage() {
                     key={person}
                     onClick={() => setSelectedPerson(person)}
                     className={`
-                      flex
-                      min-h-[72px]
                       w-full
-                      flex-col
-                      items-stretch
-                      gap-2
-                      px-3
-                      py-3
+                      px-4
+                      py-3.5
                       text-left
                       transition
                       hover:bg-gray-50
@@ -769,14 +763,13 @@ export default function ExpensePage() {
                     `}
                   >
 
-                    {/* 人名 */}
-
+                    {/* 姓名列：完整顯示，不切名字 */}
                     <div className="flex min-w-0 items-center gap-3">
 
                       <div className="
                         flex
-                        h-8
-                        w-8
+                        h-9
+                        w-9
                         shrink-0
                         items-center
                         justify-center
@@ -787,63 +780,46 @@ export default function ExpensePage() {
                         👤
                       </div>
 
-                      <div className="
-                        min-w-0
-                        break-words
-                        text-sm
-                        font-semibold
-                        text-gray-800
-                      ">
+                      <div className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-800">
                         {person}
+                      </div>
+
+                      <div className="shrink-0 text-lg leading-none text-gray-300">
+                        ›
                       </div>
 
                     </div>
 
-
-                    {/* 各幣別 */}
-
-                    <div className="
-                      flex
-                      min-w-0
-                      items-center
-                      gap-3
-                      pl-11
-                      pr-6
-                    ">
+                    {/* 金額列：放在姓名下面，手機版也不會擠到姓名 */}
+                    <div className="mt-2 pl-12">
 
                       {entries.length > 0 ? (
 
-                        entries.map(([currencyCode, amount]) => {
+                        <div className="flex flex-wrap items-end gap-x-5 gap-y-1">
 
-                          const currency =
-                            getCurrency(currencyCode);
+                          {entries.map(([currencyCode, amount]) => {
 
-                          return (
+                            const currency = getCurrency(currencyCode);
 
-                            <div
-                              key={currencyCode}
-                              className="text-right"
-                            >
+                            return (
 
-                              <div className="text-[11px] text-gray-400">
-                                {currencyCode}
+                              <div key={currencyCode} className="min-w-[82px]">
+
+                                <div className="text-[10px] font-medium tracking-wide text-gray-400">
+                                  {currencyCode}
+                                </div>
+
+                                <div className="mt-0.5 whitespace-nowrap text-sm font-bold text-emerald-600">
+                                  {currency.symbol}{formatMoney(amount)}
+                                </div>
+
                               </div>
 
-                              <div className="
-                                whitespace-nowrap
-                                text-xs
-                                font-semibold
-                                text-emerald-600
-                              ">
-                                {currency.symbol}
-                                {formatMoney(amount)}
-                              </div>
+                            );
 
-                            </div>
+                          })}
 
-                          );
-
-                        })
+                        </div>
 
                       ) : (
 
@@ -853,13 +829,6 @@ export default function ExpensePage() {
 
                       )}
 
-                    </div>
-
-
-                    {/* 右側箭頭 */}
-
-                    <div className="ml-1 shrink-0 text-base text-gray-300">
-                      ›
                     </div>
 
                   </button>
