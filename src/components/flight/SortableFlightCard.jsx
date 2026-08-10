@@ -417,7 +417,7 @@ export default function SortableFlightCard({
 
                 <div className="
                   min-w-0
-                  truncate
+                  break-words
                   text-sm
                   font-semibold
                   text-gray-800
@@ -429,9 +429,12 @@ export default function SortableFlightCard({
                   shrink-0
                   whitespace-nowrap
                   text-sm
-                  text-gray-600
+                  font-semibold
+                  text-emerald-600
                 ">
-                  🧳 {passenger.baggage ?? 0} 公斤
+                  {passenger.price !== "" && passenger.price !== null && passenger.price !== undefined
+                    ? `${passenger.currency === "TWD" ? "NT$" : passenger.currency === "USD" ? "$" : passenger.currency === "HKD" ? "HK$" : passenger.currency === "KRW" ? "₩" : "¥"}${Number(passenger.price).toLocaleString()}`
+                    : "未填價格"}
                 </div>
 
               </div>

@@ -8,6 +8,7 @@ import { canEdit } from "../services/permissionService";
 
 import FlightCard from "../components/flight/FlightCard";
 import FlightModal from "../components/flight/FlightModal";
+import { syncAutoItineraryItems } from "../services/itinerarySync";
 
 export default function FlightPage() {
 
@@ -104,6 +105,8 @@ export default function FlightPage() {
 
     };
 
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
+
     if (!shareId) {
 
       await updateTrip(updatedTrip);
@@ -147,6 +150,8 @@ export default function FlightPage() {
       flights,
 
     };
+
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
 
     if (!shareId) {
 
@@ -227,6 +232,8 @@ export default function FlightPage() {
 
               };
 
+              updatedTrip.items = syncAutoItineraryItems(updatedTrip);
+
               if (!shareId) {
 
                 await updateTrip(updatedTrip);
@@ -289,6 +296,8 @@ export default function FlightPage() {
                 },
 
               };
+
+              updatedTrip.items = syncAutoItineraryItems(updatedTrip);
 
               if (!shareId) {
 

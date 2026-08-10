@@ -18,6 +18,8 @@ export default function Home() {
 
   const [editingTrip, setEditingTrip] = useState(null);
 
+  const [copyMode, setCopyMode] = useState(false);
+
   const [trips, setTrips] = useState([]);
 
   function sortTrips(list) {
@@ -75,6 +77,23 @@ export default function Home() {
 
   }, []);
 
+  function handleCopyTrip(trip) {
+
+    const cloned = JSON.parse(JSON.stringify(trip));
+
+    delete cloned.id;
+    delete cloned.owner;
+    delete cloned.members;
+    delete cloned.memberRoles;
+    delete cloned.createdAt;
+    delete cloned.updatedAt;
+
+    setEditingTrip(cloned);
+    setCopyMode(true);
+    setShowModal(true);
+
+  }
+
   async function handleAddTrip(trip) {
 
     try {
@@ -82,6 +101,8 @@ export default function Home() {
       await createTrip(trip);
 
       setShowModal(false);
+      setEditingTrip(null);
+      setCopyMode(false);
 
     } catch (err) {
 
@@ -103,6 +124,7 @@ async function handleEditTrip(trip) {
     );
 
     setEditingTrip(null);
+    setCopyMode(false);
 
     setShowModal(false);
 
@@ -146,6 +168,7 @@ async function handleEditTrip(trip) {
           onClick={() => {
 
             setEditingTrip(null);
+            setCopyMode(false);
 
             setShowModal(true);
 
@@ -203,10 +226,11 @@ async function handleEditTrip(trip) {
                   onEdit={(trip)=>{
 
                       setEditingTrip(trip);
-
+                      setCopyMode(false);
                       setShowModal(true);
 
                   }}
+                  onCopy={handleCopyTrip}
               />
 
             ))}
@@ -221,14 +245,16 @@ async function handleEditTrip(trip) {
 
         <TripModal
               trip={editingTrip}
+              copyMode={copyMode}
               onClose={() => {
 
                   setEditingTrip(null);
+                  setCopyMode(false);
 
                   setShowModal(false);
 
               }}
-              onSave={editingTrip ? handleEditTrip : handleAddTrip}
+              onSave={copyMode ? handleAddTrip : (editingTrip ? handleEditTrip : handleAddTrip)}
           />
 
       )}

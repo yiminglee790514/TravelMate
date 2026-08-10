@@ -4,9 +4,10 @@ export default function TripModal({
   trip,
   onClose,
   onSave,
+  copyMode = false,
 }) {
 
-  const isEdit = !!trip;
+  const isEdit = !!trip && !copyMode;
 
   const [title, setTitle] = useState(trip?.title || "");
   const [country, setCountry] = useState(trip?.country || "");

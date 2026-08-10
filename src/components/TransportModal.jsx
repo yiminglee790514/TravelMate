@@ -2,6 +2,7 @@ import { useState } from "react";
 
 export default function TransportModal({
   transport,
+  initialGroup = "一般交通",
   onClose,
   onSave,
   people = [],
@@ -51,7 +52,7 @@ export default function TransportModal({
   );
 
   const [group, setGroup] = useState(
-    transport?.group || "一般交通"
+    transport?.group || initialGroup || "一般交通"
   );
 
   // 付款人：與花費共用 expensePeople

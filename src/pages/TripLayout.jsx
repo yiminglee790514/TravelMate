@@ -144,6 +144,12 @@ export default function TripLayout() {
       title: "行李",
     },
 
+    {
+      path: `/trip/${id}/data`,
+      icon: "📁",
+      title: "資料",
+    },
+
   ];
 
 
@@ -277,7 +283,7 @@ export default function TripLayout() {
         w-full
         max-w-6xl
         px-4
-        pb-28
+        pb-32
         pt-2
         sm:px-6
       ">
@@ -288,86 +294,63 @@ export default function TripLayout() {
 
 
       {/* =========================
-          底部選單
+          浮動底部選單
       ========================= */}
 
-      <nav className="
-        fixed
-        bottom-0
-        left-0
-        right-0
-        z-50
-        border-t
-        border-gray-200
-        bg-white
-        shadow-[0_-2px_10px_rgba(0,0,0,0.08)]
-      ">
-
-        <div className="
-          mx-auto
-          flex
-          w-full
-          max-w-6xl
-          overflow-x-auto
-          px-2
-          py-2
-        ">
-
+      <nav
+        className="
+          fixed
+          bottom-[calc(0.75rem+env(safe-area-inset-bottom))]
+          left-3
+          right-3
+          z-50
+          rounded-3xl
+          border
+          border-gray-200/80
+          bg-white/95
+          p-2
+          shadow-[0_8px_30px_rgba(0,0,0,0.14)]
+          backdrop-blur-md
+          sm:left-1/2
+          sm:right-auto
+          sm:w-[680px]
+          sm:-translate-x-1/2
+        "
+      >
+        <div className="grid grid-cols-7 gap-1">
           {menuItems.map((item) => {
-
-            const active =
-              location.pathname === item.path;
-
+            const active = location.pathname === item.path;
 
             return (
-
               <Link
                 key={item.path}
                 to={item.path}
                 className={`
                   flex
-                  min-w-[64px]
-                  flex-1
+                  min-w-0
                   flex-col
                   items-center
                   justify-center
-                  rounded-xl
-                  px-2
-                  py-1.5
+                  rounded-2xl
+                  px-0.5
+                  py-2
                   text-center
                   transition
-                  ${
-                    active
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-gray-500 hover:bg-gray-50"
-                  }
+                  ${active
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-gray-500 hover:bg-gray-50"}
                 `}
               >
-
-                <span className="
-                  text-xl
-                  leading-none
-                ">
+                <span className="text-xl leading-none sm:text-2xl">
                   {item.icon}
                 </span>
-
-                <span className="
-                  mt-1
-                  whitespace-nowrap
-                  text-[11px]
-                  font-medium
-                ">
+                <span className="mt-1 whitespace-nowrap text-[10px] font-medium sm:text-xs">
                   {item.title}
                 </span>
-
               </Link>
-
             );
-
           })}
-
         </div>
-
       </nav>
 
 

@@ -11,6 +11,7 @@ import { canEdit } from "../services/permissionService";
 
 import HotelModal from "../components/HotelModal";
 import HotelCard from "../components/HotelCard";
+import { syncAutoItineraryItems } from "../services/itinerarySync";
 import HotelGroupModal from "../components/HotelGroupModal";
 
 export default function HotelPage() {
@@ -300,6 +301,8 @@ export default function HotelPage() {
 
     };
 
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
+
     await updateTrip(updatedTrip);
 
     setTrip(updatedTrip);
@@ -472,6 +475,7 @@ export default function HotelPage() {
 
     };
 
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
 
     await updateTrip(updatedTrip);
 
@@ -548,6 +552,7 @@ export default function HotelPage() {
 
     };
 
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
 
     await updateTrip(updatedTrip);
 

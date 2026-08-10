@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
+import { getShare } from "../services/shareService";
 import { canEdit } from "../services/permissionService";
 
 const CURRENCY_MAP = {
@@ -58,6 +59,11 @@ const CURRENCY_MAP = {
 
 const DEFAULT_GROUPS = [
   {
+    id: "flight",
+    name: "機票",
+    icon: "✈️",
+  },
+  {
     id: "hotel",
     name: "住宿",
     icon: "🏨",
@@ -107,12 +113,27 @@ function getInitialExpense() {
 
 export default function ExpensePage() {
 
-  const { id } = useParams();
+  const { id, shareId } = useParams();
 
   const {
-    trip,
+    trip: cloudTrip,
     updateTrip,
   } = useTrip(id);
+
+  const [sharedTrip, setSharedTrip] = useState(null);
+
+  useEffect(() => {
+    if (!shareId) return;
+
+    async function loadShare() {
+      const data = await getShare(shareId);
+      setSharedTrip(data);
+    }
+
+    loadShare();
+  }, [shareId]);
+
+  const trip = shareId ? sharedTrip : cloudTrip;
 
   const [showModal, setShowModal] = useState(false);
 
@@ -140,7 +161,7 @@ export default function ExpensePage() {
 
   }
 
-  const editable = canEdit(trip);
+  const editable = !shareId && canEdit(trip);
 
   const expenses = Array.isArray(trip.expenses)
     ? trip.expenses
@@ -150,11 +171,18 @@ export default function ExpensePage() {
     ? trip.expensePeople
     : [];
 
-  const groups =
-    Array.isArray(trip.expenseGroups) &&
-    trip.expenseGroups.length > 0
-      ? trip.expenseGroups
-      : DEFAULT_GROUPS;
+  const groups = (() => {
+    const existing =
+      Array.isArray(trip.expenseGroups) && trip.expenseGroups.length > 0
+        ? trip.expenseGroups
+        : DEFAULT_GROUPS;
+
+    if (existing.some((group) => group.id === "flight")) {
+      return existing;
+    }
+
+    return [DEFAULT_GROUPS[0], ...existing];
+  })();
 
 
   // =========================
@@ -221,6 +249,43 @@ export default function ExpensePage() {
 
     });
 
+  });
+
+
+  // 航班旅客價格 → 支出群組「機票」
+  const flightValues = [
+    ...(Array.isArray(trip.flights?.outbound)
+      ? trip.flights.outbound.map((flight) => ({ type: "outbound", flight }))
+      : trip.flights?.outbound
+        ? [{ type: "outbound", flight: trip.flights.outbound }]
+        : []),
+    ...(Array.isArray(trip.flights?.inbound)
+      ? trip.flights.inbound.map((flight) => ({ type: "inbound", flight }))
+      : trip.flights?.inbound
+        ? [{ type: "inbound", flight: trip.flights.inbound }]
+        : []),
+  ];
+
+  flightValues.forEach(({ type, flight }) => {
+    (Array.isArray(flight?.passengers) ? flight.passengers : []).forEach((passenger) => {
+      const amount = Number(passenger.price);
+
+      // 沒有填價格就完全不進花費
+      if (!Number.isFinite(amount) || amount <= 0) return;
+
+      linkedExpenses.push({
+        id: `flight-${type}-${flight.id}-${passenger.id}`,
+        sourceType: "flight",
+        sourceId: `${type}-${flight.id}-${passenger.id}`,
+        date: flight.date || trip.startDate || "",
+        title: `✈️ 機票｜${passenger.name || "旅客"}`,
+        amount,
+        currency: passenger.currency || "JPY",
+        groupId: "flight",
+        person: passenger.name || "",
+        note: [flight.airline, flight.flightNo].filter(Boolean).join(" "),
+      });
+    });
   });
 
 
@@ -652,7 +717,7 @@ export default function ExpensePage() {
             每個付款人的總計
         ========================= */}
 
-        {people.length > 0 && (
+        {allPeople.length > 0 && (
 
           <div className="mb-6">
 
@@ -687,12 +752,13 @@ export default function ExpensePage() {
                     onClick={() => setSelectedPerson(person)}
                     className={`
                       flex
-                      min-h-[60px]
+                      min-h-[72px]
                       w-full
-                      items-center
+                      flex-col
+                      items-stretch
                       gap-2
                       px-3
-                      py-2.5
+                      py-3
                       text-left
                       transition
                       hover:bg-gray-50
@@ -705,7 +771,7 @@ export default function ExpensePage() {
 
                     {/* 人名 */}
 
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
 
                       <div className="
                         flex
@@ -723,7 +789,7 @@ export default function ExpensePage() {
 
                       <div className="
                         min-w-0
-                        truncate
+                        break-words
                         text-sm
                         font-semibold
                         text-gray-800
@@ -738,9 +804,11 @@ export default function ExpensePage() {
 
                     <div className="
                       flex
-                      shrink-0
+                      min-w-0
                       items-center
-                      gap-2
+                      gap-3
+                      pl-11
+                      pr-6
                     ">
 
                       {entries.length > 0 ? (

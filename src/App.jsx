@@ -17,9 +17,10 @@ import { syncCloudToLocal } from "./services/cloudService";
 import HotelPage from "./pages/HotelPage";
 import TransportPage from "./pages/TransportPage";
 import WeatherPage from "./pages/WeatherPage";
-import SharePage from "./pages/SharePage";
+import ShareLayout from "./pages/ShareLayout";
 import { createUserProfile } from "./services/userService";
 import PackingPage from "./pages/PackingPage";
+import DataPage from "./pages/DataPage";
 import ExpensePage from "./pages/ExpensePage";
 
 export default function App() {
@@ -75,33 +76,37 @@ return (
 
       <Route
         path="/share/:shareId"
-        element={<SharePage />}
-      />
-
-      <Route
-        path="/share/:shareId/flight"
-        element={<FlightPage />}
-      />
-
-      <Route
-        path="/share/:shareId/hotel"
-        element={<HotelPage />}
-      />
-
-      <Route
-        path="/share/:shareId/transport"
-        element={<TransportPage />}
-      />
-
-      <Route
-        path="/share/:shareId/weather"
-        element={<WeatherPage />}
-      />
-
-      <Route
-        path="/share/:shareId/itinerary"
-        element={<ItineraryPage />}
-      />
+        element={<ShareLayout />}
+      >
+        <Route
+          index
+          element={<Navigate to="itinerary" replace />}
+        />
+        <Route
+          path="flight"
+          element={<FlightPage />}
+        />
+        <Route
+          path="hotel"
+          element={<HotelPage />}
+        />
+        <Route
+          path="transport"
+          element={<TransportPage />}
+        />
+        <Route
+          path="weather"
+          element={<WeatherPage />}
+        />
+        <Route
+          path="itinerary"
+          element={<ItineraryPage />}
+        />
+        <Route
+          path="expense"
+          element={<ExpensePage />}
+        />
+      </Route>
 
       <Route
         path="/trip/:id"
@@ -153,6 +158,11 @@ return (
         <Route
           path="packing"
           element={<PackingPage />}
+        />
+
+        <Route
+          path="data"
+          element={<DataPage />}
         />
 
       </Route>

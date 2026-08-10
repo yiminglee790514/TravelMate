@@ -64,6 +64,7 @@ export default function TripCard({
   trip,
   onDelete,
   onEdit,
+  onCopy,
 }) {
 
   const itemCount = trip.items?.length || 0;
@@ -210,6 +211,32 @@ export default function TripCard({
                   "
                 >
                   ✏️ 編輯
+                </button>
+
+
+                {/* 複製 */}
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    setShowMenu(false);
+                    onCopy?.(trip);
+
+                  }}
+                  className="
+                    w-full
+                    px-4
+                    py-3
+                    text-left
+                    text-sm
+                    hover:bg-blue-50
+                  "
+                >
+                  📋 複製
                 </button>
 
 

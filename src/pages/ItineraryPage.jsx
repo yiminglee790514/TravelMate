@@ -238,7 +238,7 @@ useEffect(() => {
                         const week = ["日", "一", "二", "三", "四", "五", "六"];
 
                         const text =
-                          `${date.getMonth() + 1}/${date.getDate()}（週${week[date.getDay()]}）`;
+                          `Day ${item.day}　${date.getMonth() + 1}/${date.getDate()}（週${week[date.getDay()]}）`;
 
                         return (
                           <>
@@ -301,7 +301,7 @@ useEffect(() => {
                           <TimelineItem
                             key={timelineItem.id}
                             item={timelineItem}
-                            readonly={readonly}
+                            readonly={readonly || !!timelineItem.autoSource}
                             owner={owner}
 
                             onClick={
