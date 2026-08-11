@@ -1,369 +1,189 @@
-import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
-
 import { canEdit } from "../services/permissionService";
-
 import FlightCard from "../components/flight/FlightCard";
 import FlightModal from "../components/flight/FlightModal";
 import { syncAutoItineraryItems } from "../services/itinerarySync";
 
+function normalizeFlights(flights) {
+  if (Array.isArray(flights)) return [...flights];
+  return flights ? [flights] : [];
+}
+
 export default function FlightPage() {
-
   const { id, shareId } = useParams();
-
-  const {
-    trip: cloudTrip,
-    updateTrip,
-  } = useTrip(id);
-
+  const { trip: cloudTrip, updateTrip } = useTrip(id);
   const [trip, setTrip] = useState(null);
-
-  const readonly =
-    !!shareId ||
-    (trip ? !canEdit(trip) : true);
-
   const [showModal, setShowModal] = useState(false);
-
   const [flightType, setFlightType] = useState("outbound");
-
   const [editingFlight, setEditingFlight] = useState(null);
 
+  const readonly = !!shareId || (trip ? !canEdit(trip) : true);
+
   useEffect(() => {
-
     async function loadTrip() {
-
       if (shareId) {
-
-        const data = await getShare(shareId);
-
-        setTrip(data);
-
+        setTrip(await getShare(shareId));
       } else {
-
         setTrip(cloudTrip);
-
       }
-
     }
-
     loadTrip();
-
   }, [cloudTrip, shareId]);
 
   if (!trip) {
-
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         載入中...
       </div>
     );
+  }
 
+  const outbound = normalizeFlights(trip.flights?.outbound);
+  const inbound = normalizeFlights(trip.flights?.inbound);
+  const activeFlights = flightType === "outbound" ? outbound : inbound;
+
+  const people = Array.isArray(trip.expensePeople) ? trip.expensePeople : [];
+
+  async function saveTrip(nextTrip) {
+    nextTrip.items = syncAutoItineraryItems(nextTrip);
+    if (!shareId) await updateTrip(nextTrip);
+    setTrip(nextTrip);
   }
 
   async function saveFlight(flight) {
-
     const flights = {
-
-      outbound: Array.isArray(trip.flights?.outbound)
-        ? [...trip.flights.outbound]
-        : trip.flights?.outbound
-          ? [trip.flights.outbound]
-          : [],
-
-      inbound: Array.isArray(trip.flights?.inbound)
-        ? [...trip.flights.inbound]
-        : trip.flights?.inbound
-          ? [trip.flights.inbound]
-          : [],
-
+      outbound: normalizeFlights(trip.flights?.outbound),
+      inbound: normalizeFlights(trip.flights?.inbound),
     };
 
     const list = flights[flightType];
+    const index = list.findIndex((item) => item.id === flight.id);
 
-    const index = list.findIndex(
-      (item) => item.id === flight.id
-    );
+    if (index >= 0) list[index] = flight;
+    else list.push(flight);
 
-    if (index >= 0) {
-
-      list[index] = flight;
-
-    } else {
-
-      list.push(flight);
-
-    }
-
-    const updatedTrip = {
-
-      ...trip,
-
-      flights,
-
-    };
-
-    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-
-    if (!shareId) {
-
-      await updateTrip(updatedTrip);
-
-    }
-
-    setTrip(updatedTrip);
-
+    await saveTrip({ ...trip, flights });
     setShowModal(false);
-
   }
 
   async function deleteFlight(type, flightId) {
-
     if (!window.confirm("確定刪除此航班？")) return;
 
     const flights = {
-
-      outbound: Array.isArray(trip.flights?.outbound)
-        ? [...trip.flights.outbound]
-        : trip.flights?.outbound
-          ? [trip.flights.outbound]
-          : [],
-
-      inbound: Array.isArray(trip.flights?.inbound)
-        ? [...trip.flights.inbound]
-        : trip.flights?.inbound
-          ? [trip.flights.inbound]
-          : [],
-
+      outbound: normalizeFlights(trip.flights?.outbound),
+      inbound: normalizeFlights(trip.flights?.inbound),
     };
 
-    flights[type] = flights[type].filter(
-      (item) => item.id !== flightId
-    );
-
-    const updatedTrip = {
-
-      ...trip,
-
-      flights,
-
-    };
-
-    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-
-    if (!shareId) {
-
-      await updateTrip(updatedTrip);
-
-    }
-
-    setTrip(updatedTrip);
-
+    flights[type] = flights[type].filter((item) => item.id !== flightId);
+    await saveTrip({ ...trip, flights });
   }
 
-  // =========================
-  // 共用花費的人名
-  // =========================
+  async function reorderFlights(newFlights) {
+    const flights = {
+      outbound: normalizeFlights(trip.flights?.outbound),
+      inbound: normalizeFlights(trip.flights?.inbound),
+    };
+    flights[flightType] = newFlights;
+    await saveTrip({ ...trip, flights });
+  }
 
-  const people = Array.isArray(trip.expensePeople)
-    ? trip.expensePeople
-    : [];
+  function openAdd() {
+    setEditingFlight(null);
+    setShowModal(true);
+  }
+
+  function openEdit(flight) {
+    setEditingFlight(flight);
+    setShowModal(true);
+  }
+
+  async function addPerson(name) {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+    if (people.includes(cleanName)) {
+      alert("這個名字已經存在");
+      return;
+    }
+
+    await saveTrip({
+      ...trip,
+      expensePeople: [...people, cleanName],
+    });
+  }
 
   return (
-
     <div className="bg-gray-100">
-
-      <div className="mx-auto w-full max-w-6xl px-4 pt-2 pb-2 sm:px-6">
-
-
-
-        <div className="space-y-6">
-
-          {/* =========================
+      <div className="mx-auto w-full max-w-5xl px-3 pb-3 pt-1 sm:px-5">
+        {/* 去程 / 回程切換 */}
+        <div className="mb-4 rounded-2xl border border-blue-100 bg-white p-1.5 shadow-sm">
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl bg-gray-50">
+            <button
+              type="button"
+              onClick={() => setFlightType("outbound")}
+              className={`relative flex items-center justify-center gap-2 px-4 py-3 text-base font-bold transition sm:text-lg ${
+                flightType === "outbound"
+                  ? "bg-blue-50 text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:bg-white"
+              }`}
+            >
+              <span className="text-xl">🛫</span>
               去程
-          ========================= */}
+              {flightType === "outbound" && (
+                <span className="absolute bottom-0 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-blue-500" />
+              )}
+            </button>
 
-          <FlightCard
-            title="🛫 去程"
-            flights={trip.flights?.outbound || []}
-            readonly={readonly}
-
-            onAdd={() => {
-
-              setEditingFlight(null);
-
-              setFlightType("outbound");
-
-              setShowModal(true);
-
-            }}
-
-            onEdit={(flight) => {
-
-              setEditingFlight(flight);
-
-              setFlightType("outbound");
-
-              setShowModal(true);
-
-            }}
-
-            onDelete={(flightId) => {
-
-              deleteFlight("outbound", flightId);
-
-            }}
-
-            onReorder={async (newFlights) => {
-
-              const updatedTrip = {
-
-                ...trip,
-
-                flights: {
-
-                  ...(trip.flights || {}),
-
-                  outbound: newFlights,
-
-                },
-
-              };
-
-              updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-
-              if (!shareId) {
-
-                await updateTrip(updatedTrip);
-
-              }
-
-              setTrip(updatedTrip);
-
-            }}
-
-          />
-
-          {/* =========================
+            <button
+              type="button"
+              onClick={() => setFlightType("inbound")}
+              className={`relative flex items-center justify-center gap-2 px-4 py-3 text-base font-bold transition sm:text-lg ${
+                flightType === "inbound"
+                  ? "bg-blue-50 text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:bg-white"
+              }`}
+            >
+              <span className="text-xl">🛬</span>
               回程
-          ========================= */}
-
-          <FlightCard
-            title="🛬 回程"
-            flights={trip.flights?.inbound || []}
-            readonly={readonly}
-
-            onAdd={() => {
-
-              setEditingFlight(null);
-
-              setFlightType("inbound");
-
-              setShowModal(true);
-
-            }}
-
-            onEdit={(flight) => {
-
-              setEditingFlight(flight);
-
-              setFlightType("inbound");
-
-              setShowModal(true);
-
-            }}
-
-            onDelete={(flightId) => {
-
-              deleteFlight("inbound", flightId);
-
-            }}
-
-            onReorder={async (newFlights) => {
-
-              const updatedTrip = {
-
-                ...trip,
-
-                flights: {
-
-                  ...(trip.flights || {}),
-
-                  inbound: newFlights,
-
-                },
-
-              };
-
-              updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-
-              if (!shareId) {
-
-                await updateTrip(updatedTrip);
-
-              }
-
-              setTrip(updatedTrip);
-
-            }}
-
-          />
-
+              {flightType === "inbound" && (
+                <span className="absolute bottom-0 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-blue-500" />
+              )}
+            </button>
+          </div>
         </div>
 
+        <FlightCard
+          title={flightType === "outbound" ? "去程" : "回程"}
+          flights={activeFlights}
+          readonly={readonly}
+          onAdd={openAdd}
+          onEdit={openEdit}
+          onDelete={(flightId) => deleteFlight(flightType, flightId)}
+          onReorder={reorderFlights}
+        />
       </div>
 
       {!readonly && showModal && (
-
         <FlightModal
-            title={
-                flightType === "outbound"
-                ? "建立去程航班"
-                : "建立回程航班"
-            }
-
-            flight={editingFlight}
-
-            people={people}
-
-            onClose={() => setShowModal(false)}
-
-            onSave={saveFlight}
-
-            onAddPerson={async (name) => {
-
-                const cleanName = name.trim();
-
-                if (!cleanName) return;
-
-                if (people.includes(cleanName)) {
-                alert("這個名字已經存在");
-                return;
-                }
-
-                const updatedTrip = {
-                ...trip,
-
-                expensePeople: [
-                    ...people,
-                    cleanName,
-                ],
-                };
-
-                if (!shareId) {
-                await updateTrip(updatedTrip);
-                }
-
-                setTrip(updatedTrip);
-            }}
-            />
-
+          title={
+            editingFlight
+              ? flightType === "outbound"
+                ? "修改去程航班"
+                : "修改回程航班"
+              : flightType === "outbound"
+                ? "新增去程航班"
+                : "新增回程航班"
+          }
+          flight={editingFlight}
+          people={people}
+          onClose={() => setShowModal(false)}
+          onSave={saveFlight}
+          onAddPerson={addPerson}
+        />
       )}
-
     </div>
-
   );
-
 }

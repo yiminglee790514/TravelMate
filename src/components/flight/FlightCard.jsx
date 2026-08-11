@@ -9,81 +9,48 @@ export default function FlightCard({
   onReorder,
   readonly = false,
 }) {
+  const list = Array.isArray(flights) ? flights : flights ? [flights] : [];
 
-  const list = Array.isArray(flights)
-    ? flights
-    : flights
-    ? [flights]
-    : [];
-
-  if (list.length === 0) {
-
-    return (
-
-      <div className="rounded-2xl bg-white p-6 shadow">
-
-        <div className="mb-5 flex items-center justify-between">
-
-          <div className="text-2xl font-bold">
-            {title}
+  return (
+    <section className="tm-flight-section">
+      {list.length === 0 ? (
+        <div className="rounded-3xl border border-gray-100 bg-white px-5 py-14 text-center shadow-sm">
+          <div className="mb-2 text-4xl">✈️</div>
+          <div className="text-sm font-semibold text-gray-500">
+            尚未建立{title}航班
           </div>
 
           {!readonly && (
-
             <button
+              type="button"
               onClick={onAdd}
-              className="rounded-xl bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+              className="mt-5 rounded-xl border border-dashed border-blue-300 px-5 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
             >
-              ＋新增航段
+              ＋ 新增航段
             </button>
-
           )}
-
         </div>
+      ) : (
+        <>
+          <FlightList
+            flights={list}
+            readonly={readonly}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onReorder={onReorder}
+          />
 
-        <div className="py-12 text-center text-gray-400">
-          尚未建立航班
-        </div>
-
-      </div>
-
-    );
-
-  }
-
-  return (
-
-    <div>
-
-      <div className="mb-5 flex items-center justify-between">
-
-        <div className="text-2xl font-bold">
-          {title}
-        </div>
-
-        {!readonly && (
-
-          <button
-            onClick={onAdd}
-            className="rounded-xl bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-          >
-            ＋新增航段
-          </button>
-
-        )}
-
-      </div>
-
-      <FlightList
-        flights={list}
-        readonly={readonly}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onReorder={onReorder}
-      />
-
-    </div>
-
+          {!readonly && (
+            <button
+              type="button"
+              onClick={onAdd}
+              className="tm-flight-add-button"
+            >
+              ＋ 新增航段
+            </button>
+          )}
+        </>
+      )}
+    </section>
   );
-
 }

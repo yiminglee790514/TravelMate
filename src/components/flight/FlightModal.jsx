@@ -110,11 +110,11 @@ export default function FlightModal({
 
   return (
 
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4">
 
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-8 shadow-2xl">
+      <div className="tm-flight-modal max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
 
-        <h2 className="mb-6 text-2xl font-bold">
+        <h2 className="mb-5 text-xl font-bold">
           {title}
         </h2>
 
@@ -132,7 +132,7 @@ export default function FlightModal({
 
             <input
               type="date"
-              className="w-full rounded-xl border p-3"
+              className="w-full rounded-xl border p-2.5 text-sm"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
@@ -144,7 +144,7 @@ export default function FlightModal({
           ========================= */}
 
           <select
-            className="w-full rounded-xl border p-3"
+            className="w-full rounded-xl border p-2.5 text-sm"
             value={airline}
             onChange={(e) => setAirline(e.target.value)}
           >
@@ -167,7 +167,7 @@ export default function FlightModal({
           </select>
 
           <input
-            className="w-full rounded-xl border p-3"
+            className="w-full rounded-xl border p-2.5 text-sm"
             placeholder="航班號 (CI919)"
             value={flightNo}
             onChange={(e) => setFlightNo(e.target.value)}
@@ -184,7 +184,7 @@ export default function FlightModal({
           </div>
 
           <select
-            className="w-full rounded-xl border p-3"
+            className="w-full rounded-xl border p-2.5 text-sm"
             value={departureCode}
             onChange={(e) => {
 
@@ -225,7 +225,7 @@ export default function FlightModal({
           {departureCode === "CUSTOM" && (
 
             <input
-              className="w-full rounded-xl border p-3"
+              className="w-full rounded-xl border p-2.5 text-sm"
               placeholder="請輸入出發機場"
               value={departureName}
               onChange={(e) =>
@@ -237,7 +237,7 @@ export default function FlightModal({
 
           <input
             type="time"
-            className="w-full rounded-xl border p-3"
+            className="w-full rounded-xl border p-2.5 text-sm"
             value={departureTime}
             onChange={(e) =>
               setDepartureTime(e.target.value)
@@ -255,7 +255,7 @@ export default function FlightModal({
           </div>
 
           <select
-            className="w-full rounded-xl border p-3"
+            className="w-full rounded-xl border p-2.5 text-sm"
             value={arrivalCode}
             onChange={(e) => {
 
@@ -296,7 +296,7 @@ export default function FlightModal({
           {arrivalCode === "CUSTOM" && (
 
             <input
-              className="w-full rounded-xl border p-3"
+              className="w-full rounded-xl border p-2.5 text-sm"
               placeholder="請輸入抵達機場"
               value={arrivalName}
               onChange={(e) =>
@@ -308,7 +308,7 @@ export default function FlightModal({
 
           <input
             type="time"
-            className="w-full rounded-xl border p-3"
+            className="w-full rounded-xl border p-2.5 text-sm"
             value={arrivalTime}
             onChange={(e) =>
               setArrivalTime(e.target.value)
@@ -334,18 +334,18 @@ export default function FlightModal({
             按鈕
         ========================= */}
 
-        <div className="mt-8 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-3">
 
           <button
             onClick={onClose}
-            className="rounded-xl bg-gray-200 px-5 py-3"
+            className="rounded-xl bg-gray-200 px-4 py-2.5 text-sm"
           >
             取消
           </button>
 
           <button
             onClick={handleSave}
-            className="rounded-xl bg-blue-500 px-5 py-3 text-white"
+            className="rounded-xl bg-blue-500 px-4 py-2.5 text-sm text-white"
           >
             儲存
           </button>

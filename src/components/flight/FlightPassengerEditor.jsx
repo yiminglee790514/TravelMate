@@ -10,10 +10,6 @@ const CURRENCIES = [
   ["EUR", "€"],
 ];
 
-function symbol(currency) {
-  return CURRENCIES.find(([code]) => code === currency)?.[1] || currency || "";
-}
-
 export default function FlightPassengerEditor({
   passengers = [],
   people = [],
@@ -26,6 +22,8 @@ export default function FlightPassengerEditor({
   const [selectedName, setSelectedName] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("JPY");
+  const [seat, setSeat] = useState("");
+  const [baggageKg, setBaggageKg] = useState("");
   const [showNewPerson, setShowNewPerson] = useState(false);
   const [personInput, setPersonInput] = useState("");
 
@@ -48,11 +46,15 @@ export default function FlightPassengerEditor({
         name,
         price: price === "" ? "" : Number(price),
         currency,
+        seat: seat.trim(),
+        baggageKg: baggageKg === "" ? "" : Number(baggageKg),
       },
     ]);
 
     setSelectedName("");
     setPrice("");
+    setSeat("");
+    setBaggageKg("");
   }
 
   async function handleAddPerson() {
@@ -80,15 +82,18 @@ export default function FlightPassengerEditor({
         passenger.id === id
           ? {
               ...passenger,
-              [field]: field === "price" && value !== "" ? Number(value) : value,
+              [field]:
+                (field === "price" || field === "baggageKg") && value !== ""
+                  ? Number(value)
+                  : value,
             }
-          : passenger
-      )
+          : passenger,
+      ),
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 tm-flight-passenger-editor">
       <div className="text-sm font-semibold text-gray-700">
         👥 旅客資訊
       </div>
@@ -102,49 +107,81 @@ export default function FlightPassengerEditor({
             return (
               <div
                 key={passenger.id}
-                className="border-b border-gray-100 p-3 last:border-b-0"
+                className="tm-flight-passenger-edit-item border-b border-gray-100 p-3 last:border-b-0"
               >
-                <div className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1 break-words text-sm font-semibold">
-                    👤 {passenger.name}
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-1">
-                    <select
-                      className="w-16 rounded-lg border px-1 py-1.5 text-xs"
-                      value={passengerCurrency}
-                      onChange={(e) =>
-                        updatePassenger(passenger.id, "currency", e.target.value)
-                      }
-                    >
-                      {CURRENCIES.map(([code, sign]) => (
-                        <option key={code} value={code}>
-                          {sign}
-                        </option>
-                      ))}
-                    </select>
-
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="價格"
-                      className="w-24 rounded-lg border px-2 py-1.5 text-right text-sm"
-                      value={passengerPrice}
-                      onChange={(e) =>
-                        updatePassenger(passenger.id, "price", e.target.value)
-                      }
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => removePassenger(passenger.id)}
-                      className="ml-1 rounded-lg px-2 py-1 text-sm text-red-500 hover:bg-red-50"
-                    >
-                      ×
-                    </button>
-                  </div>
+                <div className="tm-flight-passenger-edit-name text-sm font-semibold text-slate-800">
+                  👤 {passenger.name}
                 </div>
 
+                <div className="tm-flight-passenger-edit-fields mt-2">
+                  <input
+                    type="text"
+                    placeholder="座位"
+                    aria-label="座位"
+                    className="rounded-lg border px-2 py-2 text-xs"
+                    value={passenger.seat || ""}
+                    onChange={(e) =>
+                      updatePassenger(passenger.id, "seat", e.target.value)
+                    }
+                  />
+
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="kg"
+                    aria-label="行李公斤"
+                    className="rounded-lg border px-2 py-2 text-xs"
+                    value={passenger.baggageKg ?? ""}
+                    onChange={(e) =>
+                      updatePassenger(
+                        passenger.id,
+                        "baggageKg",
+                        e.target.value,
+                      )
+                    }
+                  />
+
+                  <select
+                    className="rounded-lg border px-1 py-2 text-xs"
+                    value={passengerCurrency}
+                    onChange={(e) =>
+                      updatePassenger(
+                        passenger.id,
+                        "currency",
+                        e.target.value,
+                      )
+                    }
+                  >
+                    {CURRENCIES.map(([code, sign]) => (
+                      <option key={code} value={code}>
+                        {sign}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="價格"
+                    className="rounded-lg border px-2 py-2 text-right text-xs"
+                    value={passengerPrice}
+                    onChange={(e) =>
+                      updatePassenger(
+                        passenger.id,
+                        "price",
+                        e.target.value,
+                      )
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removePassenger(passenger.id)}
+                    className="rounded-lg px-2 py-2 text-sm text-red-500 hover:bg-red-50"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -155,7 +192,7 @@ export default function FlightPassengerEditor({
         <select
           value={selectedName}
           onChange={(e) => setSelectedName(e.target.value)}
-          className="w-full rounded-xl border px-4 py-3"
+          className="w-full rounded-xl border px-4 py-3 text-sm"
         >
           <option value="">選擇旅客</option>
           {personList.map((person) => (
@@ -165,11 +202,30 @@ export default function FlightPassengerEditor({
           ))}
         </select>
 
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            placeholder="座位（例如 12A）"
+            className="min-w-0 rounded-xl border px-3 py-2.5 text-sm"
+            value={seat}
+            onChange={(e) => setSeat(e.target.value)}
+          />
+
+          <input
+            type="number"
+            min="0"
+            placeholder="行李（kg）"
+            className="min-w-0 rounded-xl border px-3 py-2.5 text-sm"
+            value={baggageKg}
+            onChange={(e) => setBaggageKg(e.target.value)}
+          />
+        </div>
+
         <div className="mt-2 flex gap-2">
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="w-24 rounded-xl border px-2 py-3"
+            className="w-24 rounded-xl border px-2 py-2.5 text-sm"
           >
             {CURRENCIES.map(([code, sign]) => (
               <option key={code} value={code}>
@@ -182,7 +238,7 @@ export default function FlightPassengerEditor({
             type="number"
             min="0"
             placeholder="價格（可不填）"
-            className="min-w-0 flex-1 rounded-xl border px-3 py-3"
+            className="min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
           />
@@ -207,7 +263,7 @@ export default function FlightPassengerEditor({
         {showNewPerson && (
           <div className="mt-2 flex gap-2">
             <input
-              className="min-w-0 flex-1 rounded-xl border px-3 py-2.5"
+              className="min-w-0 flex-1 rounded-xl border px-3 py-2.5 text-sm"
               placeholder="輸入姓名"
               value={personInput}
               onChange={(e) => setPersonInput(e.target.value)}
@@ -215,7 +271,7 @@ export default function FlightPassengerEditor({
             <button
               type="button"
               onClick={handleAddPerson}
-              className="rounded-xl bg-gray-800 px-4 py-2.5 text-white"
+              className="rounded-xl bg-gray-800 px-4 py-2.5 text-sm text-white"
             >
               加入
             </button>

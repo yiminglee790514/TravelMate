@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { calculateTravelTime } from "../../services/mapsService";
-import { getRegionCode } from "../../services/mapsCountry";
 
 const MODES = [
   { value: "DRIVE", icon: "🚗", label: "開車" },
@@ -31,10 +30,21 @@ export default function TravelTimeConnector({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const regionCode = useMemo(
-    () => getRegionCode(trip?.country || ""),
-    [trip?.country]
-  );
+  const regionCode = useMemo(() => {
+    const map = {
+      日本: "JP",
+      韓國: "KR",
+      南韓: "KR",
+      台灣: "TW",
+      臺灣: "TW",
+      美國: "US",
+      法國: "FR",
+      義大利: "IT",
+      泰國: "TH",
+      新加坡: "SG",
+    };
+    return map[trip?.country] || "";
+  }, [trip?.country]);
 
   useEffect(() => {
     setMode(initialMode || "DRIVE");

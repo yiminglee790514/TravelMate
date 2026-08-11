@@ -626,7 +626,7 @@ a {
   backdrop-filter: blur(18px);
 }
 
-.tm-bottom-nav-scroll {
+ .tm-bottom-nav-scroll {
   display: flex;
   width: 100%;
   min-width: 0;
@@ -634,19 +634,12 @@ a {
   gap: 3px;
   overflow-x: auto;
   overflow-y: hidden;
-  overscroll-behavior-x: auto;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
   scrollbar-width: none;
   padding: 0;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: grab;
-}
-
-.tm-bottom-nav-scroll:active {
-  cursor: grabbing;
 }
 
 .tm-bottom-nav-scroll::-webkit-scrollbar {
@@ -868,3 +861,108 @@ a {
     padding-left: 22px;
   }
 }
+
+
+/* =========================
+   Shared trip actions
+   Center the icon + text inside each card
+========================= */
+.tm-action-card {
+  justify-content: center;
+  text-align: center;
+}
+
+.tm-action-card > .min-w-0 {
+  text-align: center;
+}
+
+/* =========================
+   Flight page
+========================= */
+.tm-flight-section {
+  width: 100%;
+}
+
+.tm-flight-add-button {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin: 6px 0 18px;
+  border: 1px dashed #cbdcf4;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2878e8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(24, 39, 75, 0.03);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.tm-flight-add-button:hover {
+  background: #f5f9ff;
+  transform: translateY(-1px);
+}
+
+.tm-flight-card {
+  overflow: visible;
+}
+
+.tm-flight-passenger-edit-item {
+  min-width: 0;
+}
+
+.tm-flight-passenger-edit-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.tm-flight-passenger-edit-fields {
+  display: grid;
+  grid-template-columns: 64px 64px 64px minmax(72px, 1fr) 30px;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tm-flight-passenger-edit-fields input,
+.tm-flight-passenger-edit-fields select,
+.tm-flight-passenger-edit-fields button {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.tm-flight-modal {
+  font-size: 0.88rem;
+}
+
+.tm-flight-modal input,
+.tm-flight-modal select,
+.tm-flight-modal button {
+  font-size: 0.84rem;
+}
+
+@media (max-width: 640px) {
+  .tm-flight-passenger-edit-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 68px 28px;
+  }
+
+  .tm-flight-passenger-edit-fields select {
+    grid-column: 1 / 2;
+  }
+
+  .tm-flight-passenger-edit-fields input:nth-child(4) {
+    grid-column: 2 / 4;
+  }
+
+  .tm-flight-passenger-edit-fields button {
+    grid-column: 4;
+  }
+
+  .tm-flight-add-button {
+    min-height: 46px;
+    margin-top: 4px;
+    font-size: 0.86rem;
+  }
+}
+
