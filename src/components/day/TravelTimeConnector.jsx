@@ -89,6 +89,8 @@ export default function TravelTimeConnector({
   function handleModeChange(event) {
     const nextMode = event.target.value;
     setMode(nextMode);
+    setResult(null);
+    setError("");
     handleCalculate(nextMode);
   }
 
@@ -130,6 +132,12 @@ export default function TravelTimeConnector({
           )}
 
           {error && <div className="tm-travel-connector-error">⚠️ {error}</div>}
+
+          {(mode === "BICYCLE" || mode === "TWO_WHEELER") && !error && (
+            <div className="tm-travel-connector-hint">
+              {mode === "BICYCLE" ? "單車路線為 Beta，部分地區可能沒有路線資料。" : "機車路線只支援部分國家／地區。"}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -55,12 +55,21 @@ export default {
         ...(input?.regionCode ? { regionCode: input.regionCode } : {}),
       };
 
+      // Google Routes API 的 routingPreference 只能用在 DRIVE / TWO_WHEELER。
+      // TRANSIT / WALK / BICYCLE 不要帶這個欄位，否則 request 會直接失敗。
       if (travelMode === "DRIVE") {
         body.routingPreference = "TRAFFIC_AWARE";
       }
 
+      // 只有大眾運輸需要指定出發時間；其他模式不需要。
       if (travelMode === "TRANSIT" && input?.departureTime) {
-        body.departureTime = input.departureTime;
+        const departure = new Date(input.departureTime);
+        if (!Number.isNaN(departure.getTime())) {
+          body.departureTime = departure.toISOString();
+        }
+
+        // 大眾運輸有時會有多條可行路線，讓 Google 有機會回傳替代路線。
+        body.computeAlternativeRoutes = true;
       }
 
       const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
@@ -68,7 +77,13 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.localizedValues",
+          "X-Goog-FieldMask": [
+            "routes.duration",
+            "routes.distanceMeters",
+            "routes.localizedValues",
+            "routes.legs.steps.travelMode",
+            "routes.legs.steps.transitDetails",
+          ].join(","),
         },
         body: JSON.stringify(body),
       });
@@ -88,7 +103,19 @@ export default {
 
       const route = data?.routes?.[0];
       if (!route) {
-        return new Response(JSON.stringify({ error: "找不到可用路線。" }), {
+        const modeMessages = {
+          TRANSIT: "Google 目前找不到這個時間的公共交通路線，請改成開車或步行，或稍後再試。",
+          BICYCLE: "Google 目前找不到這段路的單車路線；單車路線屬於 Beta，部分地區可能沒有資料。",
+          TWO_WHEELER: "Google 目前沒有提供這段路的機車路線；機車路線並非所有國家／地區都有支援。",
+          WALK: "Google 目前找不到這段路的步行路線。",
+          DRIVE: "Google 目前找不到可用的開車路線。",
+        };
+
+        return new Response(JSON.stringify({
+          error: modeMessages[travelMode] || "找不到可用路線。",
+          code: "NO_ROUTE",
+          mode: travelMode,
+        }), {
           status: 404,
           headers: { "Content-Type": "application/json; charset=utf-8" },
         });

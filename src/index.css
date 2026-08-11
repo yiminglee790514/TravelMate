@@ -566,6 +566,13 @@ a {
   line-height: 1.35;
 }
 
+.tm-travel-connector-hint {
+  margin-top: 2px;
+  color: #8a95a6;
+  font-size: 0.58rem;
+  line-height: 1.35;
+}
+
 /* =========================
    Bottom nav
 ========================= */
@@ -583,15 +590,29 @@ a {
   backdrop-filter: blur(18px);
 }
 
-.tm-bottom-nav-scroll {
+ .tm-bottom-nav-scroll {
   display: flex;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   gap: 3px;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
   padding: 0;
+}
+
+.tm-bottom-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tm-bottom-nav-scroll::after {
+  content: "";
+  flex: 0 0 1px;
 }
 
 .tm-bottom-item {
