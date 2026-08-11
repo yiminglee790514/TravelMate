@@ -2,6 +2,8 @@ import { useState } from "react";
 import { AIRLINES } from "../../constants/airlines";
 import { AIRPORTS } from "../../constants/airports";
 import FlightPassengerEditor from "./FlightPassengerEditor";
+import { searchPlaceAddress } from "../../services/mapsService";
+import { getRegionCode } from "../../services/mapsCountry";
 
 export default function FlightModal({
   title,
@@ -40,6 +42,16 @@ export default function FlightModal({
     flight?.departure?.time || ""
   );
 
+  const [departureAddress, setDepartureAddress] = useState(
+    flight?.departure?.address || ""
+  );
+
+  const [departureDuration, setDepartureDuration] = useState(
+    flight?.departure?.durationMinutes ?? ""
+  );
+
+  const [departureAddressLoading, setDepartureAddressLoading] = useState(false);
+
   const [arrivalCode, setArrivalCode] = useState(
     flight?.arrival?.code || ""
   );
@@ -51,6 +63,51 @@ export default function FlightModal({
   const [arrivalTime, setArrivalTime] = useState(
     flight?.arrival?.time || ""
   );
+
+  const [arrivalAddress, setArrivalAddress] = useState(
+    flight?.arrival?.address || ""
+  );
+
+  const [arrivalDuration, setArrivalDuration] = useState(
+    flight?.arrival?.durationMinutes ?? ""
+  );
+
+  const [arrivalAddressLoading, setArrivalAddressLoading] = useState(false);
+
+  async function findAirportAddress(kind) {
+    const isDeparture = kind === "departure";
+    const code = isDeparture ? departureCode : arrivalCode;
+    const name = isDeparture ? departureName : arrivalName;
+    const setLoading = isDeparture ? setDepartureAddressLoading : setArrivalAddressLoading;
+    const setAddress = isDeparture ? setDepartureAddress : setArrivalAddress;
+
+    if (!name && !code) {
+      alert("請先選擇機場");
+      return;
+    }
+
+    const airport = AIRPORTS.find((item) => item.code === code);
+    if (airport?.address) {
+      setAddress(airport.address);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await searchPlaceAddress({
+        query: `${name || code} airport`,
+        regionCode: getRegionCode(airport?.countryCode || ""),
+      });
+      const place = Array.isArray(result?.places) ? result.places[0] : null;
+      if (place?.address) setAddress(place.address);
+      else alert("找不到機場地址，請手動輸入。");
+    } catch (error) {
+      console.error("搜尋機場地址失敗", error);
+      alert(error?.message || "搜尋機場地址失敗");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // =========================
   // 旅客資訊
@@ -93,12 +150,16 @@ export default function FlightModal({
         code: departureCode,
         name: departureName,
         time: departureTime,
+        address: departureAddress,
+        durationMinutes: departureDuration === "" ? "" : Math.max(0, Number(departureDuration) || 0),
       },
 
       arrival: {
         code: arrivalCode,
         name: arrivalName,
         time: arrivalTime,
+        address: arrivalAddress,
+        durationMinutes: arrivalDuration === "" ? "" : Math.max(0, Number(arrivalDuration) || 0),
       },
 
       passengers,
@@ -198,6 +259,7 @@ export default function FlightModal({
 
               if (airport.code !== "CUSTOM") {
                 setDepartureName(airport.name);
+                setDepartureAddress(airport.address || "");
               } else {
                 setDepartureName("");
               }
@@ -244,6 +306,40 @@ export default function FlightModal({
             }
           />
 
+          <div className="space-y-2 rounded-2xl border border-blue-100 bg-blue-50 p-3">
+            <div className="text-sm font-semibold text-blue-700">📍 自動帶入行程表的地址</div>
+            <div className="flex gap-2">
+              <input
+                className="min-w-0 flex-1 rounded-xl border p-2.5 text-sm"
+                placeholder="出發機場地址"
+                value={departureAddress}
+                onChange={(e) => setDepartureAddress(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => findAirportAddress("departure")}
+                disabled={departureAddressLoading}
+                className="shrink-0 rounded-xl bg-blue-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {departureAddressLoading ? "搜尋中" : "自動找"}
+              </button>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">⏱️ 停留時間（分鐘）</label>
+              <input
+                type="number"
+                min="0"
+                step="5"
+                inputMode="numeric"
+                className="w-full rounded-xl border p-2.5 text-sm"
+                placeholder="例如：60"
+                value={departureDuration}
+                onChange={(e) => setDepartureDuration(e.target.value)}
+              />
+            </div>
+            <div className="text-xs text-slate-500">這兩項會跟著航班自動帶入行程表，不會自動修改下一個行程時間。</div>
+          </div>
+
           <hr />
 
           {/* =========================
@@ -269,6 +365,7 @@ export default function FlightModal({
 
               if (airport.code !== "CUSTOM") {
                 setArrivalName(airport.name);
+                setArrivalAddress(airport.address || "");
               } else {
                 setArrivalName("");
               }
@@ -314,6 +411,40 @@ export default function FlightModal({
               setArrivalTime(e.target.value)
             }
           />
+
+          <div className="space-y-2 rounded-2xl border border-blue-100 bg-blue-50 p-3">
+            <div className="text-sm font-semibold text-blue-700">📍 自動帶入行程表的地址</div>
+            <div className="flex gap-2">
+              <input
+                className="min-w-0 flex-1 rounded-xl border p-2.5 text-sm"
+                placeholder="抵達機場地址"
+                value={arrivalAddress}
+                onChange={(e) => setArrivalAddress(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => findAirportAddress("arrival")}
+                disabled={arrivalAddressLoading}
+                className="shrink-0 rounded-xl bg-blue-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {arrivalAddressLoading ? "搜尋中" : "自動找"}
+              </button>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">⏱️ 停留時間（分鐘）</label>
+              <input
+                type="number"
+                min="0"
+                step="5"
+                inputMode="numeric"
+                className="w-full rounded-xl border p-2.5 text-sm"
+                placeholder="例如：60"
+                value={arrivalDuration}
+                onChange={(e) => setArrivalDuration(e.target.value)}
+              />
+            </div>
+            <div className="text-xs text-slate-500">這兩項會跟著航班自動帶入行程表，不會自動修改下一個行程時間。</div>
+          </div>
 
           <hr />
 

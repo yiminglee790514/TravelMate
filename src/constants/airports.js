@@ -1,40 +1,15 @@
 export const AIRPORTS = [
-
-{
-    code:"TPE",
-    name:"桃園國際機場",
-    city:"台北",
-},
-
-{
-    code: "KHH",
-    name: "高雄國際機場（小港）",
-    city: "高雄",
-},
-
-{
-    code:"NRT",
-    name:"成田國際機場",
-    city:"東京",
-},
-
-{
-    code:"HND",
-    name:"羽田國際機場",
-    city:"東京",
-},
-
-{
-    code:"KIX",
-    name:"關西國際機場",
-    city:"大阪",
-},
-
-{
-  code: "CUSTOM",
-  name: "✏️ 自訂機場",
-  city: "",
-},
-
-
-]
+  { code: "TPE", name: "桃園國際機場", city: "桃園", countryCode: "TW", address: "桃園國際機場, 桃園市大園區航站南路9號, 台灣" },
+  { code: "KHH", name: "高雄國際機場（小港）", city: "高雄", countryCode: "TW", address: "高雄國際機場, 高雄市小港區中航路2號, 台灣" },
+  { code: "NRT", name: "成田國際機場", city: "東京", countryCode: "JP", address: "成田國際機場, 千葉縣成田市, 日本" },
+  { code: "HND", name: "羽田機場", city: "東京", countryCode: "JP", address: "羽田機場, 東京都大田區, 日本" },
+  { code: "KIX", name: "關西國際機場", city: "大阪", countryCode: "JP", address: "關西國際機場, 大阪府泉佐野市, 日本" },
+  { code: "FUK", name: "福岡機場", city: "福岡", countryCode: "JP", address: "福岡機場, 福岡縣福岡市博多區, 日本" },
+  { code: "KMJ", name: "阿蘇熊本機場", city: "熊本", countryCode: "JP", address: "阿蘇熊本機場, 熊本縣菊池郡菊陽町, 日本" },
+  { code: "NGO", name: "中部國際機場", city: "名古屋", countryCode: "JP", address: "中部國際機場, 愛知縣常滑市, 日本" },
+  { code: "HIJ", name: "廣島機場", city: "廣島", countryCode: "JP", address: "廣島機場, 廣島縣三原市, 日本" },
+  { code: "CTS", name: "新千歲機場", city: "札幌", countryCode: "JP", address: "新千歲機場, 北海道千歲市, 日本" },
+  { code: "ICN", name: "仁川國際機場", city: "首爾", countryCode: "KR", address: "仁川國際機場, 仁川廣域市, 韓國" },
+  { code: "GMP", name: "金浦國際機場", city: "首爾", countryCode: "KR", address: "金浦國際機場, 首爾特別市, 韓國" },
+  { code: "CUSTOM", name: "✏️ 自訂機場", city: "", countryCode: "", address: "" },
+];

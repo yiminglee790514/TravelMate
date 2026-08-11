@@ -1,3 +1,5 @@
+import { isItemInCountry } from "./mapsCountry";
+
 async function requestJson(url, options) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
@@ -45,17 +47,24 @@ export async function calculateTravelTime({
  * 優先使用 Place ID，沒有 Place ID 才使用地址／名稱。
  */
 function getGoogleMapsPoint(item) {
-  const placeId = item?.extra?.placeId || item?.placeId;
-  if (placeId) return `place_id:${placeId}`;
-
+  // Google Maps 路線一律優先使用「地址」，不要再把 Place ID
+  // 直接塞進網址，否則 Google Maps 會顯示 place_id:ChIJ...。
   const address = String(item?.address || "").trim();
   if (address) return address;
 
   return String(item?.title || item?.name || "").trim();
 }
 
-export function buildGoogleMapsDayUrl(items = []) {
-  const points = items.map(getGoogleMapsPoint).filter(Boolean);
+export function buildGoogleMapsDayUrl(items = [], trip = null) {
+  // Google Maps 自動帶入只收：
+  // 1. 有地址
+  // 2. 屬於目前旅程國家
+  const eligibleItems = items.filter((item) => {
+    if (!String(item?.address || "").trim()) return false;
+    return isItemInCountry(item, trip?.country || "");
+  });
+
+  const points = eligibleItems.map(getGoogleMapsPoint).filter(Boolean);
 
   if (points.length < 2) {
     throw new Error("這一天至少需要 2 個有地點資料的行程，才能建立 Google Maps 路線。");
@@ -74,8 +83,8 @@ export function buildGoogleMapsDayUrl(items = []) {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-export function openGoogleMapsDayRoute(items = []) {
-  const url = buildGoogleMapsDayUrl(items);
+export function openGoogleMapsDayRoute(items = [], trip = null) {
+  const url = buildGoogleMapsDayUrl(items, trip);
   window.open(url, "_blank", "noopener,noreferrer");
   return url;
 }

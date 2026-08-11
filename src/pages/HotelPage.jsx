@@ -33,6 +33,15 @@ export default function HotelPage() {
   }, [cloudTrip, shareId]);
 
   const hotelGroups = Array.isArray(trip?.hotelGroups) ? trip.hotelGroups : [];
+  // 顯示順序固定依入住日期排序；新增較晚日期的群組不會被放到最右邊。
+  const sortedHotelGroups = useMemo(() => {
+    return [...hotelGroups].sort((a, b) => {
+      const dateA = String(a?.checkIn || a?.hotels?.[0]?.checkIn || "9999-12-31");
+      const dateB = String(b?.checkIn || b?.hotels?.[0]?.checkIn || "9999-12-31");
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return String(a?.title || "").localeCompare(String(b?.title || ""), "zh-Hant");
+    });
+  }, [hotelGroups]);
   const people = Array.isArray(trip?.expensePeople) ? trip.expensePeople : [];
 
   useEffect(() => {
@@ -43,13 +52,13 @@ export default function HotelPage() {
     setActiveGroupId((prev) =>
       hotelGroups.some((group) => String(group.id) === String(prev))
         ? prev
-        : String(hotelGroups[0].id)
+        : String(sortedHotelGroups[0].id)
     );
-  }, [hotelGroups]);
+  }, [hotelGroups, sortedHotelGroups]);
 
   const activeGroup = useMemo(
-    () => hotelGroups.find((group) => String(group.id) === String(activeGroupId)) || hotelGroups[0] || null,
-    [hotelGroups, activeGroupId]
+    () => sortedHotelGroups.find((group) => String(group.id) === String(activeGroupId)) || sortedHotelGroups[0] || null,
+    [sortedHotelGroups, activeGroupId]
   );
 
   async function handleAddPerson(name) {
@@ -58,7 +67,10 @@ export default function HotelPage() {
     if (!cleanName || people.includes(cleanName)) return;
     const updatedTrip = { ...trip, expensePeople: [...people, cleanName] };
     setTrip(updatedTrip);
-    await updateTrip(updatedTrip);
+    void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
   }
 
   async function handleSaveGroup(group) {
@@ -70,7 +82,10 @@ export default function HotelPage() {
 
     const updatedTrip = { ...trip, hotelGroups: groups };
     updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-    await updateTrip(updatedTrip);
+    void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
     setTrip(updatedTrip);
     setEditingGroup(null);
     setShowGroupModal(false);
@@ -90,7 +105,10 @@ export default function HotelPage() {
     const groups = hotelGroups.filter((g) => String(g.id) !== String(groupId));
     const updatedTrip = { ...trip, hotelGroups: groups };
     updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-    await updateTrip(updatedTrip);
+    void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
     setTrip(updatedTrip);
     setActiveGroupId(groups[0] ? String(groups[0].id) : "");
   }
@@ -116,7 +134,10 @@ export default function HotelPage() {
       };
       const updatedTrip = { ...trip, hotelGroups: [...hotelGroups, newGroup] };
       updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-      await updateTrip(updatedTrip);
+      void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
       setTrip(updatedTrip);
       setActiveGroupId(String(newGroup.id));
       closeHotelModal();
@@ -139,7 +160,9 @@ export default function HotelPage() {
 
       return {
         ...group,
-        title: cleanName || group.title,
+        // 修改飯店／房間資料時，不要把上方住宿群組名稱改成飯店名稱。
+        // 群組名稱（例如「熊本」）由使用者自己管理。
+        title: group.title || cleanName,
         checkIn: hotel.checkIn || group.checkIn || "",
         checkOut: hotel.checkOut || group.checkOut || "",
         hotels,
@@ -148,7 +171,10 @@ export default function HotelPage() {
 
     const updatedTrip = { ...trip, hotelGroups: groups };
     updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-    await updateTrip(updatedTrip);
+    void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
     setTrip(updatedTrip);
     setActiveGroupId(String(saveGroupId));
     closeHotelModal();
@@ -184,7 +210,9 @@ export default function HotelPage() {
 
       return {
         ...group,
-        title: groupData.name,
+        // 這裡是修改住宿資料，不是修改群組名稱。
+        // 保留原本群組名稱，例如「熊本」。
+        title: group.title || groupData.name,
         checkIn: groupData.checkIn,
         checkOut: groupData.checkOut,
         hotels,
@@ -193,7 +221,10 @@ export default function HotelPage() {
 
     const updatedTrip = { ...trip, hotelGroups: groups };
     updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-    await updateTrip(updatedTrip);
+    void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
     setTrip(updatedTrip);
     setActiveGroupId(String(saveGroupId));
     closeHotelModal();
@@ -210,7 +241,10 @@ export default function HotelPage() {
 
     const updatedTrip = { ...trip, hotelGroups: groups };
     updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-    await updateTrip(updatedTrip);
+    void updateTrip(updatedTrip).catch((error) => {
+      console.error("住宿資料儲存失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    });
     setTrip(updatedTrip);
   }
 
@@ -256,7 +290,7 @@ export default function HotelPage() {
         {hotelGroups.length > 0 && (
           <div className="tm-hotel-group-strip">
             <div className="tm-hotel-group-scroll scrollbar-none">
-              {hotelGroups.map((group) => {
+              {sortedHotelGroups.map((group) => {
                 const active = String(group.id) === String(activeGroup?.id);
                 return (
                   <HotelGroupChip
@@ -373,7 +407,7 @@ export default function HotelPage() {
                     className="tm-hotel-empty-button"
                   >
                     <span className="text-2xl">＋</span>
-                    <span>新增飯店</span>
+                    <span>新增房間</span>
                   </button>
                 )
               ) : (

@@ -69,6 +69,7 @@ export default function HotelModal({
   const [addressResults, setAddressResults] = useState([]);
   const [newPerson, setNewPerson] = useState("");
   const [showPersonInput, setShowPersonInput] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleFindAddress() {
     const cleanName = name.trim();
@@ -132,7 +133,9 @@ export default function HotelModal({
     setRoomList((list) => [...list, makeRoom({}, people)]);
   }
 
-  function handleSave() {
+  async function handleSave() {
+    if (saving) return;
+
     if (!name.trim()) return alert("請輸入飯店名稱");
     if (!checkIn || !checkOut) return alert("請選擇入住與退房日期");
     if (checkOut < checkIn) return alert("退房日期不能早於入住日期");
@@ -141,53 +144,70 @@ export default function HotelModal({
       const invalidRoom = roomList.find((room) => !String(room.bookingName || "").trim());
       if (invalidRoom) return alert("請選擇每一間房的訂位姓名");
 
-      onSaveGroup?.({
-        name: name.trim(),
-        checkIn,
-        checkOut,
-        checkInTime,
-        checkOutTime,
-        address,
-        website,
-        phone,
-        booking,
-        note,
-        rooms: roomList.map((room) => ({
-          ...room,
-          confirmation: String(room.confirmation || "").trim(),
-          bookingName: String(room.bookingName || "").trim(),
-          roomType: String(room.roomType || "").trim(),
-          price: room.price ?? "",
-          currency: room.currency || "JPY",
-        })),
-      });
+      setSaving(true);
+
+      try {
+        await onSaveGroup?.({
+          name: name.trim(),
+          checkIn,
+          checkOut,
+          checkInTime,
+          checkOutTime,
+          address,
+          website,
+          phone,
+          booking,
+          note,
+          rooms: roomList.map((room) => ({
+            ...room,
+            confirmation: String(room.confirmation || "").trim(),
+            bookingName: String(room.bookingName || "").trim(),
+            roomType: String(room.roomType || "").trim(),
+            price: room.price ?? "",
+            currency: room.currency || "JPY",
+          })),
+        });
+      } catch (error) {
+        console.error("儲存住宿失敗", error);
+        alert(error?.message || "儲存住宿失敗，請稍後再試。");
+      } finally {
+        setSaving(false);
+      }
       return;
     }
 
     if (!bookingName.trim()) return alert("請選擇訂位姓名");
     if (!currency && price) return alert("請選擇價格幣別");
 
-    onSave(
-      {
-        id: copyMode ? Date.now() : (hotel?.id || Date.now()),
-        name: name.trim(),
-        checkIn,
-        checkOut,
-        checkInTime,
-        checkOutTime,
-        address,
-        phone,
-        website,
-        booking,
-        confirmation,
-        bookingName,
-        roomType,
-        price,
-        currency,
-        note,
-      },
-      targetGroupId
-    );
+    setSaving(true);
+
+    try {
+      await onSave?.(
+        {
+          id: copyMode ? Date.now() : (hotel?.id || Date.now()),
+          name: name.trim(),
+          checkIn,
+          checkOut,
+          checkInTime,
+          checkOutTime,
+          address,
+          phone,
+          website,
+          confirmation,
+          bookingName,
+          roomType,
+          price,
+          currency,
+          note,
+        },
+        targetGroupId
+      );
+    } catch (error) {
+      console.error("儲存住宿失敗", error);
+      alert(error?.message || "儲存住宿失敗，請稍後再試。");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const modalTitle = groupEdit ? "修改住宿" : copyMode ? "新增房間" : isEdit ? "修改房間" : "新增飯店";
@@ -253,7 +273,16 @@ export default function HotelModal({
 
                 {roomList.map((room, index) => (
                   <div key={room.id} className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 last:mb-0">
-                    <div className="mb-3 font-bold text-blue-600">房間 {index + 1}</div>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="font-bold text-blue-600">房間 {index + 1}</div>
+                    <button
+                      type="button"
+                      onClick={() => setRoomList((list) => list.filter((_, roomIndex) => roomIndex !== index))}
+                      className="rounded-lg px-2 py-1 text-xs font-semibold text-red-500 hover:bg-red-50"
+                    >
+                      🗑 刪除
+                    </button>
+                  </div>
                     <input className="tm-modal-input mb-3" placeholder="訂單編號" value={room.confirmation} onChange={(e) => updateRoom(index, "confirmation", e.target.value)} />
 
                     <div className="flex gap-2">

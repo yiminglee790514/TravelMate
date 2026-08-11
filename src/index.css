@@ -452,6 +452,22 @@ a {
   color: #4d5667;
   font-size: 0.78rem;
   line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tm-timeline-duration {
+  margin-top: 7px;
+  color: #5f6d82;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+.tm-modal-input:disabled {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
 }
 
 .tm-item-menu-button {
@@ -1162,5 +1178,36 @@ a {
 @media (max-width: 640px) {
   .tm-hotel-detail-title {
     font-size: 1.12rem;
+  }
+}
+
+/* Transport page redesign */
+.tm-transport-group-strip{margin-bottom:2px}.tm-transport-group-chip{position:relative;display:flex;width:112px;min-width:112px;min-height:78px;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid #dce5f2;border-radius:13px;background:#fff;padding:8px 12px 9px;text-align:center;box-shadow:0 3px 10px rgba(24,39,75,.045);scroll-snap-align:start;transition:border-color 160ms ease,background 160ms ease,box-shadow 160ms ease}.tm-transport-group-chip.is-active{border-color:#3785ee;background:#edf5ff;box-shadow:0 5px 16px rgba(55,133,238,.12)}.tm-transport-group-chip.is-active::after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;transform:translateX(-50%) rotate(45deg);border-right:1px solid #3785ee;border-bottom:1px solid #3785ee;background:#edf5ff}.tm-transport-group-icon{font-size:1.8rem;line-height:1}.tm-transport-group-chip strong{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#172033;font-size:.86rem;line-height:1.25}.tm-transport-group-chip.is-active strong{color:#216fdc}.tm-transport-detail-card{overflow:visible;border:1px solid #e4eaf2;border-radius:18px;background:#fff;padding:18px;box-shadow:0 3px 12px rgba(24,39,75,.04)}.tm-transport-detail-note{white-space:pre-wrap;overflow-wrap:anywhere}.tm-transport-detail-title{color:#172033;font-size:1.05rem;line-height:1.35;font-weight:800}@media(max-width:640px){.tm-transport-group-chip{width:112px;min-width:112px;min-height:78px;border-radius:13px}.tm-transport-group-icon{font-size:1.8rem}.tm-transport-group-chip strong{font-size:.86rem}.tm-transport-detail-card{padding:15px;border-radius:16px}}
+
+/* =========================
+   Transport page v4
+   - 群組只保留圖示＋名稱
+   - 手機長按群組可編輯
+   - 交通新增按鈕固定在清單最下方
+   - 交通 Modal 在手機上可完整捲動
+========================= */
+.tm-transport-group-chip {
+  touch-action: pan-x;
+  -webkit-touch-callout: none;
+}
+
+.tm-transport-modal {
+  max-height: calc(100dvh - 24px);
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 640px) {
+  .tm-transport-modal {
+    width: min(100%, 440px);
+    max-height: calc(100dvh - 16px);
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+    padding: 16px;
+    border-radius: 20px;
   }
 }

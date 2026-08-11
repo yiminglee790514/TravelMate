@@ -1,350 +1,374 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 import { canEdit } from "../services/permissionService";
-
+import { syncAutoItineraryItems } from "../services/itinerarySync";
 import TransportModal from "../components/TransportModal";
 import TransportCard from "../components/TransportCard";
-import TransportGroupModal from "../components/TransportGroupModal";
-import { syncAutoItineraryItems } from "../services/itinerarySync";
+import TransportGroupModal, { getTransportGroupIcon } from "../components/TransportGroupModal";
 
+function getGroupName(group) {
+  return typeof group === "string" ? group : String(group?.title || "一般交通");
+}
 
-function TransportGroupMenu({ onEdit, onDelete }) {
-  const [open, setOpen] = useState(false);
+function getFirstDate(transports = []) {
+  return transports
+    .map((t) => t?.departureDate || t?.arrivalDate || "9999-12-31")
+    .sort()[0] || "9999-12-31";
+}
+
+function TransportGroupChip({ groupName, icon, active, onSelect, onLongPress }) {
+  const timerRef = useRef(null);
+  const suppressClickRef = useRef(false);
+
+  function clearPressTimer() {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  function handlePointerDown(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    clearPressTimer();
+    suppressClickRef.current = false;
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      suppressClickRef.current = true;
+      onLongPress?.();
+    }, 600);
+  }
+
+  function handlePointerUp() {
+    clearPressTimer();
+  }
+
+  function handlePointerCancel() {
+    clearPressTimer();
+  }
+
+  function handleClick() {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    onSelect();
+  }
+
+  useEffect(() => () => clearPressTimer(), []);
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((value) => !value);
-        }}
-        className="rounded-lg px-2 py-1 text-xl font-bold text-gray-500 hover:bg-gray-100"
-      >
-        ⋯
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-28 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onEdit();
-            }}
-            className="w-full px-4 py-3 text-left text-sm hover:bg-gray-100"
-          >
-            ✏️ 編輯
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onDelete();
-            }}
-            className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
-          >
-            🗑️ 刪除
-          </button>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onPointerLeave={handlePointerCancel}
+      className={`tm-transport-group-chip ${active ? "is-active" : ""}`}
+      title="點一下查看，長按編輯群組"
+    >
+      <span className="tm-transport-group-icon">{icon}</span>
+      <strong>{groupName}</strong>
+    </button>
   );
 }
 
 export default function TransportPage() {
   const { id, shareId } = useParams();
   const { trip: cloudTrip, updateTrip } = useTrip(id);
-
   const [trip, setTrip] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingTransport, setEditingTransport] = useState(null);
-  const [collapsedGroups, setCollapsedGroups] = useState({});
   const [editingGroup, setEditingGroup] = useState(null);
   const [showGroupModal, setShowGroupModal] = useState(false);
-  const [initialTransportGroup, setInitialTransportGroup] = useState("一般交通");
+  const [initialTransportGroup, setInitialTransportGroup] = useState("");
+  const [activeGroupName, setActiveGroupName] = useState("");
 
   const readonly = !!shareId || (trip ? !canEdit(trip) : true);
 
   useEffect(() => {
-    async function loadTrip() {
-      if (shareId) {
-        setTrip(await getShare(shareId));
-      } else {
-        setTrip(cloudTrip);
-      }
+    async function load() {
+      if (shareId) setTrip(await getShare(shareId));
+      else setTrip(cloudTrip);
     }
-    loadTrip();
+    load();
   }, [cloudTrip, shareId]);
 
-  useEffect(() => {
-    if (!trip) return;
+  const transportGroups = useMemo(() => {
+    if (!trip) return [];
 
-    const names = new Set([
-      ...(Array.isArray(trip.transportGroups) ? trip.transportGroups : []),
-      ...(trip.transports || []).map(
-        (transport) => transport.group?.trim() || "一般交通"
-      ),
-    ]);
+    const explicit = Array.isArray(trip.transportGroups) ? trip.transportGroups : [];
+    const names = new Set(explicit.map(getGroupName));
 
-    setCollapsedGroups((prev) => {
-      const next = { ...prev };
-      names.forEach((name) => {
-        if (next[name] === undefined) next[name] = true;
-      });
-      return next;
+    (trip.transports || []).forEach((transport) => {
+      names.add(transport.group?.trim() || "一般交通");
     });
+
+    return [...names]
+      .map((name) => ({
+        name,
+        icon: trip.transportGroupIcons?.[name] || getTransportGroupIcon(name),
+        transports: (trip.transports || []).filter(
+          (transport) => (transport.group?.trim() || "一般交通") === name
+        ),
+      }))
+      .sort((a, b) => {
+        const dateA = getFirstDate(a.transports);
+        const dateB = getFirstDate(b.transports);
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return a.name.localeCompare(b.name, "zh-Hant");
+      });
   }, [trip]);
+
+  useEffect(() => {
+    if (!transportGroups.length) {
+      setActiveGroupName("");
+      return;
+    }
+
+    setActiveGroupName((prev) =>
+      transportGroups.some((group) => group.name === prev)
+        ? prev
+        : transportGroups[0].name
+    );
+  }, [transportGroups]);
 
   if (!trip) {
     return <div className="flex min-h-screen items-center justify-center">載入中...</div>;
   }
 
+  const activeGroup =
+    transportGroups.find((group) => group.name === activeGroupName) ||
+    transportGroups[0];
   const people = Array.isArray(trip.expensePeople) ? trip.expensePeople : [];
 
-  async function saveTrip(updatedTrip) {
-    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
-    if (!shareId) await updateTrip(updatedTrip);
-    setTrip(updatedTrip);
+  function saveTrip(updated) {
+    const next = { ...updated, items: syncAutoItineraryItems(updated) };
+    setTrip(next);
+
+    if (!shareId) {
+      // 不等待 Firestore，先讓畫面完成；背景寫入失敗再提示。
+      void updateTrip(next).catch((error) => {
+        console.error("交通資料儲存失敗", error);
+        alert(error?.message || "儲存失敗，請稍後再試。");
+      });
+    }
   }
 
-  async function handleAddPerson(name) {
-    if (readonly) return;
-    const cleanName = name.trim();
-    if (!cleanName || people.includes(cleanName)) return;
-
-    const updatedTrip = {
-      ...trip,
-      expensePeople: [...people, cleanName],
-    };
-    await saveTrip(updatedTrip);
-  }
-
-  async function handleSaveTransport(transport) {
+  function saveTransport(transport) {
     const transports = [...(trip.transports || [])];
-    const index = transports.findIndex((item) => item.id === transport.id);
+    const index = transports.findIndex((item) => String(item.id) === String(transport.id));
 
-    if (index === -1) transports.push(transport);
+    if (index < 0) transports.push(transport);
     else transports[index] = transport;
 
-    const existingGroups = Array.isArray(trip.transportGroups)
-      ? trip.transportGroups
+    const groups = Array.isArray(trip.transportGroups)
+      ? trip.transportGroups.map(getGroupName)
       : [];
+    const name = transport.group?.trim() || activeGroupName || "一般交通";
+    const transportGroups = groups.includes(name) ? groups : [...groups, name];
+    const transportGroupIcons = {
+      ...(trip.transportGroupIcons || {}),
+      [name]: trip.transportGroupIcons?.[name] || getTransportGroupIcon(name),
+    };
 
-    const groupName = transport.group?.trim() || "一般交通";
-    const transportGroups = existingGroups.includes(groupName)
-      ? existingGroups
-      : [...existingGroups, groupName];
-
-    await saveTrip({ ...trip, transports, transportGroups });
+    saveTrip({ ...trip, transports, transportGroups, transportGroupIcons });
+    setActiveGroupName(name);
     setEditingTransport(null);
     setShowModal(false);
+    setInitialTransportGroup("");
   }
 
-  async function handleSaveGroup(group) {
-    const newName = group.title.trim();
+  function openGroupEditor(name) {
+    if (readonly) return;
+    setEditingGroup(name);
+    setShowGroupModal(true);
+  }
+
+  function saveGroup(group) {
+    const newName = String(group.title || "").trim();
     if (!newName) return;
 
-    const currentGroups = Array.isArray(trip.transportGroups)
-      ? trip.transportGroups
+    const current = Array.isArray(trip.transportGroups)
+      ? trip.transportGroups.map(getGroupName)
       : [];
 
     if (editingGroup) {
       const oldName = editingGroup;
-
-      if (
-        newName !== oldName &&
-        currentGroups.includes(newName)
-      ) {
+      if (newName !== oldName && current.includes(newName)) {
         alert("這個群組名稱已經存在");
         return;
       }
 
-      const transportGroups = currentGroups.map((name) =>
+      const transportGroups = current.map((name) =>
         name === oldName ? newName : name
       );
-
-      const transports = (trip.transports || []).map((transport) => {
-        const current = transport.group?.trim() || "一般交通";
-        return current === oldName
+      const transports = (trip.transports || []).map((transport) =>
+        (transport.group?.trim() || "一般交通") === oldName
           ? { ...transport, group: newName }
-          : transport;
-      });
+          : transport
+      );
+      const icons = { ...(trip.transportGroupIcons || {}) };
+      delete icons[oldName];
+      icons[newName] = group.icon || "🧭";
 
-      await saveTrip({ ...trip, transportGroups, transports });
+      saveTrip({
+        ...trip,
+        transportGroups,
+        transports,
+        transportGroupIcons: icons,
+      });
     } else {
-      if (currentGroups.includes(newName)) {
+      if (current.includes(newName)) {
         alert("這個群組名稱已經存在");
         return;
       }
 
-      await saveTrip({
+      saveTrip({
         ...trip,
-        transportGroups: [...currentGroups, newName],
+        transportGroups: [...current, newName],
+        transportGroupIcons: {
+          ...(trip.transportGroupIcons || {}),
+          [newName]: group.icon || "🧭",
+        },
       });
     }
 
+    setActiveGroupName(newName);
     setEditingGroup(null);
     setShowGroupModal(false);
   }
 
-  async function handleDeleteTransport(transportId) {
-    if (!window.confirm("確定刪除此交通？")) return;
-    const transports = (trip.transports || []).filter((item) => item.id !== transportId);
-    await saveTrip({ ...trip, transports });
-  }
-
-  async function handleDeleteGroup(groupName) {
+  function deleteGroup(name) {
     const transports = (trip.transports || []).filter(
-      (transport) =>
-        (transport.group?.trim() || "一般交通") !== groupName
+      (transport) => (transport.group?.trim() || "一般交通") !== name
     );
 
-    const hasTransports =
-      transports.length !== (trip.transports || []).length;
-
     if (
-      hasTransports &&
-      !window.confirm(
-        `「${groupName}」群組裡還有交通，確定連同交通一起刪除嗎？`
-      )
+      transports.length !== (trip.transports || []).length &&
+      !window.confirm(`「${name}」群組裡還有交通，確定連同交通一起刪除嗎？`)
     ) {
       return;
     }
 
-    const currentGroups = Array.isArray(trip.transportGroups)
-      ? trip.transportGroups
-      : [];
+    const groups = (Array.isArray(trip.transportGroups)
+      ? trip.transportGroups.map(getGroupName)
+      : []
+    ).filter((groupName) => groupName !== name);
 
-    const transportGroups = currentGroups.filter(
-      (name) => name !== groupName
-    );
+    const icons = { ...(trip.transportGroupIcons || {}) };
+    delete icons[name];
 
-    // 舊資料沒有 transportGroups 時，刪除後仍不會留下空群組。
-    await saveTrip({
+    saveTrip({
       ...trip,
       transports,
-      transportGroups,
+      transportGroups: groups,
+      transportGroupIcons: icons,
     });
 
-    setCollapsedGroups((prev) => {
-      const next = { ...prev };
-      delete next[groupName];
-      return next;
+    const nextGroup = groups
+      .map((groupName) => transportGroups.find((group) => group.name === groupName))
+      .filter(Boolean)
+      .sort((a, b) => getFirstDate(a.transports).localeCompare(getFirstDate(b.transports)))[0];
+
+    setActiveGroupName(nextGroup?.name || "");
+    setEditingGroup(null);
+    setShowGroupModal(false);
+  }
+
+  function openAddTransport() {
+    setEditingTransport(null);
+    setInitialTransportGroup(activeGroup?.name || "一般交通");
+    setShowModal(true);
+  }
+
+  function openEditTransport(transport) {
+    setEditingTransport(transport);
+    setInitialTransportGroup(transport.group || activeGroup?.name || "一般交通");
+    setShowModal(true);
+  }
+
+  function deleteTransport(transportId) {
+    if (!window.confirm("確定刪除此交通？")) return;
+    saveTrip({
+      ...trip,
+      transports: (trip.transports || []).filter(
+        (transport) => String(transport.id) !== String(transportId)
+      ),
     });
   }
 
-  const groupNames = Array.from(
-    new Set([
-      ...(Array.isArray(trip.transportGroups) ? trip.transportGroups : []),
-      ...(trip.transports || []).map(
-        (transport) => transport.group?.trim() || "一般交通"
-      ),
-    ])
-  );
-
-  if (groupNames.length === 0) groupNames.push("一般交通");
-
-  const grouped = groupNames.map((groupName) => [
-    groupName,
-    (trip.transports || []).filter(
-      (transport) =>
-        (transport.group?.trim() || "一般交通") === groupName
-    ),
-  ]);
-
   return (
-    <div className="bg-gray-100 pb-8">
-      <div className="mx-auto w-full max-w-6xl px-4 pt-2 sm:px-6">
-        {!readonly && (
-          <button
-            onClick={() => {
-              setEditingGroup(null);
-              setShowGroupModal(true);
-            }}
-            className="mt-2 w-full rounded-2xl bg-blue-500 py-4 text-lg font-semibold text-white"
-          >
-            ＋ 新增群組
-          </button>
-        )}
+    <div className="bg-gray-100 pb-28">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-2 sm:px-6">
+        {/* 交通群組：只顯示圖示＋名稱。點一下切換，長按編輯。 */}
+        <div className="tm-hotel-group-strip tm-transport-group-strip">
+          <div className="tm-hotel-group-scroll scrollbar-none">
+            {transportGroups.map((group) => (
+              <div key={group.name} className="relative shrink-0">
+                <TransportGroupChip
+                  groupName={group.name}
+                  icon={group.icon}
+                  active={group.name === activeGroup?.name}
+                  onSelect={() => setActiveGroupName(group.name)}
+                  onLongPress={() => openGroupEditor(group.name)}
+                />
+              </div>
+            ))}
 
-        {grouped.length === 0 ? (
-          <div className="mt-4 rounded-2xl bg-white p-8 text-center text-gray-400 shadow">
-            尚未新增交通
+            {!readonly && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingGroup(null);
+                  setShowGroupModal(true);
+                }}
+                className="tm-hotel-group-add-chip"
+              >
+                ＋ 新增群組
+              </button>
+            )}
+          </div>
+        </div>
+
+        {!activeGroup ? (
+          <div className="mt-4 rounded-3xl bg-white p-8 text-center text-slate-400 shadow-sm">
+            尚未新增交通群組
           </div>
         ) : (
-          <div className="mt-4 space-y-4">
-            {grouped.map(([groupName, transports]) => {
-              const isCollapsed = collapsedGroups[groupName] ?? true;
+          <section className="mt-4">
+            <div>
+              {activeGroup.transports.length === 0 ? (
+                <div className="py-8 text-center text-sm text-slate-400">
+                  這個群組目前沒有交通資料
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeGroup.transports.map((transport) => (
+                    <TransportCard
+                      key={transport.id}
+                      transport={transport}
+                      readonly={readonly}
+                      onEdit={() => openEditTransport(transport)}
+                      onDelete={() => deleteTransport(transport.id)}
+                    />
+                  ))}
+                </div>
+              )}
 
-              return (
-                <section key={groupName} className="overflow-visible rounded-2xl bg-white shadow-sm">
-                  <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCollapsedGroups((prev) => ({
-                          ...prev,
-                          [groupName]: !isCollapsed,
-                        }))
-                      }
-                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                    >
-                      <span className="text-gray-400">{isCollapsed ? "▶" : "▼"}</span>
-                      <span className="truncate font-bold">🚆 {groupName}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                        {transports.length}
-                      </span>
-                    </button>
-
-                    {!readonly && (
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingTransport(null);
-                            setInitialTransportGroup(groupName);
-                            setShowModal(true);
-                          }}
-                          className="rounded-xl px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-                        >
-                          ＋ 新增交通
-                        </button>
-
-                        <TransportGroupMenu
-                          onEdit={() => {
-                            setEditingGroup(groupName);
-                            setShowGroupModal(true);
-                          }}
-                          onDelete={() => handleDeleteGroup(groupName)}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {!isCollapsed && (
-                    <div className="space-y-3 p-3">
-                      {transports.map((transport) => (
-                        <TransportCard
-                          key={transport.id}
-                          transport={transport}
-                          readonly={readonly}
-                          onEdit={() => {
-                            setEditingTransport(transport);
-                            setShowModal(true);
-                          }}
-                          onDelete={() => handleDeleteTransport(transport.id)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-          </div>
+              {!readonly && (
+                <button
+                  type="button"
+                  onClick={openAddTransport}
+                  className="tm-hotel-empty-button mt-5"
+                >
+                  ＋ 新增交通
+                </button>
+              )}
+            </div>
+          </section>
         )}
       </div>
 
@@ -352,28 +376,41 @@ export default function TransportPage() {
         <TransportModal
           transport={editingTransport}
           initialGroup={initialTransportGroup}
+          groupNames={transportGroups.map((group) => group.name)}
+          groupIcons={trip.transportGroupIcons || {}}
+          trip={trip}
           people={people}
-          onAddPerson={handleAddPerson}
+          onAddPerson={(name) => {
+            const clean = name.trim();
+            if (!clean || people.includes(clean)) return;
+            const updated = { ...trip, expensePeople: [...people, clean] };
+            setTrip(updated);
+            void updateTrip(updated);
+          }}
           onClose={() => {
             setEditingTransport(null);
-            setInitialTransportGroup("一般交通");
             setShowModal(false);
+            setInitialTransportGroup("");
           }}
-          onSave={handleSaveTransport}
+          onSave={saveTransport}
         />
       )}
 
       {!readonly && showGroupModal && (
         <TransportGroupModal
-          group={editingGroup ? { title: editingGroup } : null}
+          group={editingGroup ? {
+            title: editingGroup,
+            icon: trip.transportGroupIcons?.[editingGroup],
+          } : null}
+          groupIcons={trip.transportGroupIcons || {}}
           onClose={() => {
             setEditingGroup(null);
             setShowGroupModal(false);
           }}
-          onSave={handleSaveGroup}
+          onDelete={editingGroup ? () => deleteGroup(editingGroup) : undefined}
+          onSave={saveGroup}
         />
       )}
-
     </div>
   );
 }

@@ -8,8 +8,9 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
-import { syncAutoItineraryItems } from "../services/itinerarySync";
+import { syncAutoItineraryItems, updateHotelItineraryTime } from "../services/itinerarySync";
 import { openGoogleMapsDayRoute } from "../services/mapsService";
+import { isItemInCountry } from "../services/mapsCountry";
 
 import {
   canEdit,
@@ -161,14 +162,11 @@ export default function TripDetail() {
         ? cloudTrip.items
         : [];
 
-      // 把雲端舊版重複資料整理掉。
-      if (JSON.stringify(oldItems) !== JSON.stringify(syncedItems)) {
-        try {
-          await updateTrip(t);
-        } catch (error) {
-          console.error("同步行程表失敗", error);
-        }
-      }
+      // 不在載入時再次寫回 Firestore。
+      // 舊版這裡會因為自動同步後資料不同而再 updateTrip 一次，
+      // 導致每次儲存後又觸發第二次 Firestore 寫入，手機上會明顯卡在「儲存中」。
+      // 自動同步結果先只放在畫面 state；真正需要儲存時才寫入。
+      void oldItems;
 
     }
 
@@ -415,9 +413,13 @@ useEffect(() => {
     if (timelineItem.type === "transport") navigate(`${base}/transport`);
   }
 
+  const googleMapsItems = activeDayItems.filter((item) =>
+    String(item?.address || "").trim() && isItemInCountry(item, trip?.country || "")
+  );
+
   function handleOpenGoogleMaps() {
     try {
-      openGoogleMapsDayRoute(activeDayItems);
+      openGoogleMapsDayRoute(activeDayItems, trip);
     } catch (error) {
       alert(error?.message || "無法建立 Google Maps 路線");
     }
@@ -455,7 +457,7 @@ useEffect(() => {
                   type="button"
                   className="tm-google-maps-button"
                   onClick={handleOpenGoogleMaps}
-                  disabled={activeDayItems.length < 2}
+                  disabled={googleMapsItems.length < 2}
                   title="按照這一天的行程順序開啟 Google Maps"
                 >
                   <span aria-hidden="true">🗺️</span>
@@ -495,12 +497,19 @@ useEffect(() => {
                           to={timelineItem}
                           trip={trip}
                           date={activeDay.date}
+                          routeSignature={`${previousItem?.id}|${previousItem?.address || ""}|${previousItem?.time || ""}|${timelineItem?.id}|${timelineItem?.address || ""}|${timelineItem?.time || ""}|${activeDay.date}`}
                           initialMode={routeResults[routeKey]?.mode || "DRIVE"}
                           initialResult={routeResults[routeKey] || null}
                           onResult={(result) => {
+                            // 只更新「交通時間」本身。
+                            // 不再依交通時間／停留時間自動修改下一個行程的時間，
+                            // 行程時間完全由使用者自己輸入。
                             setRouteResults((prev) => ({
                               ...prev,
-                              [routeKey]: result,
+                              [routeKey]: {
+                                ...result,
+                                calculatedAt: Date.now(),
+                              },
                             }));
                           }}
                         />
@@ -508,31 +517,39 @@ useEffect(() => {
 
                       <TimelineItem
                         item={timelineItem}
-                        readonly={readonly || !!timelineItem.autoSource}
+                        readonly={readonly || (!!timelineItem.autoSource && !["hotel", "flight", "transport"].includes(timelineItem.autoSource))}
                         owner={owner}
                         onClick={
                           ["hotel", "flight", "transport"].includes(timelineItem.type)
                             ? () => handleOpenLinkedItem(timelineItem)
                             : undefined
                         }
-                        onEdit={() => {
-                          setEditItem(timelineItem);
-                          setCurrentDay(activeDay.day);
-                          setShowModal(true);
-                        }}
-                        onDelete={async () => {
-                          if (!owner) return;
-                          const updatedItems = items.filter((i) => i.id !== timelineItem.id);
-                          await updateTrip({ ...trip, items: updatedItems });
-                          setItems(updatedItems);
-                          setRouteResults((prev) => {
-                            const next = { ...prev };
-                            Object.keys(next).forEach((key) => {
-                              if (key.includes(String(timelineItem.id))) delete next[key];
-                            });
-                            return next;
-                          });
-                        }}
+                        onEdit={
+                          readonly
+                            ? undefined
+                            : () => {
+                                setEditItem(timelineItem);
+                                setCurrentDay(activeDay.day);
+                                setShowModal(true);
+                              }
+                        }
+                        onDelete={
+                          timelineItem.autoSource
+                            ? undefined
+                            : async () => {
+                                if (!owner) return;
+                                const updatedItems = items.filter((i) => i.id !== timelineItem.id);
+                                await updateTrip({ ...trip, items: updatedItems });
+                                setItems(updatedItems);
+                                setRouteResults((prev) => {
+                                  const next = { ...prev };
+                                  Object.keys(next).forEach((key) => {
+                                    if (key.includes(String(timelineItem.id))) delete next[key];
+                                  });
+                                  return next;
+                                });
+                              }
+                        }
                       />
                     </div>
                   );
@@ -720,6 +737,8 @@ useEffect(() => {
           day={currentDay}
           item={editItem}
           trip={trip}
+          linkedHotel={editItem?.autoSource === "hotel"}
+          linkedTransport={editItem?.autoSource === "transport"}
           onClose={() => {
 
             setEditItem(null);
@@ -728,69 +747,139 @@ useEffect(() => {
 
           }}
           onSave={async (item) => {
-
             const iconMap = {
-
               flight: "✈️",
-
               hotel: "🏨",
-
               restaurant: "🍜",
-
               attraction: "📍",
-
               shopping: "🛍️",
-
               transport: "🚆",
-
             };
 
-            const newItem = {
+            // 航班自動帶入的機場行程：只把「地址／停留時間」寫回航班資料，
+            // 再重新同步，避免下一次載入時被舊的航班資料覆蓋。
+            if (editItem?.autoSource === "flight" && editItem?.extra?.flightId) {
+              const flightType = editItem.extra.flightType || "outbound";
+              const endpoint = editItem.extra.flightEndpoint || "departure";
+              const flightId = editItem.extra.flightId;
+              const flights = {
+                outbound: Array.isArray(trip.flights?.outbound) ? [...trip.flights.outbound] : trip.flights?.outbound ? [trip.flights.outbound] : [],
+                inbound: Array.isArray(trip.flights?.inbound) ? [...trip.flights.inbound] : trip.flights?.inbound ? [trip.flights.inbound] : [],
+              };
+              const list = flights[flightType] || [];
+              const index = list.findIndex((flight) => String(flight.id) === String(flightId));
+              if (index >= 0) {
+                const currentFlight = list[index];
+                const currentEndpoint = currentFlight[endpoint] || {};
+                list[index] = {
+                  ...currentFlight,
+                  [endpoint]: {
+                    ...currentEndpoint,
+                    address: item.address || "",
+                    durationMinutes: item.durationMinutes === "" ? "" : Math.max(0, Number(item.durationMinutes) || 0),
+                    placeId: item.extra?.placeId || currentEndpoint.placeId || "",
+                    placeLatitude: item.extra?.placeLatitude ?? currentEndpoint.placeLatitude ?? null,
+                    placeLongitude: item.extra?.placeLongitude ?? currentEndpoint.placeLongitude ?? null,
+                    mapsUrl: item.extra?.mapsUrl || currentEndpoint.mapsUrl || "",
+                    countryCode: item.extra?.countryCode || currentEndpoint.countryCode || "",
+                  },
+                };
+                flights[flightType] = list;
 
-              ...item,
-
-              icon: iconMap[item.type] || "📍",
-
-            };
-
-            let updatedItems;
-
-            if (editItem) {
-
-              updatedItems = items.map((i) =>
-
-                i.id === newItem.id
-                  ? newItem
-                  : i
-
-              );
-
-            } else {
-
-              updatedItems = [
-
-                ...items,
-
-                newItem,
-
-              ];
-
+                const updatedTripBase = { ...trip, flights };
+                const updatedItems = syncAutoItineraryItems(updatedTripBase);
+                const updatedTrip = { ...updatedTripBase, items: updatedItems };
+                setTrip(updatedTrip);
+                setItems(updatedItems);
+                setEditItem(null);
+                setShowModal(false);
+                void updateTrip(updatedTrip).catch((error) => {
+                  console.error("儲存航班行程資料失敗", error);
+                  alert(error?.message || "儲存失敗，請稍後再試。");
+                });
+              }
+              return;
             }
 
-            await updateTrip({
+            // 交通由交通資料同步；行程表可修改這一端的時間、地址、顯示文字與停留時間。
+            if (editItem?.autoSource === "transport" && editItem?.extra?.transportId) {
+              const transportId = String(editItem.extra.transportId);
+              const endpoint = editItem.extra.transportEndpoint || "departure";
+              const transports = Array.isArray(trip.transports) ? [...trip.transports] : [];
+              const index = transports.findIndex((transport) => String(transport.id) === transportId);
+              if (index >= 0) {
+                const currentTransport = transports[index];
+                const metaKey = endpoint === "departure" ? "fromMeta" : "toMeta";
+                const currentMeta = currentTransport[metaKey] || {};
+                const meta = { ...currentMeta, placeId: item.extra?.placeId || currentMeta.placeId || "", placeLatitude: item.extra?.placeLatitude ?? currentMeta.placeLatitude ?? null, placeLongitude: item.extra?.placeLongitude ?? currentMeta.placeLongitude ?? null, mapsUrl: item.extra?.mapsUrl || currentMeta.mapsUrl || "", countryCode: item.extra?.countryCode || currentMeta.countryCode || "" };
+                transports[index] = {
+                  ...currentTransport,
+                  ...(endpoint === "departure" ? { from: item.address || "", fromMeta: meta, departureTime: item.time || currentTransport.departureTime || "", departureDurationMinutes: item.durationMinutes === "" ? "" : Math.max(0, Number(item.durationMinutes) || 0), departureLabel: item.extra?.eventLabel || currentTransport.departureLabel || "出發" } : { to: item.address || "", toMeta: meta, arrivalTime: item.time || currentTransport.arrivalTime || "", arrivalDurationMinutes: item.durationMinutes === "" ? "" : Math.max(0, Number(item.durationMinutes) || 0), arrivalLabel: item.extra?.eventLabel || currentTransport.arrivalLabel || "抵達" }),
+                };
+                const updatedTripBase = { ...trip, transports };
+                const updatedItems = syncAutoItineraryItems(updatedTripBase);
+                const updatedTrip = { ...updatedTripBase, items: updatedItems };
+                setTrip(updatedTrip); setItems(updatedItems); setEditItem(null); setShowModal(false);
+                void updateTrip(updatedTrip).catch((error) => { console.error("儲存交通行程資料失敗", error); alert(error?.message || "儲存失敗，請稍後再試。"); });
+              }
+              return;
+            }
 
-              ...trip,
+            // 飯店由住宿資料同步；行程表只允許修改「這一天這一筆」的時間。
+            if (editItem?.autoSource === "hotel" && editItem?.extra?.groupId) {
+              const groupId = String(editItem.extra.groupId);
+              const stayDate = editItem.extra.stayDate;
+              const slot = editItem.extra.slot || "arrival";
 
-              items: updatedItems,
+              const updatedTripBase = updateHotelItineraryTime(
+                trip,
+                groupId,
+                stayDate,
+                slot,
+                item.time
+              );
+              const updatedItems = syncAutoItineraryItems(updatedTripBase);
+              const updatedTrip = {
+                ...updatedTripBase,
+                items: updatedItems,
+              };
 
-            });
+              setTrip(updatedTrip);
+              setItems(updatedItems);
+              setEditItem(null);
+              setShowModal(false);
 
+              // UI 先完成，Firestore 背景儲存，避免手機長時間卡在「儲存中」。
+              void updateTrip(updatedTrip).catch((error) => {
+                console.error("儲存飯店行程時間失敗", error);
+                alert(error?.message || "儲存失敗，請稍後再試。");
+              });
+              return;
+            }
+
+            const newItem = {
+              ...item,
+              icon: iconMap[item.type] || "📍",
+            };
+
+            const updatedItems = editItem
+              ? items.map((i) => i.id === newItem.id ? newItem : i)
+              : [...items, newItem];
+
+            const updatedTrip = { ...trip, items: updatedItems };
+            setTrip(updatedTrip);
             setItems(updatedItems);
 
+            // 地點／時間變更後，TravelTimeConnector 會依新的 routeSignature
+            // 自動重新抓交通時間；不會自動修改任何行程時間。
             setEditItem(null);
-
             setShowModal(false);
 
+            // 不等待 Firestore 回應，先關閉視窗讓使用者可以繼續操作。
+            void updateTrip(updatedTrip).catch((error) => {
+              console.error("儲存行程失敗", error);
+              alert(error?.message || "儲存失敗，請稍後再試。");
+            });
           }}
         />
 

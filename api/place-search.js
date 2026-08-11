@@ -32,7 +32,7 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri",
+          "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri,places.addressComponents",
         },
         body: JSON.stringify({
           textQuery: query,
@@ -62,6 +62,10 @@ export default {
         latitude: place.location?.latitude ?? null,
         longitude: place.location?.longitude ?? null,
         mapsUrl: place.googleMapsUri || "",
+        countryCode:
+          place.addressComponents?.find((component) =>
+            Array.isArray(component.types) && component.types.includes("country")
+          )?.shortText || "",
       })) : [];
 
       return new Response(JSON.stringify({ places }), {

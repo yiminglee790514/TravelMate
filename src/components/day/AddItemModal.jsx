@@ -1,11 +1,14 @@
 import { useState } from "react";
 import FlightEditor from "./editors/FlightEditor";
 import { searchPlaceAddress } from "../../services/mapsService";
+import { getRegionCode } from "../../services/mapsCountry";
 
 export default function AddItemModal({
   day,
   item,
   trip,
+  linkedHotel = false,
+  linkedTransport = false,
   onClose,
   onSave,
 }) {
@@ -15,18 +18,23 @@ export default function AddItemModal({
   const [title, setTitle] = useState(item?.title || "");
   const [address, setAddress] = useState(item?.address || "");
   const [note, setNote] = useState(item?.note || "");
+  const [eventLabel, setEventLabel] = useState(item?.extra?.eventLabel || "");
+  const [durationMinutes, setDurationMinutes] = useState(
+    item?.durationMinutes ?? item?.extra?.durationMinutes ?? ""
+  );
   const [type, setType] = useState(item?.type || "attraction");
   const [extra, setExtra] = useState(item?.extra || {});
   const [flightType, setFlightType] = useState(item?.flightType || "outbound");
+  const [saving, setSaving] = useState(false);
 
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressError, setAddressError] = useState("");
   const [addressResults, setAddressResults] = useState([]);
 
   async function handleFindAddress() {
-    const cleanTitle = title.trim();
+    const cleanTitle = linkedTransport ? (address.trim() || title.trim()) : title.trim();
     if (!cleanTitle) {
-      alert("請先輸入景點／餐廳／飯店名稱");
+      alert(linkedTransport ? "請先輸入地點名稱或地址" : "請先輸入景點／餐廳／飯店名稱");
       return;
     }
 
@@ -41,6 +49,7 @@ export default function AddItemModal({
 
       const result = await searchPlaceAddress({
         query: `${cleanTitle}${locationText ? ` ${locationText}` : ""}`,
+        regionCode: getRegionCode(trip?.country || ""),
       });
 
       const places = Array.isArray(result?.places) ? result.places : [];
@@ -67,28 +76,40 @@ export default function AddItemModal({
       placeLatitude: place.latitude ?? prev.placeLatitude ?? null,
       placeLongitude: place.longitude ?? prev.placeLongitude ?? null,
       mapsUrl: place.mapsUrl || prev.mapsUrl || "",
+      countryCode: place.countryCode || prev.countryCode || "",
     }));
   }
 
-  function handleSave() {
+  async function handleSave() {
+    if (saving) return;
+
     if (!time || !title.trim()) {
       alert("請輸入時間與名稱");
       return;
     }
 
-    onSave({
-      id: item?.id || Date.now(),
-      day,
-      time,
-      title,
-      address,
-      note,
-      type,
-      flightType,
-      extra,
-    });
+    setSaving(true);
 
-    onClose();
+    try {
+      await onSave({
+        id: item?.id || Date.now(),
+        day,
+        time,
+        title,
+        address,
+        note,
+        durationMinutes:
+          durationMinutes === "" ? "" : Math.max(0, Number(durationMinutes) || 0),
+        type,
+        flightType,
+        extra: { ...extra, ...(linkedTransport ? { eventLabel: eventLabel.trim() } : {}) },
+      });
+    } catch (error) {
+      console.error("儲存行程失敗", error);
+      alert(error?.message || "儲存失敗，請稍後再試。");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -99,6 +120,13 @@ export default function AddItemModal({
         </h2>
 
         <div className="space-y-4">
+          {linkedHotel && (
+            <div className="rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">🏨 這筆飯店由住宿資料自動同步，這裡只修改行程表上的時間。</div>
+          )}
+          {linkedTransport && (
+            <div className="rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">🚆 這筆交通由交通資料自動同步；可以修改顯示文字、地址與停留時間。</div>
+          )}
+
           <input
             type="time"
             className="tm-modal-input"
@@ -111,7 +139,12 @@ export default function AddItemModal({
             className="tm-modal-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            disabled={linkedHotel}
           />
+
+          {linkedTransport && (
+            <input placeholder="例如：取車、還車、搭乘飛機" className="tm-modal-input" value={eventLabel} onChange={(e) => setEventLabel(e.target.value)} />
+          )}
 
           <div>
             <div className="flex items-center gap-2">
@@ -123,11 +156,12 @@ export default function AddItemModal({
                   setAddress(e.target.value);
                   setAddressError("");
                 }}
+                disabled={linkedHotel}
               />
               <button
                 type="button"
                 onClick={handleFindAddress}
-                disabled={addressLoading}
+                disabled={addressLoading || linkedHotel}
                 className="tm-address-search-button"
               >
                 {addressLoading ? "搜尋中" : "自動找"}
@@ -157,28 +191,47 @@ export default function AddItemModal({
             )}
           </div>
 
-          <textarea
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-500">⏱️ 停留時間（分鐘）</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              placeholder="例如：60"
+              className="tm-modal-input"
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(e.target.value)}
+            />
+            <div className="mt-1 text-xs text-slate-400">只記錄停留時間供你參考，不會自動修改下一個行程時間。</div>
+          </div>
+
+          {!linkedHotel && (
+            <textarea
             placeholder="備註（例如：抽御神籤、必吃、預約時間...）"
             className="tm-modal-input"
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+          )}
 
-          <select
-            className="tm-modal-input"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
+          {!linkedHotel && (
+            <select
+              className="tm-modal-input"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
             <option value="flight">✈️ 飛機</option>
             <option value="hotel">🏨 飯店</option>
             <option value="restaurant">🍜 餐廳</option>
             <option value="attraction">📍 景點</option>
             <option value="shopping">🛍️ 購物</option>
-            <option value="transport">🚆 交通</option>
-          </select>
+              <option value="transport">🚆 交通</option>
+            </select>
+          )}
 
-          {type === "flight" && (
+          {type === "flight" && !linkedHotel && (
             <div className="rounded-2xl border bg-blue-50 p-4">
               <div className="mb-2 text-sm font-bold text-blue-700">✈️ 航班</div>
 
@@ -204,11 +257,11 @@ export default function AddItemModal({
         </div>
 
         <div className="mt-6 flex justify-end gap-2.5">
-          <button onClick={onClose} className="tm-modal-button bg-gray-200 text-gray-700">
+          <button onClick={onClose} disabled={saving} className="tm-modal-button bg-gray-200 text-gray-700 disabled:opacity-50">
             取消
           </button>
-          <button onClick={handleSave} className="tm-modal-button bg-blue-500 text-white">
-            {isEdit ? "儲存" : "建立"}
+          <button onClick={handleSave} disabled={saving} className="tm-modal-button bg-blue-500 text-white disabled:opacity-60">
+            {saving ? "儲存中…" : (isEdit ? "儲存" : "建立")}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { calculateTravelTime } from "../../services/mapsService";
 
 const MODES = [
@@ -23,6 +23,7 @@ export default function TravelTimeConnector({
   date,
   initialMode = "DRIVE",
   initialResult = null,
+  routeSignature = "",
   onResult,
 }) {
   const [mode, setMode] = useState(initialMode);
@@ -46,16 +47,38 @@ export default function TravelTimeConnector({
     return map[trip?.country] || "";
   }, [trip?.country]);
 
-  useEffect(() => {
-    setMode(initialMode || "DRIVE");
-    setResult(initialResult || null);
-  }, [from?.id, to?.id, initialMode, initialResult]);
+  const lastSignatureRef = useRef(null);
 
   useEffect(() => {
-    if (!from?.address || !to?.address || initialResult) return;
-    handleCalculate(initialMode || "DRIVE");
+    setMode(initialMode || "DRIVE");
+
+    if (!from?.address || !to?.address) {
+      setResult(null);
+      return;
+    }
+
+    const signatureChanged = lastSignatureRef.current !== routeSignature;
+
+    if (signatureChanged) {
+      lastSignatureRef.current = routeSignature;
+      setResult(null);
+      setError("");
+      handleCalculate(initialMode || "DRIVE");
+      return;
+    }
+
+    // 同一條路線收到新的結果時，只顯示結果，不再次呼叫 API。
+    if (initialResult) {
+      setResult(initialResult);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from?.id, to?.id, from?.address, to?.address, date]);
+  }, [
+    routeSignature,
+    initialMode,
+    initialResult,
+    from?.address,
+    to?.address,
+  ]);
 
   async function handleCalculate(nextMode = mode) {
     if (!from?.address || !to?.address) {

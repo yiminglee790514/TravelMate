@@ -20,6 +20,8 @@ export default function TimelineItem({
     note = item.note;
   }
 
+  const durationMinutes = Number(item?.durationMinutes ?? item?.extra?.durationMinutes ?? 0);
+
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -82,17 +84,19 @@ export default function TimelineItem({
                   >
                     ✏️ 編輯
                   </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setShowMenu(false);
-                      onDelete?.();
-                    }}
-                    className="text-red-600"
-                  >
-                    🗑️ 刪除
-                  </button>
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setShowMenu(false);
+                        onDelete?.();
+                      }}
+                      className="text-red-600"
+                    >
+                      🗑️ 刪除
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -110,6 +114,12 @@ export default function TimelineItem({
             >
               {address}
             </a>
+          </div>
+        )}
+
+        {durationMinutes > 0 && (
+          <div className="tm-timeline-duration">
+            ⏱️ 停留 {durationMinutes >= 60 ? `${Math.floor(durationMinutes / 60)} 小時${durationMinutes % 60 ? ` ${durationMinutes % 60} 分鐘` : ""}` : `${durationMinutes} 分鐘`}
           </div>
         )}
 

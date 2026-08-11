@@ -317,9 +317,11 @@ export default function ExpensePage() {
         trip.startDate ||
         "",
 
-      title:
-        transport.company ||
-        transport.type ||
+      // 交通費用明細直接沿用交通頁的標題，讓人一眼就知道是哪一筆。
+      // 例如：🚗 租車 TOYOTA Rent a Car
+      title: [transport.type, transport.company]
+        .filter(Boolean)
+        .join(" ") ||
         "交通",
 
       amount,

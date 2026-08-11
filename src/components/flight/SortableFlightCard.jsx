@@ -55,7 +55,7 @@ export default function SortableFlightCard({
   };
 
   const [showMenu, setShowMenu] = useState(false);
-  const [showPassengers, setShowPassengers] = useState(false);
+  const [showPassengers, setShowPassengers] = useState(true);
   const menuRef = useRef(null);
 
   const passengers = Array.isArray(segment.passengers)
