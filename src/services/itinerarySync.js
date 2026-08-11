@@ -103,7 +103,7 @@ export function syncAutoItineraryItems(trip) {
   // 3. 例如 10/21 → 10/23 = 2 晚，顯示 10/21、10/22。
   // 4. 同一住宿群組同一天，就算裡面有 2 筆以上住宿資料，
   //    行程表也只產生 1 筆。
-  // 5. 直接把 day 寫進自動行程，不再依賴畫面跨日過濾，
+  // 5. 行程表標題使用「飯店名稱」，不再使用住宿群組名稱。
   //    避免舊資料 / Firebase 序列化後造成飯店不顯示。
   // =========================
   (Array.isArray(trip.hotelGroups) ? trip.hotelGroups : []).forEach((group) => {
@@ -143,7 +143,7 @@ export function syncAutoItineraryItems(trip) {
     if (Number.isNaN(endExclusive.getTime()) || endExclusive < start) return;
 
     const sourceId = String(group.id);
-    const title = group.title || firstHotel.name || "住宿";
+    const title = hotelForDay.name || firstHotel.name || group.title || "住宿";
 
     // 用日期字串遞增，避免 toISOString() 因時區造成前一天 / 後一天問題。
     const cursor = new Date(start);
