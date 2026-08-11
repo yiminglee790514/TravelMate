@@ -21,6 +21,7 @@ export default function TimelineItem({
   }
 
   const durationMinutes = Number(item?.durationMinutes ?? item?.extra?.durationMinutes ?? 0);
+  const mapsUrl = item?.extra?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || "")}`;
 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -107,7 +108,7 @@ export default function TimelineItem({
           <div className="tm-timeline-detail">
             <div className="tm-timeline-label">📍 地址</div>
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+              href={mapsUrl}
               target="_blank"
               rel="noreferrer"
               className="tm-timeline-address"

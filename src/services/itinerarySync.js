@@ -45,6 +45,7 @@ function addAutoItem(list, item) {
     icon: item.icon,
     address: item.address || "",
     note: item.note || "",
+    durationMinutes: item.durationMinutes ?? item.extra?.durationMinutes ?? "",
     type: item.type,
     autoSource: item.autoSource,
     autoSourceId: item.autoSourceId,
@@ -392,10 +393,15 @@ export function syncAutoItineraryItems(trip) {
   // =========================
   (Array.isArray(trip.transports) ? trip.transports : []).forEach((transport) => {
     const sourceId = String(transport.id);
-    // 行程表顯示完整交通名稱：例如「🚗 租車 TOYOTA Rent a Car」。
-    // icon 留空，避免前面再重複顯示一次 🚗。
-    const title = [transport.type, transport.company].filter(Boolean).join(" ") || "🚆 交通";
-    const icon = "";
+    const typeParts = String(transport.type || "🚆 交通").trim().split(/\s+/);
+    const icon = typeParts[0] || "🚆";
+    const typeLabel = typeParts.slice(1).join(" ") || "交通";
+    const title = [typeLabel, transport.company || "未命名交通"].filter(Boolean).join(" ").trim();
+
+    // 行程表的備註區只顯示這個端點的事件時間。
+    // 交通頁自己的備註仍完整保留，不要把它同步到行程表。
+    const buildEventNote = (label, time) =>
+      label && time ? `${label}：${time}` : (label || time || "");
 
     if (transport.departureDate) {
       add({
@@ -403,11 +409,10 @@ export function syncAutoItineraryItems(trip) {
         date: transport.departureDate,
         time: transport.departureTime || "00:00",
         title, icon, address: transport.from || "",
-        // 行程表備註與交通資料中的備註完全同步，保留原本換行。
-        note: transport.note || "",
+        note: buildEventNote(transport.departureLabel || "出發", transport.departureTime || ""),
         durationMinutes: transport.departureDurationMinutes ?? "",
         type: "transport", autoSource: "transport", autoSourceId: sourceId,
-        extra: { transportId: sourceId, transportEndpoint: "departure", eventLabel: transport.departureLabel || "出發", countryCode: transport.fromMeta?.countryCode || "", placeId: transport.fromMeta?.placeId || "", placeLatitude: transport.fromMeta?.placeLatitude ?? null, placeLongitude: transport.fromMeta?.placeLongitude ?? null, mapsUrl: transport.fromMeta?.mapsUrl || "" },
+        extra: { transportId: sourceId, transportEndpoint: "departure", eventLabel: transport.departureLabel || "出發", durationMinutes: transport.departureDurationMinutes ?? "", countryCode: transport.fromMeta?.countryCode || "", placeId: transport.fromMeta?.placeId || "", placeLatitude: transport.fromMeta?.placeLatitude ?? null, placeLongitude: transport.fromMeta?.placeLongitude ?? null, mapsUrl: transport.fromMeta?.mapsUrl || "" },
       });
     }
     if (transport.arrivalDate && (transport.arrivalDate !== transport.departureDate || transport.arrivalTime)) {
@@ -416,10 +421,10 @@ export function syncAutoItineraryItems(trip) {
         date: transport.arrivalDate,
         time: transport.arrivalTime || "00:00",
         title, icon, address: transport.to || "",
-        note: transport.note || "",
+        note: buildEventNote(transport.arrivalLabel || "抵達", transport.arrivalTime || ""),
         durationMinutes: transport.arrivalDurationMinutes ?? "",
         type: "transport", autoSource: "transport", autoSourceId: sourceId,
-        extra: { transportId: sourceId, transportEndpoint: "arrival", eventLabel: transport.arrivalLabel || "抵達", countryCode: transport.toMeta?.countryCode || "", placeId: transport.toMeta?.placeId || "", placeLatitude: transport.toMeta?.placeLatitude ?? null, placeLongitude: transport.toMeta?.placeLongitude ?? null, mapsUrl: transport.toMeta?.mapsUrl || "" },
+        extra: { transportId: sourceId, transportEndpoint: "arrival", eventLabel: transport.arrivalLabel || "抵達", durationMinutes: transport.arrivalDurationMinutes ?? "", countryCode: transport.toMeta?.countryCode || "", placeId: transport.toMeta?.placeId || "", placeLatitude: transport.toMeta?.placeLatitude ?? null, placeLongitude: transport.toMeta?.placeLongitude ?? null, mapsUrl: transport.toMeta?.mapsUrl || "" },
       });
     }
   });

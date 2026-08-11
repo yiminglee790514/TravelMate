@@ -446,14 +446,14 @@ a {
 
 .tm-timeline-note {
   margin-top: 4px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   border-radius: 14px;
   background: #fffbea;
   padding: 9px 11px;
   color: #4d5667;
   font-size: 0.78rem;
   line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 .tm-timeline-duration {
@@ -1182,7 +1182,7 @@ a {
 }
 
 /* Transport page redesign */
-.tm-transport-group-strip{margin-bottom:2px}.tm-transport-group-chip{position:relative;display:flex;width:112px;min-width:112px;min-height:78px;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid #dce5f2;border-radius:13px;background:#fff;padding:8px 12px 9px;text-align:center;box-shadow:0 3px 10px rgba(24,39,75,.045);scroll-snap-align:start;transition:border-color 160ms ease,background 160ms ease,box-shadow 160ms ease}.tm-transport-group-chip.is-active{border-color:#3785ee;background:#edf5ff;box-shadow:0 5px 16px rgba(55,133,238,.12)}.tm-transport-group-chip.is-active::after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;transform:translateX(-50%) rotate(45deg);border-right:1px solid #3785ee;border-bottom:1px solid #3785ee;background:#edf5ff}.tm-transport-group-icon{font-size:1.8rem;line-height:1}.tm-transport-group-chip strong{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#172033;font-size:.86rem;line-height:1.25}.tm-transport-group-chip.is-active strong{color:#216fdc}.tm-transport-detail-card{overflow:visible;border:1px solid #e4eaf2;border-radius:18px;background:#fff;padding:18px;box-shadow:0 3px 12px rgba(24,39,75,.04)}.tm-transport-detail-note{white-space:pre-wrap;overflow-wrap:anywhere}.tm-transport-detail-title{color:#172033;font-size:1.05rem;line-height:1.35;font-weight:800}@media(max-width:640px){.tm-transport-group-chip{width:112px;min-width:112px;min-height:78px;border-radius:13px}.tm-transport-group-icon{font-size:1.8rem}.tm-transport-group-chip strong{font-size:.86rem}.tm-transport-detail-card{padding:15px;border-radius:16px}}
+.tm-transport-group-strip{margin-bottom:2px}.tm-transport-group-chip{position:relative;display:flex;width:108px;min-height:92px;flex:0 0 auto;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #dce5f2;border-radius:16px;background:#fff;padding:9px 8px 10px;text-align:center;box-shadow:0 3px 10px rgba(24,39,75,.045);scroll-snap-align:start}.tm-transport-group-chip.is-active{border-color:#3785ee;background:#edf5ff;box-shadow:0 5px 16px rgba(55,133,238,.12)}.tm-transport-group-chip.is-active::after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;transform:translateX(-50%) rotate(45deg);border-right:1px solid #3785ee;border-bottom:1px solid #3785ee;background:#edf5ff}.tm-transport-group-icon{font-size:2rem;line-height:1}.tm-transport-group-chip strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#172033;font-size:.84rem;line-height:1.2}.tm-transport-group-chip.is-active strong{color:#216fdc}.tm-transport-detail-card{overflow:visible;border:1px solid #e4eaf2;border-radius:18px;background:#fff;padding:18px;box-shadow:0 3px 12px rgba(24,39,75,.04)}.tm-transport-detail-title{color:#172033;font-size:1.05rem;line-height:1.35;font-weight:800}@media(max-width:640px){.tm-transport-group-chip{width:92px;min-height:86px;border-radius:14px}.tm-transport-group-icon{font-size:1.8rem}.tm-transport-group-chip strong{font-size:.8rem}.tm-transport-detail-card{padding:15px;border-radius:16px}}
 
 /* =========================
    Transport page v4
@@ -1209,5 +1209,195 @@ a {
     margin-bottom: 8px !important;
     padding: 16px;
     border-radius: 20px;
+  }
+}
+
+/* =========================
+   Transport detail v5
+   - 中間時間資訊比照住宿頁的資訊卡
+   - 地址可直接開啟 Google Maps
+   - 訂單編號／網站／備註分層顯示
+========================= */
+.tm-transport-time-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: #edf5ff;
+}
+
+.tm-transport-time-point {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.tm-transport-time-icon {
+  flex: 0 0 auto;
+  font-size: 1.35rem;
+}
+
+.tm-transport-time-label {
+  color: #657187;
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.tm-transport-time-value {
+  margin-top: 3px;
+  color: #172033;
+  font-size: 1.08rem;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.tm-transport-time-arrow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #3785ee;
+  font-size: .72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tm-transport-time-arrow b {
+  font-size: .95rem;
+}
+
+.tm-transport-stay-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 8px 11px;
+  color: #69758a;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.tm-transport-stay-row b {
+  color: #475569;
+}
+
+.tm-transport-address-row {
+  min-width: 0;
+}
+
+.tm-transport-address-label {
+  color: #7c8798;
+  font-size: .74rem;
+  line-height: 1.25;
+  font-weight: 750;
+}
+
+.tm-transport-address-link {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
+  color: #2878e8;
+  font-size: .82rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.tm-transport-address-link:hover {
+  text-decoration: underline;
+}
+
+.tm-transport-address-arrow {
+  flex: 0 0 auto;
+  color: #7aaaf0;
+  font-weight: 800;
+}
+
+.tm-transport-info-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #edf0f5;
+  color: #69758a;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.tm-transport-info-row b {
+  color: #172033;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.tm-transport-website {
+  display: block;
+  margin-top: 12px;
+  color: #159447;
+  font-size: .82rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tm-transport-website span {
+  color: #7a8699;
+}
+
+.tm-transport-note {
+  margin-top: 14px;
+  border-radius: 14px;
+  background: #fffbea;
+  padding: 11px 13px;
+  color: #4d5667;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.tm-transport-note-label {
+  margin-bottom: 4px;
+  color: #7b6f42;
+  font-weight: 750;
+}
+
+@media (max-width: 640px) {
+  .tm-transport-time-panel {
+    gap: 6px;
+    padding: 12px 9px;
+  }
+
+  .tm-transport-time-point {
+    gap: 6px;
+  }
+
+  .tm-transport-time-icon {
+    font-size: 1.05rem;
+  }
+
+  .tm-transport-time-label {
+    font-size: .68rem;
+  }
+
+  .tm-transport-time-value {
+    font-size: .95rem;
+  }
+
+  .tm-transport-time-arrow {
+    font-size: .6rem;
+  }
+
+  .tm-transport-time-arrow b {
+    font-size: .78rem;
   }
 }
