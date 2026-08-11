@@ -988,10 +988,11 @@ a {
 .tm-hotel-group-chip {
   position: relative;
   flex: 0 0 auto;
-  min-width: 150px;
-  max-width: 205px;
-  min-height: 62px;
-  padding: 9px 12px 10px;
+  min-width: 112px;
+  width: max-content;
+  max-width: min(230px, 68vw);
+  min-height: 58px;
+  padding: 8px 12px 9px;
   border: 1px solid #dce5f2;
   border-radius: 13px;
   background: #fff;
@@ -1075,6 +1076,32 @@ a {
   white-space: nowrap;
 }
 .tm-hotel-group-add-chip:hover { background: #f8fbff; border-color: #93c5fd; }
+
+@media (max-width: 640px) {
+  .tm-hotel-group-chip {
+    min-width: 108px;
+    max-width: 68vw;
+    min-height: 56px;
+    padding: 7px 10px 8px;
+    border-radius: 14px;
+  }
+
+  .tm-hotel-group-chip strong {
+    font-size: .82rem;
+  }
+
+  .tm-hotel-group-chip span {
+    margin-top: 3px;
+    font-size: .7rem;
+  }
+
+  .tm-hotel-group-add-chip {
+    min-width: 108px;
+    min-height: 56px;
+    padding: 7px 10px;
+    border-radius: 14px;
+  }
+}
 
 
 /* Hotel room section */

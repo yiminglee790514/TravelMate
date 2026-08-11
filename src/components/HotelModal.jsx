@@ -15,8 +15,22 @@ const CURRENCIES = [
   { code: "THB", name: "泰銖", symbol: "฿" },
 ];
 
+function makeRoom(source = {}, people = []) {
+  return {
+    id: source.id || Date.now() + Math.random(),
+    confirmation: source.confirmation || "",
+    bookingName: source.bookingName || people[0] || "",
+    roomType: source.roomType || "",
+    price: source.price ?? "",
+    currency: source.currency || "JPY",
+  };
+}
+
 export default function HotelModal({
   hotel,
+  rooms = [],
+  groupEdit = false,
+  onSaveGroup,
   onClose,
   onSave,
   copyMode = false,
@@ -33,18 +47,22 @@ export default function HotelModal({
   const [name, setName] = useState(hotel?.name || currentGroup?.title || "");
   const [checkIn, setCheckIn] = useState(hotel?.checkIn || currentGroup?.checkIn || "");
   const [checkOut, setCheckOut] = useState(hotel?.checkOut || currentGroup?.checkOut || "");
-  const [checkInTime, setCheckInTime] = useState(hotel?.checkInTime || "");
-  const [checkOutTime, setCheckOutTime] = useState(hotel?.checkOutTime || "");
-  const [address, setAddress] = useState(hotel?.address || "");
-  const [website, setWebsite] = useState(hotel?.website || "");
+  const [checkInTime, setCheckInTime] = useState(hotel?.checkInTime || rooms[0]?.checkInTime || "");
+  const [checkOutTime, setCheckOutTime] = useState(hotel?.checkOutTime || rooms[0]?.checkOutTime || "");
+  const [address, setAddress] = useState(hotel?.address || rooms[0]?.address || "");
+  const [website, setWebsite] = useState(hotel?.website || rooms[0]?.website || "");
   const [confirmation, setConfirmation] = useState(hotel?.confirmation || "");
   const [bookingName, setBookingName] = useState(hotel?.bookingName || people[0] || "");
   const [roomType, setRoomType] = useState(hotel?.roomType || "");
   const [price, setPrice] = useState(hotel?.price ?? "");
   const [currency, setCurrency] = useState(hotel?.currency || "JPY");
-  const [phone, setPhone] = useState(hotel?.phone || "");
-  const [booking, setBooking] = useState(hotel?.booking || "");
-  const [note, setNote] = useState(hotel?.note || "");
+  const [phone, setPhone] = useState(hotel?.phone || rooms[0]?.phone || "");
+  const [booking, setBooking] = useState(hotel?.booking || rooms[0]?.booking || "");
+  const [note, setNote] = useState(hotel?.note || rooms[0]?.note || "");
+
+  const [roomList, setRoomList] = useState(() =>
+    groupEdit ? (rooms.length ? rooms.map((room) => makeRoom(room, people)) : [makeRoom({}, people)]) : []
+  );
 
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressError, setAddressError] = useState("");
@@ -97,15 +115,55 @@ export default function HotelModal({
     const clean = newPerson.trim();
     if (!clean) return;
     onAddPerson?.(clean);
-    setBookingName(clean);
+    if (groupEdit) {
+      setRoomList((list) => list.map((room, index) => index === 0 && !room.bookingName ? { ...room, bookingName: clean } : room));
+    } else {
+      setBookingName(clean);
+    }
     setNewPerson("");
     setShowPersonInput(false);
+  }
+
+  function updateRoom(index, key, value) {
+    setRoomList((list) => list.map((room, i) => (i === index ? { ...room, [key]: value } : room)));
+  }
+
+  function addRoom() {
+    setRoomList((list) => [...list, makeRoom({}, people)]);
   }
 
   function handleSave() {
     if (!name.trim()) return alert("請輸入飯店名稱");
     if (!checkIn || !checkOut) return alert("請選擇入住與退房日期");
     if (checkOut < checkIn) return alert("退房日期不能早於入住日期");
+
+    if (groupEdit) {
+      const invalidRoom = roomList.find((room) => !String(room.bookingName || "").trim());
+      if (invalidRoom) return alert("請選擇每一間房的訂位姓名");
+
+      onSaveGroup?.({
+        name: name.trim(),
+        checkIn,
+        checkOut,
+        checkInTime,
+        checkOutTime,
+        address,
+        website,
+        phone,
+        booking,
+        note,
+        rooms: roomList.map((room) => ({
+          ...room,
+          confirmation: String(room.confirmation || "").trim(),
+          bookingName: String(room.bookingName || "").trim(),
+          roomType: String(room.roomType || "").trim(),
+          price: room.price ?? "",
+          currency: room.currency || "JPY",
+        })),
+      });
+      return;
+    }
+
     if (!bookingName.trim()) return alert("請選擇訂位姓名");
     if (!currency && price) return alert("請選擇價格幣別");
 
@@ -132,16 +190,15 @@ export default function HotelModal({
     );
   }
 
+  const modalTitle = groupEdit ? "修改住宿" : copyMode ? "新增房間" : isEdit ? "修改房間" : "新增飯店";
+  const modalSubtitle = groupEdit ? "飯店基本資料與所有房間資料" : copyMode ? "複製後可再修改房間資料" : "飯店基本資料與房間資料";
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-3 sm:p-4">
-      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="shrink-0 px-5 pt-5 sm:px-8 sm:pt-7">
-          <h2 className="text-xl font-bold sm:text-2xl">
-            {copyMode ? "新增房間" : isEdit ? "修改房間" : "新增飯店"}
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {copyMode ? "複製後可再修改房間資料" : "飯店基本資料與房間資料"}
-          </p>
+          <h2 className="text-xl font-bold sm:text-2xl">{modalTitle}</h2>
+          <p className="mt-1 text-sm text-slate-500">{modalSubtitle}</p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-8">
@@ -187,36 +244,80 @@ export default function HotelModal({
 
             <input className="tm-modal-input" placeholder="官網（https://...）" value={website} onChange={(e) => setWebsite(e.target.value)} />
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="mb-3 font-bold text-slate-700">🛏️ 房間資料</div>
-
-              <input className="tm-modal-input mb-3" placeholder="訂單編號" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
-
-              <div className="flex gap-2">
-                <select className="tm-modal-input min-w-0 flex-1" value={bookingName} onChange={(e) => setBookingName(e.target.value)}>
-                  <option value="">選擇訂位姓名</option>
-                  {people.map((person) => <option key={person} value={person}>{person}</option>)}
-                  {bookingName && !people.includes(bookingName) && <option value={bookingName}>{bookingName}</option>}
-                </select>
-                <button type="button" onClick={() => setShowPersonInput((v) => !v)} className="shrink-0 rounded-xl bg-white px-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">＋人名</button>
-              </div>
-
-              {showPersonInput && (
-                <div className="mt-2 flex gap-2">
-                  <input autoFocus className="tm-modal-input min-w-0 flex-1" placeholder="輸入人名" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddPerson()} />
-                  <button type="button" onClick={handleAddPerson} className="rounded-xl bg-blue-500 px-4 text-sm font-semibold text-white">新增</button>
+            {groupEdit ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="font-bold text-slate-700">🛏️ 房間資料</div>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-600">共 {roomList.length} 間</span>
                 </div>
-              )}
 
-              <input className="tm-modal-input mt-3" placeholder="房型，例如：禁菸雙床房" value={roomType} onChange={(e) => setRoomType(e.target.value)} />
+                {roomList.map((room, index) => (
+                  <div key={room.id} className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 last:mb-0">
+                    <div className="mb-3 font-bold text-blue-600">房間 {index + 1}</div>
+                    <input className="tm-modal-input mb-3" placeholder="訂單編號" value={room.confirmation} onChange={(e) => updateRoom(index, "confirmation", e.target.value)} />
 
-              <div className="mt-3 grid grid-cols-[110px_1fr] gap-2">
-                <select className="tm-modal-input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                  {CURRENCIES.map((item) => <option key={item.code} value={item.code}>{item.symbol} {item.code}</option>)}
-                </select>
-                <input type="number" className="tm-modal-input" placeholder="價格（可不填）" value={price} onChange={(e) => setPrice(e.target.value)} />
+                    <div className="flex gap-2">
+                      <select className="tm-modal-input min-w-0 flex-1" value={room.bookingName} onChange={(e) => updateRoom(index, "bookingName", e.target.value)}>
+                        <option value="">選擇訂位姓名</option>
+                        {people.map((person) => <option key={person} value={person}>{person}</option>)}
+                        {room.bookingName && !people.includes(room.bookingName) && <option value={room.bookingName}>{room.bookingName}</option>}
+                      </select>
+                      {index === 0 && (
+                        <button type="button" onClick={() => setShowPersonInput((v) => !v)} className="shrink-0 rounded-xl bg-white px-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">＋人名</button>
+                      )}
+                    </div>
+
+                    <input className="tm-modal-input mt-3" placeholder="房型，例如：禁菸雙床房" value={room.roomType} onChange={(e) => updateRoom(index, "roomType", e.target.value)} />
+                    <div className="mt-3 grid grid-cols-[110px_1fr] gap-2">
+                      <select className="tm-modal-input" value={room.currency} onChange={(e) => updateRoom(index, "currency", e.target.value)}>
+                        {CURRENCIES.map((item) => <option key={item.code} value={item.code}>{item.symbol} {item.code}</option>)}
+                      </select>
+                      <input type="number" className="tm-modal-input" placeholder="價格（可不填）" value={room.price} onChange={(e) => updateRoom(index, "price", e.target.value)} />
+                    </div>
+                  </div>
+                ))}
+
+                {showPersonInput && (
+                  <div className="mb-4 flex gap-2">
+                    <input autoFocus className="tm-modal-input min-w-0 flex-1" placeholder="輸入人名" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddPerson()} />
+                    <button type="button" onClick={handleAddPerson} className="rounded-xl bg-blue-500 px-4 text-sm font-semibold text-white">新增</button>
+                  </div>
+                )}
+
+                <button type="button" onClick={addRoom} className="w-full rounded-xl border border-dashed border-blue-200 bg-white py-3 font-bold text-blue-600 hover:bg-blue-50">
+                  ＋ 新增房間
+                </button>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 font-bold text-slate-700">🛏️ 房間資料</div>
+                <input className="tm-modal-input mb-3" placeholder="訂單編號" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
+
+                <div className="flex gap-2">
+                  <select className="tm-modal-input min-w-0 flex-1" value={bookingName} onChange={(e) => setBookingName(e.target.value)}>
+                    <option value="">選擇訂位姓名</option>
+                    {people.map((person) => <option key={person} value={person}>{person}</option>)}
+                    {bookingName && !people.includes(bookingName) && <option value={bookingName}>{bookingName}</option>}
+                  </select>
+                  <button type="button" onClick={() => setShowPersonInput((v) => !v)} className="shrink-0 rounded-xl bg-white px-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">＋人名</button>
+                </div>
+
+                {showPersonInput && (
+                  <div className="mt-2 flex gap-2">
+                    <input autoFocus className="tm-modal-input min-w-0 flex-1" placeholder="輸入人名" value={newPerson} onChange={(e) => setNewPerson(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddPerson()} />
+                    <button type="button" onClick={handleAddPerson} className="rounded-xl bg-blue-500 px-4 text-sm font-semibold text-white">新增</button>
+                  </div>
+                )}
+
+                <input className="tm-modal-input mt-3" placeholder="房型，例如：禁菸雙床房" value={roomType} onChange={(e) => setRoomType(e.target.value)} />
+                <div className="mt-3 grid grid-cols-[110px_1fr] gap-2">
+                  <select className="tm-modal-input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                    {CURRENCIES.map((item) => <option key={item.code} value={item.code}>{item.symbol} {item.code}</option>)}
+                  </select>
+                  <input type="number" className="tm-modal-input" placeholder="價格（可不填）" value={price} onChange={(e) => setPrice(e.target.value)} />
+                </div>
+              </div>
+            )}
 
             <input className="tm-modal-input" placeholder="電話（可不填）" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <select className="tm-modal-input" value={booking} onChange={(e) => setBooking(e.target.value)}>
@@ -229,7 +330,7 @@ export default function HotelModal({
 
         <div className="flex shrink-0 justify-end gap-3 border-t bg-white px-5 py-4 sm:px-8">
           <button type="button" onClick={onClose} className="rounded-xl bg-gray-200 px-5 py-3">取消</button>
-          <button type="button" onClick={handleSave} className="rounded-xl bg-blue-500 px-5 py-3 text-white">{copyMode ? "新增" : isEdit ? "儲存" : "新增"}</button>
+          <button type="button" onClick={handleSave} className="rounded-xl bg-blue-500 px-5 py-3 text-white">{copyMode ? "新增" : "儲存"}</button>
         </div>
       </div>
     </div>

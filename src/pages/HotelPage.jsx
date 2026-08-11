@@ -154,6 +154,51 @@ export default function HotelPage() {
     closeHotelModal();
   }
 
+  async function handleSaveHotelGroup(groupData) {
+    if (shareId) return;
+
+    const saveGroupId = currentGroupId || activeGroup?.id;
+    if (!saveGroupId) return;
+
+    const groups = hotelGroups.map((group) => {
+      if (String(group.id) !== String(saveGroupId)) return group;
+
+      const shared = {
+        name: groupData.name,
+        checkIn: groupData.checkIn,
+        checkOut: groupData.checkOut,
+        checkInTime: groupData.checkInTime,
+        checkOutTime: groupData.checkOutTime,
+        address: groupData.address,
+        phone: groupData.phone,
+        website: groupData.website,
+        booking: groupData.booking,
+        note: groupData.note,
+      };
+
+      const hotels = (groupData.rooms || []).map((room, index) => ({
+        ...room,
+        id: room.id || Date.now() + index,
+        ...shared,
+      }));
+
+      return {
+        ...group,
+        title: groupData.name,
+        checkIn: groupData.checkIn,
+        checkOut: groupData.checkOut,
+        hotels,
+      };
+    });
+
+    const updatedTrip = { ...trip, hotelGroups: groups };
+    updatedTrip.items = syncAutoItineraryItems(updatedTrip);
+    await updateTrip(updatedTrip);
+    setTrip(updatedTrip);
+    setActiveGroupId(String(saveGroupId));
+    closeHotelModal();
+  }
+
   async function handleDeleteHotel(groupId, hotelId) {
     if (shareId) return;
     if (!window.confirm("確定刪除此房間資料？")) return;
@@ -376,6 +421,9 @@ export default function HotelPage() {
           currentGroupId={currentGroupId}
           trip={trip}
           onClose={closeHotelModal}
+          rooms={rooms}
+          groupEdit={!!editingHotel && !copyingHotel}
+          onSaveGroup={handleSaveHotelGroup}
           onSave={(hotel, targetGroupId) =>
             handleSaveHotel(hotel, targetGroupId, { copy: copyingHotel })
           }
