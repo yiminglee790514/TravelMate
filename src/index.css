@@ -966,3 +966,152 @@ a {
   }
 }
 
+
+/* =========================
+   Hotel page redesign
+========================= */
+.tm-hotel-group-strip {
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.tm-hotel-group-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 1px 14px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tm-hotel-group-chip {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 150px;
+  max-width: 205px;
+  min-height: 62px;
+  padding: 9px 12px 10px;
+  border: 1px solid #dce5f2;
+  border-radius: 13px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(24,39,75,.045);
+  scroll-snap-align: start;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.tm-hotel-group-chip strong,
+.tm-hotel-group-chip span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-hotel-group-chip strong { color: #172033; font-size: .86rem; line-height: 1.25; }
+.tm-hotel-group-chip span { margin-top: 4px; color: #64748b; font-size: .72rem; line-height: 1.2; }
+.tm-hotel-group-chip.is-active {
+  border-color: #3785ee;
+  background: #edf5ff;
+  box-shadow: 0 5px 16px rgba(55,133,238,.12);
+}
+.tm-hotel-group-chip.is-active strong { color: #216fdc; }
+
+/* 選中的住宿群組下方顯示小箭頭，和參考圖一致 */
+.tm-hotel-group-chip.is-active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 1px solid #3785ee;
+  border-bottom: 1px solid #3785ee;
+  background: #edf5ff;
+}
+
+.tm-hotel-empty-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px dashed #b9cbe3;
+  border-radius: 18px;
+  background: #fff;
+  padding: 18px 16px;
+  color: #2878e8;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tm-hotel-empty-button:hover { background: #f7fbff; }
+
+.tm-room-card {
+  overflow: visible;
+  border: 1px solid #e4eaf2;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(24,39,75,.04);
+}
+
+/* Hotel groups v3 */
+.tm-hotel-group-scroll { align-items: stretch; }
+.tm-hotel-group-chip, .tm-hotel-group-add-chip { touch-action: pan-x; user-select: none; -webkit-user-select: none; }
+.tm-hotel-group-add-chip {
+  flex: 0 0 auto;
+  min-width: 142px;
+  min-height: 62px;
+  padding: 9px 14px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  background: rgba(255,255,255,.72);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.tm-hotel-group-add-chip:hover { background: #f8fbff; border-color: #93c5fd; }
+
+
+/* Hotel room section */
+.tm-room-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 2px 10px;
+  margin-bottom: 2px;
+  font-size: .95rem;
+}
+.tm-room-count {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #edf5ff;
+  padding: 5px 11px;
+  color: #2563eb;
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+
+/* =========================
+   Hotel detail refinements
+========================= */
+.tm-hotel-detail-title {
+  margin: 0;
+  color: #172033;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  .tm-hotel-detail-title {
+    font-size: 1.12rem;
+  }
+}

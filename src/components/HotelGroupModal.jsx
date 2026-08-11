@@ -4,6 +4,7 @@ export default function HotelGroupModal({
   group,
   onClose,
   onSave,
+  onDelete,
 }) {
 
   const isEdit = !!group;
@@ -119,22 +120,31 @@ export default function HotelGroupModal({
 
         </div>
 
-        <div className="mt-8 flex justify-end gap-3">
+        <div className="mt-8 flex items-center justify-between gap-3">
+          {isEdit && onDelete ? (
+            <button
+              onClick={onDelete}
+              className="rounded-xl bg-red-50 px-4 py-3 font-semibold text-red-600 hover:bg-red-100"
+            >
+              🗑️ 刪除群組
+            </button>
+          ) : <span />}
 
-          <button
-            onClick={onClose}
-            className="rounded-xl bg-gray-200 px-5 py-3"
-          >
-            取消
-          </button>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-xl bg-gray-200 px-5 py-3"
+            >
+              取消
+            </button>
 
-          <button
-            onClick={handleSave}
-            className="rounded-xl bg-blue-500 px-5 py-3 text-white"
-          >
-            {isEdit ? "儲存" : "建立"}
-          </button>
-
+            <button
+              onClick={handleSave}
+              className="rounded-xl bg-blue-500 px-5 py-3 text-white"
+            >
+              {isEdit ? "儲存" : "建立"}
+            </button>
+          </div>
         </div>
 
       </div>
