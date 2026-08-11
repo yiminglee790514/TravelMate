@@ -237,7 +237,7 @@ export default function MemberModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+        className="tm-member-modal flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         {/* 標題 */}

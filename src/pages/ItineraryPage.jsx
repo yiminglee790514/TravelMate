@@ -1,4 +1,5 @@
 import TimelineItem from "../components/day/TimelineItem";
+import TravelTimeConnector from "../components/day/TravelTimeConnector";
 import AddItemModal from "../components/day/AddItemModal";
 
 import { useState, useEffect, useRef } from "react";
@@ -103,6 +104,7 @@ export default function TripDetail() {
   const [trip, setTrip] = useState(null);
 
   const [items, setItems] = useState([]);
+  const [routeResults, setRouteResults] = useState({});
 
   const initialized = useRef(false);
 
@@ -457,30 +459,62 @@ useEffect(() => {
                   {!readonly && <div className="mt-1 text-xs text-slate-400">從下面新增第一個行程吧</div>}
                 </div>
               ) : (
-                activeDayItems.map((timelineItem) => (
-                  <TimelineItem
-                    key={timelineItem.id}
-                    item={timelineItem}
-                    readonly={readonly || !!timelineItem.autoSource}
-                    owner={owner}
-                    onClick={
-                      ["hotel", "flight", "transport"].includes(timelineItem.type)
-                        ? () => handleOpenLinkedItem(timelineItem)
-                        : undefined
-                    }
-                    onEdit={() => {
-                      setEditItem(timelineItem);
-                      setCurrentDay(activeDay.day);
-                      setShowModal(true);
-                    }}
-                    onDelete={async () => {
-                      if (!owner) return;
-                      const updatedItems = items.filter((i) => i.id !== timelineItem.id);
-                      await updateTrip({ ...trip, items: updatedItems });
-                      setItems(updatedItems);
-                    }}
-                  />
-                ))
+                activeDayItems.map((timelineItem, index) => {
+                  const previousItem = activeDayItems[index - 1];
+                  const routeKey = previousItem && timelineItem
+                    ? `${previousItem.id}-${timelineItem.id}`
+                    : "";
+
+                  return (
+                    <div key={timelineItem.id}>
+                      {previousItem && routeKey && (
+                        <TravelTimeConnector
+                          from={previousItem}
+                          to={timelineItem}
+                          trip={trip}
+                          date={activeDay.date}
+                          initialMode={routeResults[routeKey]?.mode || "DRIVE"}
+                          initialResult={routeResults[routeKey] || null}
+                          onResult={(result) => {
+                            setRouteResults((prev) => ({
+                              ...prev,
+                              [routeKey]: result,
+                            }));
+                          }}
+                        />
+                      )}
+
+                      <TimelineItem
+                        item={timelineItem}
+                        readonly={readonly || !!timelineItem.autoSource}
+                        owner={owner}
+                        onClick={
+                          ["hotel", "flight", "transport"].includes(timelineItem.type)
+                            ? () => handleOpenLinkedItem(timelineItem)
+                            : undefined
+                        }
+                        onEdit={() => {
+                          setEditItem(timelineItem);
+                          setCurrentDay(activeDay.day);
+                          setShowModal(true);
+                        }}
+                        onDelete={async () => {
+                          if (!owner) return;
+                          const updatedItems = items.filter((i) => i.id !== timelineItem.id);
+                          await updateTrip({ ...trip, items: updatedItems });
+                          setItems(updatedItems);
+                          setRouteResults((prev) => {
+                            const next = { ...prev };
+                            Object.keys(next).forEach((key) => {
+                              if (key.includes(String(timelineItem.id))) delete next[key];
+                            });
+                            return next;
+                          });
+                        }}
+                      />
+                    </div>
+                  );
+                })
               )}
             </div>
 
@@ -663,6 +697,7 @@ useEffect(() => {
         <AddItemModal
           day={currentDay}
           item={editItem}
+          trip={trip}
           onClose={() => {
 
             setEditItem(null);

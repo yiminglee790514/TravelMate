@@ -57,6 +57,7 @@ a {
 
 .tm-trip-cover {
   min-height: 238px;
+  padding-top: env(safe-area-inset-top);
   background-color: #eef5ff;
   background-repeat: no-repeat;
   background-size: cover;
@@ -485,6 +486,87 @@ a {
 }
 
 /* =========================
+   Travel time connector
+========================= */
+.tm-travel-connector {
+  position: relative;
+  margin: 0 0 0 52px;
+  padding: 2px 0 3px 25px;
+}
+
+.tm-travel-connector-line {
+  position: absolute;
+  left: 9px;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: #e3e8f0;
+}
+
+.tm-travel-connector-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid #e8edf4;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 6px 9px;
+}
+
+.tm-travel-connector-icon {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  font-size: 0.9rem;
+}
+
+.tm-travel-connector-title {
+  color: #647086;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.tm-travel-mode-select {
+  max-width: 104px;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 3px 5px;
+  color: #475569;
+  font-size: 0.65rem;
+  outline: none;
+}
+
+.tm-travel-connector-result {
+  margin-top: 2px;
+  color: #2878e8;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tm-travel-calculate-button {
+  margin-top: 2px;
+  border: 0;
+  padding: 0;
+  color: #2878e8;
+  background: transparent;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.tm-travel-connector-error {
+  margin-top: 2px;
+  color: #b45309;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+/* =========================
    Bottom nav
 ========================= */
 .tm-bottom-nav {
@@ -502,13 +584,19 @@ a {
 }
 
 .tm-bottom-nav-scroll {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  width: max-content;
+  min-width: 100%;
   gap: 3px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding: 0;
 }
 
 .tm-bottom-item {
-  min-width: 0;
+  min-width: 72px;
+  flex: 0 0 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -518,6 +606,7 @@ a {
   color: #68748a;
   text-align: center;
   text-decoration: none;
+  scroll-snap-align: center;
   transition: background 160ms ease, color 160ms ease;
 }
 
@@ -537,6 +626,25 @@ a {
   line-height: 1;
   font-weight: 650;
   white-space: nowrap;
+}
+
+
+/* Member modal: follow the compact mobile typography used by the itinerary UI */
+.tm-member-modal {
+  font-size: 0.82rem;
+}
+
+.tm-member-modal h2 {
+  font-size: 1rem;
+}
+
+.tm-member-modal input,
+.tm-member-modal button {
+  font-size: 0.78rem;
+}
+
+.tm-member-modal .text-sm {
+  font-size: 0.78rem;
 }
 
 /* =========================
@@ -673,5 +781,16 @@ a {
     right: 8px;
     bottom: calc(8px + env(safe-area-inset-bottom));
     border-radius: 24px;
+  }
+
+  .tm-bottom-item {
+    min-width: 70px;
+    flex-basis: 70px;
+    padding-inline: 3px;
+  }
+
+  .tm-travel-connector {
+    margin-left: 46px;
+    padding-left: 22px;
   }
 }
