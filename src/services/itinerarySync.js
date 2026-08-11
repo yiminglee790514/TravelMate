@@ -143,7 +143,6 @@ export function syncAutoItineraryItems(trip) {
     if (Number.isNaN(endExclusive.getTime()) || endExclusive < start) return;
 
     const sourceId = String(group.id);
-    const title = hotelForDay.name || firstHotel.name || group.title || "住宿";
 
     // 用日期字串遞增，避免 toISOString() 因時區造成前一天 / 後一天問題。
     const cursor = new Date(start);
@@ -164,6 +163,9 @@ export function syncAutoItineraryItems(trip) {
             hotel.checkIn <= stayDate &&
             (!hotel.checkOut || stayDate < hotel.checkOut)
           ) || firstHotel;
+
+        // 行程表顯示「飯店名稱」，不再顯示住宿群組名稱。
+        const title = hotelForDay.name || firstHotel.name || group.title || "住宿";
 
         generated.push({
           id: `auto-hotel-group-${sourceId}-${stayDate}`,

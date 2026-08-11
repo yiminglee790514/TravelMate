@@ -863,6 +863,28 @@ a {
 }
 
 
+/* Desktop: center the bottom navigation instead of stretching it from the left */
+@media (min-width: 769px) {
+  .tm-bottom-nav {
+    left: 50%;
+    right: auto;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    transform: translateX(-50%);
+  }
+
+  .tm-bottom-nav-scroll {
+    width: auto;
+    justify-content: center;
+    overflow-x: visible;
+  }
+
+  .tm-bottom-nav-scroll::after {
+    display: none;
+  }
+}
+
+
 /* =========================
    Shared trip actions
    Keep the icon on the left and the text block naturally aligned.
