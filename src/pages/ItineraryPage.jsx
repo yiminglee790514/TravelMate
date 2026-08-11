@@ -1,10 +1,9 @@
 import TimelineItem from "../components/day/TimelineItem";
 import AddItemModal from "../components/day/AddItemModal";
-import TripModal from "../components/TripModal";
 
 import { useState, useEffect, useRef } from "react";
 import { generateAIPlan } from "../services/aiPlannerService";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
@@ -14,6 +13,7 @@ import {
   canEdit,
   isOwner,
 } from "../services/permissionService";
+import DaySelector from "../components/trip/DaySelector";
 
 
 
@@ -84,8 +84,6 @@ export default function TripDetail() {
 
   const [editItem, setEditItem] = useState(null);
 
-  const [showTripModal, setShowTripModal] = useState(false);
-
   const [currentDay, setCurrentDay] = useState(1);
 
   // AI 規劃第一版
@@ -100,6 +98,7 @@ export default function TripDetail() {
   const [aiResult, setAiResult] = useState(null);
   const [aiAddedIds, setAiAddedIds] = useState([]);
   const [aiAddError, setAiAddError] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [trip, setTrip] = useState(null);
 
@@ -219,6 +218,12 @@ useEffect(() => {
     setAiAddError("");
     setShowAIPlanner(true);
   }
+
+  useEffect(() => {
+    if (shareId || !trip || searchParams.get("ai") !== "1") return;
+    openAIPlanner();
+    setSearchParams({}, { replace: true });
+  }, [trip, shareId, searchParams, setSearchParams]);
 
   const aiDay = days.find((d) => d.date === aiDate);
   const aiDayItems = aiDay
@@ -393,239 +398,107 @@ useEffect(() => {
 
   }
 
-    return (
+  const activeDay = days.find((day) => day.day === openDay) || days[0];
+  const activeDayItems = activeDay
+    ? items
+        .filter((timelineItem) => (timelineItem.day ?? 1) === activeDay.day)
+        .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")))
+    : [];
 
+  function handleOpenLinkedItem(timelineItem) {
+    const base = shareId ? `/share/${shareId}` : `/trip/${id}`;
+    if (timelineItem.type === "hotel") navigate(`${base}/hotel`);
+    if (timelineItem.type === "flight") navigate(`${base}/flight`);
+    if (timelineItem.type === "transport") navigate(`${base}/transport`);
+  }
+
+  return (
     <>
-
-      {!readonly && (
-        <button
-          type="button"
-          aria-label="AI 規劃行程"
-          title="AI 規劃行程"
-          onClick={openAIPlanner}
-          className="fixed right-4 top-4 z-[120] flex h-14 w-14 items-center justify-center rounded-full bg-white p-1.5 shadow-lg ring-1 ring-gray-200 transition hover:scale-105 hover:shadow-xl active:scale-95 sm:right-6 sm:top-6 sm:h-16 sm:w-16"
-        >
-          <img
-            src="/ai-robot.svg"
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-contain"
-          />
-        </button>
-      )}
-
-      <div className="mt-8 space-y-4">
-
-          {days.map((item) => {
-
-            const isOpen = openDay === item.day;
-
-            return (
-
-              <div
-                key={item.day}
-                className="rounded-2xl bg-white shadow"
-              >
-
-                <button
-                  onClick={() =>
-                    setOpenDay(isOpen ? 0 : item.day)
-                  }
-                  className="flex w-full items-center justify-between p-5"
-                >
-
-                  <div className="flex items-center gap-3">
-
-                      {(() => {
-
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-
-                        const date = new Date(item.date);
-                        date.setHours(0, 0, 0, 0);
-
-                        const isToday = today.getTime() === date.getTime();
-
-                        const week = ["日", "一", "二", "三", "四", "五", "六"];
-
-                        const text =
-                          `Day ${item.day}　${date.getMonth() + 1}/${date.getDate()}（週${week[date.getDay()]}）`;
-
-                        return (
-                          <>
-
-                            <span
-                              className={`h-3 w-3 rounded-full ${
-                                isToday
-                                  ? "bg-green-500"
-                                  : "bg-gray-300"
-                              }`}
-                            />
-
-                            <span className="text-xl font-bold">
-
-                              {text}
-
-                            </span>
-
-                            {isToday && (
-
-                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                                今天
-                              </span>
-
-                            )}
-
-                          </>
-                        );
-
-                      })()}
-
-                    </div>
-
-                  <div className="text-2xl">
-                    {isOpen ? "▼" : "▶"}
-                  </div>
-
-                </button>
-
-                {isOpen && (
-
-                  <div className="border-t p-5">
-
-                    <div className="space-y-2">
-
-                      {items
-                        .filter((timelineItem) => {
-                          // 飯店同步時已經為每一個住宿日建立唯一的一筆資料，
-                          // 這裡直接依 Day 篩選即可。
-                          const itemDay = timelineItem.day ?? 1;
-                          return itemDay === item.day;
-                        })
-                        .sort((a, b) =>
-                          a.time.localeCompare(b.time)
-                        )
-                        .map((timelineItem) => (
-
-                          <TimelineItem
-                            key={timelineItem.id}
-                            item={timelineItem}
-                            readonly={readonly || !!timelineItem.autoSource}
-                            owner={owner}
-
-                            onClick={
-                              timelineItem.type === "hotel"
-                                ? () => {
-
-                                    if (shareId) {
-
-                                      navigate(`/share/${shareId}/hotel`);
-
-                                    } else {
-
-                                      navigate(`/trip/${id}/hotel`);
-
-                                    }
-
-                                  }
-                                : timelineItem.type === "flight"
-                                  ? () => {
-
-                                      if (shareId) {
-
-                                        navigate(`/share/${shareId}/flight`);
-
-                                      } else {
-
-                                        navigate(`/trip/${id}/flight`);
-
-                                      }
-
-                                    }
-                                  : timelineItem.type === "transport"
-                                    ? () => {
-
-                                        if (shareId) {
-
-                                          navigate(`/share/${shareId}/transport`);
-
-                                        } else {
-
-                                          navigate(`/trip/${id}/transport`);
-
-                                        }
-
-                                      }
-                                    : undefined
-                            }
-
-                            onEdit={() => {
-
-                              setEditItem(timelineItem);
-
-                              setCurrentDay(item.day);
-
-                              setShowModal(true);
-
-                            }}
-                            onDelete={async () => {
-
-                              if (!owner) return;
-
-                              const updatedItems =
-                                items.filter(
-                                  (i) =>
-                                    i.id !== timelineItem.id
-                                );
-
-                              await updateTrip({
-
-                                ...trip,
-
-                                items: updatedItems,
-
-                              });
-
-                              setItems(updatedItems);
-
-                            }}
-                          />
-
-                        ))}
-
-                      {!readonly && (
-
-                        <button
-                          onClick={() => {
-
-                            setEditItem(null);
-
-                            setCurrentDay(item.day);
-
-                            setShowModal(true);
-
-                          }}
-                          className="mt-4 w-full rounded-xl bg-blue-500 py-3 text-white"
-                        >
-                          {`＋ 新增 Day ${item.day} 行程`}
-                        </button>
-
-                      )}
-
-                    </div>
-
-                  </div>
-
-                )}
-
+      <div className="tm-itinerary-page">
+        <DaySelector
+          days={days}
+          activeDay={activeDay?.day || 1}
+          onChange={(day) => setOpenDay(day)}
+        />
+
+        {activeDay && (
+          <section className="tm-itinerary-card">
+            <div className="tm-itinerary-card-header">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="tm-day-dot" />
+                <div className="min-w-0">
+                  <h2 className="tm-itinerary-day-title">
+                    Day {activeDay.day}
+                  </h2>
+                  <p className="tm-itinerary-day-date">
+                    {(() => {
+                      const date = new Date(`${activeDay.date}T00:00:00`);
+                      const week = ["日", "一", "二", "三", "四", "五", "六"];
+                      return `${date.getMonth() + 1}/${date.getDate()}（週${week[date.getDay()]}）`;
+                    })()}
+                  </p>
+                </div>
               </div>
+              {(() => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const date = new Date(`${activeDay.date}T00:00:00`);
+                return today.getTime() === date.getTime() ? (
+                  <span className="tm-today-badge">今天</span>
+                ) : null;
+              })()}
+            </div>
 
-            );
+            <div className="tm-timeline">
+              {activeDayItems.length === 0 ? (
+                <div className="tm-empty-day">
+                  <div className="text-2xl">🗓️</div>
+                  <div className="mt-2 font-semibold text-slate-700">這一天還沒有行程</div>
+                  {!readonly && <div className="mt-1 text-xs text-slate-400">從下面新增第一個行程吧</div>}
+                </div>
+              ) : (
+                activeDayItems.map((timelineItem) => (
+                  <TimelineItem
+                    key={timelineItem.id}
+                    item={timelineItem}
+                    readonly={readonly || !!timelineItem.autoSource}
+                    owner={owner}
+                    onClick={
+                      ["hotel", "flight", "transport"].includes(timelineItem.type)
+                        ? () => handleOpenLinkedItem(timelineItem)
+                        : undefined
+                    }
+                    onEdit={() => {
+                      setEditItem(timelineItem);
+                      setCurrentDay(activeDay.day);
+                      setShowModal(true);
+                    }}
+                    onDelete={async () => {
+                      if (!owner) return;
+                      const updatedItems = items.filter((i) => i.id !== timelineItem.id);
+                      await updateTrip({ ...trip, items: updatedItems });
+                      setItems(updatedItems);
+                    }}
+                  />
+                ))
+              )}
+            </div>
 
-          })}
-
-        
-
+            {!readonly && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditItem(null);
+                  setCurrentDay(activeDay.day);
+                  setShowModal(true);
+                }}
+                className="tm-add-day-button"
+              >
+                ＋ 新增此日行程
+              </button>
+            )}
+          </section>
+        )}
       </div>
 
       {!readonly && showAIPlanner && (
@@ -860,24 +733,6 @@ useEffect(() => {
             setEditItem(null);
 
             setShowModal(false);
-
-          }}
-        />
-
-      )}
-
-      {!readonly && showTripModal && (
-
-        <TripModal
-          trip={trip}
-          onClose={() => setShowTripModal(false)}
-          onSave={async (updatedTrip) => {
-
-            await updateTrip(updatedTrip);
-
-            setTrip(updatedTrip);
-
-            setShowTripModal(false);
 
           }}
         />

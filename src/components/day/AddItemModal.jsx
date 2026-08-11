@@ -46,11 +46,11 @@ export default function AddItemModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div className="tm-modal-backdrop">
 
-      <div className="w-[420px] rounded-3xl bg-white p-8 shadow-2xl">
+      <div className="tm-modal">
 
-        <h2 className="mb-6 text-2xl font-bold">
+        <h2 className="tm-modal-title mb-5">
           {isEdit ? `修改 Day ${day} 行程` : `新增 Day ${day} 行程`}
         </h2>
 
@@ -58,35 +58,35 @@ export default function AddItemModal({
 
           <input
             type="time"
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             value={time}
             onChange={(e) => setTime(e.target.value)}
           />
 
           <input
             placeholder="例如：維多利亞港"
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
           <input
             placeholder="地址（例如：東京都台東區淺草2-3-1）"
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
 
           <textarea
             placeholder="備註（例如：抽御神籤、必吃、預約時間...）"
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
 
           <select
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
@@ -102,11 +102,11 @@ export default function AddItemModal({
 
           <div className="rounded-2xl border bg-blue-50 p-4">
 
-            <div className="mb-3 text-lg font-bold text-blue-700">
+            <div className="mb-2 text-sm font-bold text-blue-700">
               ✈️ 航班
             </div>
 
-            <label className="flex items-center gap-3 py-2">
+            <label className="flex items-center gap-2 py-1.5 text-sm">
 
               <input
                 type="radio"
@@ -118,7 +118,7 @@ export default function AddItemModal({
 
             </label>
 
-            <label className="mt-2 flex items-center gap-3 py-2">
+            <label className="mt-2 flex items-center gap-2 py-1.5 text-sm">
 
               <input
                 type="radio"
@@ -136,18 +136,18 @@ export default function AddItemModal({
 
         </div>
 
-        <div className="mt-8 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-2.5">
 
           <button
             onClick={onClose}
-            className="rounded-xl bg-gray-200 px-5 py-3"
+            className="tm-modal-button bg-gray-200 text-gray-700"
           >
             取消
           </button>
 
           <button
             onClick={handleSave}
-            className="rounded-xl bg-blue-500 px-5 py-3 text-white"
+            className="tm-modal-button bg-blue-500 text-white"
           >
             {isEdit ? "儲存" : "建立"}
           </button>

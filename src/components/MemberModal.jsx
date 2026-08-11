@@ -233,36 +233,16 @@ export default function MemberModal({
 
   return (
     <div
-      className="
-        fixed
-        inset-0
-        z-50
-        flex
-        items-center
-        justify-center
-        bg-black/40
-        p-3
-        sm:p-5
-      "
+      className="tm-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="
-          flex
-          max-h-[90vh]
-          w-full
-          max-w-xl
-          flex-col
-          overflow-hidden
-          rounded-3xl
-          bg-white
-          shadow-2xl
-        "
+        className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         {/* 標題 */}
-        <div className="flex shrink-0 items-center justify-between px-5 pt-5 sm:px-7 sm:pt-7">
-          <h2 className="text-2xl font-bold sm:text-3xl">
+        <div className="flex shrink-0 items-center justify-between px-5 pt-5">
+          <h2 className="text-lg font-bold">
             👥 共同編輯
           </h2>
 
@@ -283,15 +263,15 @@ export default function MemberModal({
         </div>
 
         {/* 內容捲軸 */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 sm:px-7 sm:pb-7">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
 
           {/* 建立者 */}
-          <div className="mt-5 rounded-2xl bg-gray-50 p-4 sm:p-5">
-            <div className="text-sm font-semibold text-gray-500">
+          <div className="mt-4 rounded-2xl bg-gray-50 p-4">
+            <div className="text-xs font-semibold text-gray-500">
               建立者
             </div>
 
-            <div className="mt-2 break-all text-base font-semibold sm:text-lg">
+            <div className="mt-2 break-all text-sm font-semibold">
               {currentTrip?.ownerEmail || user?.email || ownerUid || "—"}
             </div>
 
@@ -301,24 +281,24 @@ export default function MemberModal({
           </div>
 
           {/* 目前成員 */}
-          <div className="mt-5 rounded-2xl bg-gray-50 p-4 sm:p-5">
+          <div className="mt-4 rounded-2xl bg-gray-50 p-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-gray-500">
+              <div className="text-xs font-semibold text-gray-500">
                 目前成員
               </div>
 
-              <div className="text-sm font-semibold text-gray-500">
+              <div className="text-xs font-semibold text-gray-500">
                 {memberIds.length} 人
               </div>
             </div>
 
-            <div className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">
+            <div className="mt-3 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-700">
               {owner
                 ? "👑 你是 Owner，可以修改成員權限或移除成員。"
                 : "✏️ 你可以使用旅程，但不能管理其他成員。"}
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-3 space-y-2.5">
               {memberIds.length === 0 ? (
                 <div className="rounded-xl bg-white p-4 text-sm text-gray-400">
                   目前還沒有其他成員
@@ -348,7 +328,7 @@ export default function MemberModal({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <div className="break-all font-semibold text-gray-800">
+                          <div className="break-all text-sm font-semibold text-gray-800">
                             {memberEmail}
                           </div>
 
@@ -392,7 +372,7 @@ export default function MemberModal({
                       </div>
 
                       {owner && !isOwner && (
-                        <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="mt-2.5 grid grid-cols-2 gap-2">
                           <button
                             type="button"
                             disabled={busy}
@@ -407,7 +387,7 @@ export default function MemberModal({
                               border
                               px-3
                               py-2
-                              text-sm
+                              text-xs
                               font-semibold
                               ${
                                 memberRole === "editor"
@@ -434,7 +414,7 @@ export default function MemberModal({
                               border
                               px-3
                               py-2
-                              text-sm
+                              text-xs
                               font-semibold
                               ${
                                 memberRole === "viewer"
@@ -462,22 +442,13 @@ export default function MemberModal({
           </div>
 
           {/* 邀請 */}
-          <div className="mt-5">
-            <div className="text-sm font-semibold text-gray-500">
+          <div className="mt-4">
+            <div className="text-xs font-semibold text-gray-500">
               邀請 Google 帳號
             </div>
 
             <input
-              className="
-                mt-3
-                w-full
-                rounded-xl
-                border
-                px-4
-                py-3
-                outline-none
-                focus:border-blue-500
-              "
+              className="tm-modal-input mt-2"
               placeholder="example@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -493,12 +464,12 @@ export default function MemberModal({
             </div>
 
             {owner && (
-              <div className="mt-5">
-                <div className="text-sm font-semibold text-gray-500">
+              <div className="mt-4">
+                <div className="text-xs font-semibold text-gray-500">
                   新成員權限
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-2.5 grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setRole("editor")}
@@ -507,7 +478,7 @@ export default function MemberModal({
                       border
                       px-3
                       py-3
-                      text-sm
+                      text-xs
                       font-semibold
                       ${
                         role === "editor"
@@ -527,7 +498,7 @@ export default function MemberModal({
                       border
                       px-3
                       py-3
-                      text-sm
+                      text-xs
                       font-semibold
                       ${
                         role === "viewer"
@@ -545,17 +516,11 @@ export default function MemberModal({
         </div>
 
         {/* 底部按鈕 */}
-        <div className="flex shrink-0 justify-end gap-3 border-t bg-white px-5 py-4 sm:px-7">
+        <div className="flex shrink-0 justify-end gap-2.5 border-t bg-white px-5 py-3.5">
           <button
             type="button"
             onClick={onClose}
-            className="
-              rounded-xl
-              bg-gray-200
-              px-5
-              py-3
-              hover:bg-gray-300
-            "
+            className="tm-modal-button bg-gray-200 text-gray-700 hover:bg-gray-300"
           >
             關閉
           </button>
@@ -564,18 +529,7 @@ export default function MemberModal({
             type="button"
             disabled={loading}
             onClick={handleInvite}
-            className="
-              rounded-xl
-              bg-blue-500
-              px-5
-              py-3
-              font-semibold
-              text-white
-              transition
-              hover:bg-blue-600
-              disabled:cursor-not-allowed
-              disabled:bg-blue-300
-            "
+            className="tm-modal-button bg-blue-500 text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
           >
             {loading ? "送出中..." : "📨 發送邀請"}
           </button>

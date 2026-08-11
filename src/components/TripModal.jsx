@@ -87,32 +87,32 @@ export default function TripModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="tm-modal-backdrop">
 
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+      <div className="tm-modal">
 
-        <h2 className="mb-6 text-2xl font-bold">
+        <h2 className="tm-modal-title mb-5">
           {isEdit ? "修改旅程" : "新增旅程"}
         </h2>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
 
           <input
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             placeholder="旅程名稱"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
           <input
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             placeholder="國家"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
           />
 
           <input
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             placeholder="城市"
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -120,32 +120,32 @@ export default function TripModal({
 
           <input
             type="date"
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
 
           <input
             type="date"
-            className="w-full rounded-xl border p-3"
+            className="tm-modal-input"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
 
         </div>
 
-        <div className="mt-8 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-2.5">
 
           <button
             onClick={onClose}
-            className="rounded-xl bg-gray-200 px-5 py-3"
+            className="tm-modal-button bg-gray-200 text-gray-700"
           >
             取消
           </button>
 
           <button
             onClick={handleSave}
-            className="rounded-xl bg-blue-500 px-5 py-3 text-white"
+            className="tm-modal-button bg-blue-500 text-white"
           >
             {isEdit ? "儲存" : "建立"}
           </button>
