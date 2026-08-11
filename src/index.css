@@ -865,15 +865,15 @@ a {
 
 /* =========================
    Shared trip actions
-   Center the icon + text inside each card
+   Keep the icon on the left and the text block naturally aligned.
 ========================= */
 .tm-action-card {
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .tm-action-card > .min-w-0 {
-  text-align: center;
+  text-align: left;
 }
 
 /* =========================
