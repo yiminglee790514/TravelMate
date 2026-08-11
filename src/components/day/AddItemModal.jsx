@@ -1,6 +1,7 @@
 import { useState } from "react";
 import FlightEditor from "./editors/FlightEditor";
 import { searchPlaceAddress } from "../../services/mapsService";
+import { getRegionCode, isPlaceInCountry } from "../../services/mapsCountry";
 
 export default function AddItemModal({
   day,
@@ -35,17 +36,29 @@ export default function AddItemModal({
     setAddressResults([]);
 
     try {
-      const locationText = [trip?.country, trip?.city, trip?.destination]
-        .filter(Boolean)
-        .join(" ");
+      // 地點搜尋只使用「國家」，不要把整趟旅程的城市帶進去。
+      // 這樣 Day 1 在熊本、Day 2 到阿蘇、Day 3 到由布院時，
+      // 不會一直被 trip.city 綁在同一個城市。
+      const country = String(trip?.country || "").trim();
+
+      const regionCode = getRegionCode(country);
 
       const result = await searchPlaceAddress({
-        query: `${cleanTitle}${locationText ? ` ${locationText}` : ""}`,
+        query: `${cleanTitle}${country ? ` ${country}` : ""}`,
+        regionCode,
       });
 
-      const places = Array.isArray(result?.places) ? result.places : [];
+      const rawPlaces = Array.isArray(result?.places) ? result.places : [];
+      const places = country
+        ? rawPlaces.filter((place) => isPlaceInCountry(place, country))
+        : rawPlaces;
+
       if (!places.length) {
-        setAddressError("找不到這個地點，請再補充城市或手動輸入地址。");
+        setAddressError(
+          country
+            ? `找不到符合「${country}」的地點，請補充更完整的名稱或手動輸入地址。`
+            : "找不到這個地點，請補充更完整的名稱或手動輸入地址。"
+        );
         return;
       }
 
@@ -67,6 +80,8 @@ export default function AddItemModal({
       placeLatitude: place.latitude ?? prev.placeLatitude ?? null,
       placeLongitude: place.longitude ?? prev.placeLongitude ?? null,
       mapsUrl: place.mapsUrl || prev.mapsUrl || "",
+      countryCode: place.countryCode || prev.countryCode || "",
+      countryName: place.countryName || prev.countryName || "",
     }));
   }
 

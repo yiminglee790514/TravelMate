@@ -312,6 +312,42 @@ a {
   font-weight: 700;
 }
 
+.tm-itinerary-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.tm-google-maps-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  border: 1px solid #dbe7f8;
+  border-radius: 10px;
+  background: #f7fbff;
+  padding: 5px 9px;
+  color: #2878e8;
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.tm-google-maps-button:hover:not(:disabled) {
+  background: #edf5ff;
+  transform: translateY(-1px);
+}
+
+.tm-google-maps-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .tm-timeline {
   padding: 8px 15px 2px;
 }
@@ -590,7 +626,7 @@ a {
   backdrop-filter: blur(18px);
 }
 
- .tm-bottom-nav-scroll {
+.tm-bottom-nav-scroll {
   display: flex;
   width: 100%;
   min-width: 0;
@@ -598,12 +634,19 @@ a {
   gap: 3px;
   overflow-x: auto;
   overflow-y: hidden;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: auto;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
   scrollbar-width: none;
   padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.tm-bottom-nav-scroll:active {
+  cursor: grabbing;
 }
 
 .tm-bottom-nav-scroll::-webkit-scrollbar {
@@ -751,6 +794,16 @@ a {
   .tm-trip-actions {
     width: calc(100% - 24px);
     gap: 8px;
+  }
+
+  .tm-itinerary-header-actions {
+    gap: 5px;
+  }
+
+  .tm-google-maps-button {
+    min-height: 28px;
+    padding: 4px 7px;
+    font-size: 0.62rem;
   }
 
   .tm-action-card {

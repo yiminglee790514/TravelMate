@@ -9,6 +9,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import useTrip from "../hooks/useTrip";
 import { getShare } from "../services/shareService";
 import { syncAutoItineraryItems } from "../services/itinerarySync";
+import { getGoogleMapsDayItems, openGoogleMapsDayRoute } from "../services/mapsService";
 
 import {
   canEdit,
@@ -414,6 +415,21 @@ useEffect(() => {
     if (timelineItem.type === "transport") navigate(`${base}/transport`);
   }
 
+  const googleMapsItems = getGoogleMapsDayItems(
+    activeDayItems,
+    trip?.country || ""
+  );
+
+  function handleOpenGoogleMaps() {
+    try {
+      openGoogleMapsDayRoute(activeDayItems, {
+        country: trip?.country || "",
+      });
+    } catch (error) {
+      alert(error?.message || "無法建立 Google Maps 路線");
+    }
+  }
+
   return (
     <>
       <div className="tm-itinerary-page">
@@ -441,14 +457,27 @@ useEffect(() => {
                   </p>
                 </div>
               </div>
-              {(() => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const date = new Date(`${activeDay.date}T00:00:00`);
-                return today.getTime() === date.getTime() ? (
-                  <span className="tm-today-badge">今天</span>
-                ) : null;
-              })()}
+              <div className="tm-itinerary-header-actions">
+                <button
+                  type="button"
+                  className="tm-google-maps-button"
+                  onClick={handleOpenGoogleMaps}
+                  disabled={googleMapsItems.length < 2}
+                  title="只使用這一天、符合旅遊國家且有地址的行程開啟 Google Maps"
+                >
+                  <span aria-hidden="true">🗺️</span>
+                  <span>Google Maps</span>
+                </button>
+
+                {(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const date = new Date(`${activeDay.date}T00:00:00`);
+                  return today.getTime() === date.getTime() ? (
+                    <span className="tm-today-badge">今天</span>
+                  ) : null;
+                })()}
+              </div>
             </div>
 
             <div className="tm-timeline">

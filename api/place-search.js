@@ -32,7 +32,7 @@ export default {
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri",
+          "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri,places.addressComponents",
         },
         body: JSON.stringify({
           textQuery: query,
@@ -55,14 +55,24 @@ export default {
         });
       }
 
-      const places = Array.isArray(data?.places) ? data.places.map((place) => ({
-        id: place.id || "",
-        name: place.displayName?.text || "",
-        address: place.formattedAddress || "",
-        latitude: place.location?.latitude ?? null,
-        longitude: place.location?.longitude ?? null,
-        mapsUrl: place.googleMapsUri || "",
-      })) : [];
+      const places = Array.isArray(data?.places) ? data.places.map((place) => {
+        const countryComponent = Array.isArray(place.addressComponents)
+          ? place.addressComponents.find((component) =>
+              Array.isArray(component.types) && component.types.includes("country")
+            )
+          : null;
+
+        return {
+          id: place.id || "",
+          name: place.displayName?.text || "",
+          address: place.formattedAddress || "",
+          latitude: place.location?.latitude ?? null,
+          longitude: place.location?.longitude ?? null,
+          mapsUrl: place.googleMapsUri || "",
+          countryCode: countryComponent?.shortText || "",
+          countryName: countryComponent?.longText || "",
+        };
+      }) : [];
 
       return new Response(JSON.stringify({ places }), {
         status: 200,
