@@ -38,7 +38,12 @@ export default function HotelCard({ hotel, roomNumber }) {
         {hotel.booking && (
           <div className="flex gap-3"><span className="w-20 shrink-0 text-slate-500">訂房平台</span><b className="break-words text-slate-800">{hotel.booking}</b></div>
         )}
-
+        {hotel.note && (
+          <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-5 text-slate-600">
+            <div className="mb-0.5 font-bold text-amber-700">📝 備註</div>
+            <div className="whitespace-pre-wrap break-words">{hotel.note}</div>
+          </div>
+        )}
       </div>
     </div>
   );

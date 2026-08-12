@@ -610,15 +610,6 @@ export default function ExpensePage() {
     return { group, totals, entries };
   }).filter((row) => row.entries.length > 0);
 
-  // 群組比例固定優先用台幣；沒有台幣時才用日幣。
-  // 這樣即使旅程同時存在 JPY / TWD，也能維持第三張圖那種比例條。
-  const primaryCurrency = currencyTotals.TWD > 0 ? "TWD" : (currencyTotals.JPY > 0 ? "JPY" : null);
-  const primaryTotal = primaryCurrency ? Number(currencyTotals[primaryCurrency] || 0) : 0;
-
-  function getGroupPercent(totals) {
-    if (!primaryCurrency || !totals?.[primaryCurrency] || primaryTotal <= 0) return null;
-    return Math.round((Number(totals[primaryCurrency]) / primaryTotal) * 100);
-  }
 
   return (
     <div className="bg-[#f6f8fc]">
@@ -630,14 +621,14 @@ export default function ExpensePage() {
           </div>
           <div className="rounded-[1.35rem] bg-white p-3.5 shadow-[0_8px_26px_rgba(36,66,115,0.08)] ring-1 ring-slate-100">
             {totalCurrencies.length === 0 ? <div className="rounded-xl bg-slate-50 px-4 py-7 text-center text-sm text-slate-400">尚未有花費</div> : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex gap-3 overflow-x-auto scrollbar-none">
                 {totalCurrencies.map(([currencyCode, amount]) => {
                   const currency = getCurrency(currencyCode);
                   const isJPY = currencyCode === "JPY";
-                  return <div key={currencyCode} className={`relative overflow-hidden rounded-xl border p-3.5 ${isJPY ? "border-emerald-100 bg-emerald-50/60" : "border-blue-100 bg-blue-50/60"}`}>
+                  return <div key={currencyCode} className={`relative min-w-[calc(50%-6px)] flex-1 overflow-hidden rounded-xl border p-3 ${isJPY ? "border-emerald-100 bg-emerald-50/60" : "border-blue-100 bg-blue-50/60"}`}>
                     <div className="text-[11px] font-medium text-slate-500">{currencyCode} {currency.name}</div>
-                    <div className={`mt-1 text-2xl font-black ${isJPY ? "text-emerald-600" : "text-blue-600"}`}>{currency.symbol}{formatMoney(amount)}</div>
-                    <div className={`absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-2xl ${isJPY ? "bg-emerald-100/90 text-emerald-500" : "bg-blue-100/90 text-blue-500"}`}>{currency.symbol === "¥" ? "¥" : "＄"}</div>
+                    <div className={`mt-1 whitespace-nowrap text-[clamp(1.35rem,5vw,2rem)] font-black tracking-tight ${isJPY ? "text-emerald-600" : "text-blue-600"}`}>{currency.symbol}{formatMoney(amount)}</div>
+                    <div className={`absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-xl ${isJPY ? "bg-emerald-100/90 text-emerald-500" : "bg-blue-100/90 text-blue-500"}`}>{currency.symbol === "¥" ? "¥" : "＄"}</div>
                   </div>;
                 })}
               </div>
@@ -648,37 +639,32 @@ export default function ExpensePage() {
         {allPeople.length > 0 && (
           <section className="mb-6">
             <div className="mb-3 flex items-center gap-2"><h2 className="text-base font-black text-slate-900">👤 按付款人統計</h2><div className="h-px flex-1 bg-slate-200" /></div>
-            <div className="tm-payer-list">
+            <div className="overflow-hidden rounded-[1.2rem] bg-white shadow-[0_6px_22px_rgba(36,66,115,0.07)] ring-1 ring-slate-100">
               {allPeople.map((person, index) => {
                 const totals = personTotals[person] || {};
-                const jpy = Number(totals.JPY || 0);
-                const twd = Number(totals.TWD || 0);
-                const avatarClass = index % 3 === 0 ? "tm-payer-avatar-violet" : index % 3 === 1 ? "tm-payer-avatar-blue" : "tm-payer-avatar-orange";
-                return (
-                  <button
-                    type="button"
-                    key={person}
-                    onClick={() => setSelectedPerson(person)}
-                    className={`tm-payer-row ${index !== allPeople.length - 1 ? "tm-payer-row-divider" : ""}`}
-                  >
-                    <div className={`tm-payer-avatar ${avatarClass}`}>♟</div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold text-slate-800">{person}</div>
-                      <div className="tm-payer-currency-row">
-                        <div className="tm-payer-currency tm-payer-jpy">
-                          <span>JPY</span>
-                          <strong>{jpy ? `¥${formatMoney(jpy)}` : ""}</strong>
-                        </div>
-                        <div className="tm-payer-currency-divider" />
-                        <div className="tm-payer-currency tm-payer-twd">
-                          <span>TWD</span>
-                          <strong>{twd ? `NT$${formatMoney(twd)}` : ""}</strong>
-                        </div>
+                const entries = Object.entries(totals);
+                const avatarClass = index % 3 === 0 ? "bg-violet-50 text-violet-400" : index % 3 === 1 ? "bg-sky-50 text-sky-500" : "bg-orange-50 text-orange-400";
+                const jpyAmount = totals.JPY;
+                const twdAmount = totals.TWD;
+                const otherEntries = entries.filter(([currencyCode]) => currencyCode !== "JPY" && currencyCode !== "TWD");
+                return <button type="button" key={person} onClick={() => setSelectedPerson(person)} className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${index !== allPeople.length - 1 ? "border-b border-slate-100" : ""}`}>
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${avatarClass}`}>♟</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-bold text-slate-800">{person}</div>
+                    <div className="mt-1 grid grid-cols-2">
+                      <div className="min-w-0 pr-4">
+                        <div className="text-[9px] font-bold tracking-wide text-slate-400">JPY</div>
+                        <div className="whitespace-nowrap text-xs font-black text-emerald-600">{jpyAmount != null ? `${getCurrency("JPY").symbol}${formatMoney(jpyAmount)}` : ""}</div>
+                      </div>
+                      <div className="min-w-0 border-l border-slate-200 pl-5 pr-2">
+                        <div className="text-[9px] font-bold tracking-wide text-slate-400">TWD</div>
+                        <div className="whitespace-nowrap text-xs font-black text-blue-600">{twdAmount != null ? `${getCurrency("TWD").symbol}${formatMoney(twdAmount)}` : ""}</div>
                       </div>
                     </div>
-                    <span className="tm-payer-arrow">›</span>
-                  </button>
-                );
+                    {otherEntries.length > 0 && <div className="mt-1 text-[9px] text-slate-400">另有 {otherEntries.length} 種幣別</div>}
+                  </div>
+                  <span className="shrink-0 pl-1 text-xl text-slate-300">›</span>
+                </button>;
               })}
             </div>
           </section>
@@ -689,36 +675,32 @@ export default function ExpensePage() {
             <h2 className="text-base font-black text-slate-900">◔ 支出群組</h2>
             {editable && <button onClick={() => setShowGroupModal(true)} className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50">＋ 群組</button>}
           </div>
-          <div className="tm-expense-group-grid">
-            {groupRows.map(({ group, totals, entries }, index) => {
-              const percent = getGroupPercent(totals);
-              const palette = ["blue", "orange", "green", "purple", "pink", "teal"];
-              const tone = palette[index % palette.length];
-              const jpy = Number(totals.JPY || 0);
-              const twd = Number(totals.TWD || 0);
-              const fallbackCode = entries.find(([code]) => code !== "JPY" && code !== "TWD")?.[0];
-              const fallback = fallbackCode ? getCurrency(fallbackCode) : null;
-              return (
-                <button
-                  type="button"
-                  key={group.id}
-                  onClick={() => setSelectedGroup(group)}
-                  className={`tm-expense-group-card tm-expense-group-${tone}`}
-                >
-                  <div className="tm-expense-group-head">
-                    <span className="tm-expense-group-icon">{group.icon}</span>
-                    <span className="min-w-0 flex-1 truncate">{group.name}</span>
-                    <span className="tm-expense-group-chevron">›</span>
-                  </div>
-                  <div className="tm-expense-group-values">
-                    {jpy > 0 && <div><span>JPY</span><strong>¥{formatMoney(jpy)}</strong></div>}
-                    {twd > 0 && <div><span>TWD</span><strong>NT${formatMoney(twd)}</strong></div>}
-                    {!jpy && !twd && fallback && <div><span>{fallbackCode}</span><strong>{fallback.symbol}{formatMoney(totals[fallbackCode])}</strong></div>}
-                  </div>
-                  {percent !== null && <div className="tm-expense-group-progress"><span style={{ width: `${Math.min(percent, 100)}%` }} /></div>}
-                  {percent !== null && <div className="tm-expense-group-percent">{percent}%</div>}
-                </button>
-              );
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
+            {groupRows.map(({ group, totals, entries }) => {
+              const palette = {
+                flight: { card: "border-blue-100 bg-blue-50/40", icon: "bg-blue-100/80", title: "text-blue-700", amount: "text-blue-600" },
+                hotel: { card: "border-orange-100 bg-orange-50/40", icon: "bg-orange-100/80", title: "text-orange-700", amount: "text-orange-500" },
+                transport: { card: "border-emerald-100 bg-emerald-50/40", icon: "bg-emerald-100/80", title: "text-emerald-700", amount: "text-emerald-600" },
+                food: { card: "border-rose-100 bg-rose-50/40", icon: "bg-rose-100/80", title: "text-rose-700", amount: "text-rose-500" },
+                ticket: { card: "border-violet-100 bg-violet-50/40", icon: "bg-violet-100/80", title: "text-violet-700", amount: "text-violet-600" },
+                shopping: { card: "border-pink-100 bg-pink-50/40", icon: "bg-pink-100/80", title: "text-pink-700", amount: "text-pink-600" },
+              }[group.id] || { card: "border-slate-100 bg-white", icon: "bg-slate-100", title: "text-slate-700", amount: "text-slate-700" };
+              return <button type="button" key={group.id} onClick={() => setSelectedGroup(group)} className={`w-[175px] min-w-[175px] snap-start rounded-[1.15rem] border p-3 text-left shadow-[0_6px_18px_rgba(36,66,115,0.06)] transition hover:-translate-y-0.5 hover:shadow-md ${palette.card}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ${palette.icon}`}>{group.icon}</span>
+                  <span className={`min-w-0 flex-1 truncate text-sm font-black ${palette.title}`}>{group.name}</span>
+                  <span className="text-lg font-bold text-slate-300">›</span>
+                </div>
+                <div className="mt-3 space-y-1">
+                  {entries.slice(0, 3).map(([currencyCode, amount]) => {
+                    const currency = getCurrency(currencyCode);
+                    return <div key={currencyCode} className="flex items-baseline justify-between gap-2">
+                      <span className="text-[9px] font-bold tracking-wide text-slate-400">{currencyCode}</span>
+                      <span className={`whitespace-nowrap text-sm font-black ${palette.amount}`}>{currency.symbol}{formatMoney(amount)}</span>
+                    </div>;
+                  })}
+                </div>
+              </button>;
             })}
           </div>
         </section>

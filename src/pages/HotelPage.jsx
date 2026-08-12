@@ -381,12 +381,6 @@ export default function HotelPage() {
                     📍 {firstHotel.address}
                   </a>
                 )}
-                {firstHotel.note && (
-                  <div className="mt-3 rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm leading-5 text-slate-600 ring-1 ring-amber-100">
-                    <span className="font-bold text-amber-700">📝 備註：</span>{' '}
-                    <span className="whitespace-pre-wrap break-words">{firstHotel.note}</span>
-                  </div>
-                )}
                 {firstHotel.website && (
                   <a href={firstHotel.website} target="_blank" rel="noreferrer" className="mt-2 block text-sm font-medium text-green-600 hover:underline">
                     🌐 官方網站
