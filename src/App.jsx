@@ -106,6 +106,16 @@ return (
           path="expense"
           element={<ExpensePage />}
         />
+
+        <Route
+          path="packing"
+          element={<PackingPage />}
+        />
+
+        <Route
+          path="data"
+          element={<DataPage />}
+        />
       </Route>
 
       <Route

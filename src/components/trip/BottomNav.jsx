@@ -11,7 +11,7 @@ const defaultItems = [
   { path: "data", icon: "📁", title: "資料" },
 ];
 
-const shareItems = defaultItems.filter((item) => ["itinerary", "flight", "hotel", "transport", "weather", "expense"].includes(item.path));
+const shareItems = defaultItems;
 
 export default function BottomNav({ share = false, items }) {
   const { id, shareId } = useParams();

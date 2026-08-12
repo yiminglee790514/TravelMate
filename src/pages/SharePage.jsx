@@ -9,6 +9,8 @@ const menuItems = [
   ["weather", "🌤️", "天氣"],
   ["itinerary", "📅", "行程表"],
   ["expense", "💰", "花費"],
+  ["packing", "🧳", "行李"],
+  ["data", "📁", "資料"],
 ];
 
 export default function SharePage() {

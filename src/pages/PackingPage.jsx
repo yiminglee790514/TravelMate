@@ -1,351 +1,432 @@
-import { Link, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import useTrip from "../hooks/useTrip";
+import { getShare } from "../services/shareService";
+import { canEdit } from "../services/permissionService";
 import PackingGroupModal from "../components/packing/PackingGroupModal";
-import PackingGroup from "../components/packing/PackingGroup";
 import PackingItemModal from "../components/packing/PackingItemModal";
 
+const groupStyles = [
+  {
+    card: "border-blue-100 bg-blue-50/70",
+    icon: "bg-blue-100",
+    title: "text-blue-700",
+    badge: "bg-blue-600 text-white",
+  },
+  {
+    card: "border-orange-100 bg-orange-50/70",
+    icon: "bg-orange-100",
+    title: "text-orange-700",
+    badge: "bg-orange-500 text-white",
+  },
+  {
+    card: "border-emerald-100 bg-emerald-50/70",
+    icon: "bg-emerald-100",
+    title: "text-emerald-700",
+    badge: "bg-emerald-600 text-white",
+  },
+  {
+    card: "border-violet-100 bg-violet-50/70",
+    icon: "bg-violet-100",
+    title: "text-violet-700",
+    badge: "bg-violet-600 text-white",
+  },
+  {
+    card: "border-pink-100 bg-pink-50/70",
+    icon: "bg-pink-100",
+    title: "text-pink-700",
+    badge: "bg-pink-600 text-white",
+  },
+  {
+    card: "border-amber-100 bg-amber-50/70",
+    icon: "bg-amber-100",
+    title: "text-amber-700",
+    badge: "bg-amber-500 text-white",
+  },
+];
+
+function PackingGroupCard({
+  group,
+  index,
+  selected,
+  readonly,
+  onSelect,
+  onEdit,
+  onDelete,
+}) {
+  const timerRef = useRef(null);
+  const longPressedRef = useRef(false);
+  const style = groupStyles[index % groupStyles.length];
+  const uncheckedCount = (group.items || []).filter((item) => !item.checked).length;
+
+  function clearLongPress() {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  function startLongPress(event) {
+    if (readonly) return;
+    longPressedRef.current = false;
+    clearLongPress();
+    timerRef.current = window.setTimeout(() => {
+      longPressedRef.current = true;
+      onEdit(group);
+    }, 550);
+
+    if (event.pointerType === "mouse") {
+      event.preventDefault();
+    }
+  }
+
+  function endLongPress() {
+    clearLongPress();
+  }
+
+  useEffect(() => () => clearLongPress(), []);
+
+  return (
+    <div className="relative w-[148px] shrink-0 snap-start sm:w-[164px]">
+      <button
+        type="button"
+        onPointerDown={startLongPress}
+        onPointerUp={endLongPress}
+        onPointerLeave={endLongPress}
+        onPointerCancel={endLongPress}
+        onContextMenu={(event) => {
+          event.preventDefault();
+        }}
+        onClick={() => {
+          if (longPressedRef.current) {
+            longPressedRef.current = false;
+            return;
+          }
+          onSelect();
+        }}
+        className={`relative flex h-[112px] w-full flex-col justify-between rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.98] ${style.card} ${selected ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-xl ${style.icon}`}>
+            {group.icon || "📂"}
+          </span>
+
+          {uncheckedCount > 0 && (
+            <span className={`flex min-w-6 h-6 items-center justify-center rounded-full px-1.5 text-[11px] font-black shadow-sm ${style.badge}`}>
+              {uncheckedCount}
+            </span>
+          )}
+        </div>
+
+        <div className="min-w-0 pr-1">
+          <div className={`truncate text-[14px] font-extrabold ${style.title}`}>
+            {group.title}
+          </div>
+          <div className="mt-0.5 text-[10px] font-medium text-slate-400">
+            {(group.items || []).length} 項物品
+          </div>
+        </div>
+      </button>
+
+
+    </div>
+  );
+}
+
 export default function PackingPage() {
+  const { id, shareId } = useParams();
+  const { trip: cloudTrip, updateTrip } = useTrip(id);
 
-  const { id } = useParams();
-
-  const {
-    trip,
-    updateTrip,
-  } = useTrip(id);
-
+  const [trip, setTrip] = useState(null);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [editGroup, setEditGroup] = useState(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [currentGroupId, setCurrentGroupId] = useState(null);
 
-    const [editGroup, setEditGroup] = useState(null);
+  useEffect(() => {
+    let active = true;
 
-    const [showItemModal, setShowItemModal] = useState(false);
+    async function load() {
+      if (shareId) {
+        const data = await getShare(shareId);
+        if (active) setTrip(data);
+      } else if (cloudTrip) {
+        setTrip(cloudTrip);
+      }
+    }
 
-    const [editItem, setEditItem] = useState(null);
-
-    const [currentGroupId, setCurrentGroupId] = useState(null);
-
-    const [openItemId, setOpenItemId] = useState(null);
+    load();
+    return () => {
+      active = false;
+    };
+  }, [cloudTrip, shareId]);
 
   if (!trip) {
-
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
         載入中...
       </div>
     );
+  }
 
+  const readonly = !!shareId || !canEdit(trip);
+  const groups = Array.isArray(trip.packing) ? trip.packing : [];
+  const selectedGroup = groups.find((group) => group.id === selectedGroupId) || groups[0] || null;
+
+  async function saveTrip(updatedTrip) {
+    setTrip(updatedTrip);
+    if (!readonly) await updateTrip(updatedTrip);
+  }
+
+  async function toggleItem(groupId, itemId) {
+    if (readonly) return;
+
+    const packing = groups.map((group) => {
+      if (group.id !== groupId) return group;
+      return {
+        ...group,
+        items: (group.items || []).map((item) =>
+          item.id === itemId ? { ...item, checked: !item.checked } : item
+        ),
+      };
+    });
+
+    await saveTrip({ ...trip, packing });
+  }
+
+  async function deleteGroup(groupId) {
+    if (readonly) return;
+    if (!window.confirm("確定刪除此群組？群組內物品也會一起刪除。")) return;
+
+    const packing = groups.filter((group) => group.id !== groupId);
+    await saveTrip({ ...trip, packing });
+    if (selectedGroupId === groupId) setSelectedGroupId(packing[0]?.id || null);
+    if (editGroup?.id === groupId) {
+      setEditGroup(null);
+      setShowGroupModal(false);
+    }
+  }
+
+  async function deleteItem(groupId, itemId) {
+    if (readonly) return;
+    if (!window.confirm("確定刪除此物品？")) return;
+
+    const packing = groups.map((group) => {
+      if (group.id !== groupId) return group;
+      return {
+        ...group,
+        items: (group.items || []).filter((item) => item.id !== itemId),
+      };
+    });
+
+    await saveTrip({ ...trip, packing });
   }
 
   return (
-
-    <>
-      <div className="bg-gray-100">
-
-        <div className="mx-auto w-full max-w-6xl px-4 pt-2 sm:px-6">
-
-          
-
-          <button
-            onClick={() => setShowGroupModal(true)}
-            className="mt-6 mb-6 w-full rounded-2xl bg-blue-500 py-3 font-semibold text-white hover:bg-blue-600"
-            >
-            ＋ 新增群組
-          </button>
-
-          <div className="space-y-6">
-
-  {(trip.packing || []).map((group) => (
-
-    <PackingGroup
-
-      key={group.id}
-
-      group={group}
-
-      onAddItem={(groupId) => {
-
-        setCurrentGroupId(groupId);
-
-        setEditItem(null);
-
-        setShowItemModal(true);
-
-      }}
-
-      onEditGroup={(group) => {
-
-        setEditGroup(group);
-
-        setShowGroupModal(true);
-
-      }}
-
-      onDeleteGroup={async (groupId) => {
-
-        if (!window.confirm("確定刪除此群組？")) return;
-
-        await updateTrip({
-
-          ...trip,
-
-          packing: trip.packing.filter(
-            g => g.id !== groupId
-          ),
-
-        });
-
-      }}
-
-      onToggleItem={async (groupId,itemId)=>{
-
-        const packing=trip.packing.map(group=>{
-
-          if(group.id!==groupId) return group;
-
-          return{
-
-            ...group,
-
-            items:group.items.map(item=>
-
-              item.id===itemId
-
-              ?{
-
-                  ...item,
-
-                  checked:!item.checked
-
-                }
-
-              :item
-
-            )
-
-          };
-
-        });
-
-        await updateTrip({
-
-          ...trip,
-
-          packing,
-
-        });
-
-      }}
-
-      onEditItem={(groupId,item)=>{
-
-        setCurrentGroupId(groupId);
-
-        setEditItem(item);
-
-        setShowItemModal(true);
-
-      }}
-
-      onDeleteItem={async(groupId,itemId)=>{
-
-        if(!window.confirm("確定刪除此物品？")) return;
-
-        const packing=trip.packing.map(group=>{
-
-          if(group.id!==groupId) return group;
-
-          return{
-
-            ...group,
-
-            items:group.items.filter(
-
-              i=>i.id!==itemId
-
-            )
-
-          };
-
-        });
-
-        await updateTrip({
-
-          ...trip,
-
-          packing,
-
-        });
-
-      }}
-      openItemId={openItemId}
-      setOpenItemId={setOpenItemId}
-    />
-
-  ))}
-
-</div>
-
+    <div className="min-h-full bg-slate-50 pb-8">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-3 sm:px-6">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <div className="text-2xl font-black text-slate-900">🧳 行李</div>
+            <div className="mt-1 text-xs text-slate-400">選擇群組查看需要攜帶的物品</div>
+          </div>
         </div>
 
+        {/* 群組橫向滑動區 */}
+        <div className="-mx-4 overflow-x-auto px-4 pb-3 scrollbar-none sm:-mx-6 sm:px-6">
+          <div className="flex w-max snap-x snap-mandatory gap-3">
+            {groups.map((group, index) => (
+              <PackingGroupCard
+                key={group.id}
+                group={group}
+                index={index}
+                selected={selectedGroup?.id === group.id}
+                readonly={readonly}
+                onSelect={() => setSelectedGroupId(group.id)}
+                onEdit={(value) => {
+                  setEditGroup(value);
+                  setShowGroupModal(true);
+                }}
+                onDelete={deleteGroup}
+              />
+            ))}
+
+            {!readonly && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditGroup(null);
+                  setShowGroupModal(true);
+                }}
+                className="flex h-[112px] w-[148px] shrink-0 snap-start flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-200 bg-white text-blue-600 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 active:scale-[0.98] sm:w-[164px]"
+              >
+                <span className="text-3xl font-light">＋</span>
+                <span className="mt-1 text-sm font-bold">新增群組</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 選取群組的物品 */}
+        {selectedGroup ? (
+          <section className="mt-3 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="text-2xl">{selectedGroup.icon || "📂"}</span>
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-black text-slate-800">{selectedGroup.title}</h2>
+                  <p className="text-xs text-slate-400">
+                    {(selectedGroup.items || []).filter((item) => !item.checked).length} 項尚未完成
+                  </p>
+                </div>
+              </div>
+              {!readonly && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentGroupId(selectedGroup.id);
+                    setEditItem(null);
+                    setShowItemModal(true);
+                  }}
+                  className="shrink-0 rounded-full bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600"
+                >
+                  ＋ 新增物品
+                </button>
+              )}
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {(selectedGroup.items || []).length === 0 ? (
+                <div className="px-5 py-10 text-center text-sm text-slate-400">
+                  這個群組還沒有物品
+                </div>
+              ) : (
+                [...(selectedGroup.items || [])]
+                  .sort((a, b) => Number(a.checked) - Number(b.checked))
+                  .map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 px-5 py-3.5">
+                      <input
+                        type="checkbox"
+                        checked={!!item.checked}
+                        disabled={readonly}
+                        onChange={() => toggleItem(selectedGroup.id, item.id)}
+                        className="h-5 w-5 accent-blue-600"
+                      />
+                      <button
+                        type="button"
+                        disabled={readonly}
+                        onClick={() => {
+                          if (readonly) return;
+                          setCurrentGroupId(selectedGroup.id);
+                          setEditItem(item);
+                          setShowItemModal(true);
+                        }}
+                        className={`min-w-0 flex-1 text-left text-sm font-semibold ${item.checked ? "text-slate-400 line-through" : "text-slate-700"}`}
+                      >
+                        {item.name}
+                      </button>
+                      {!readonly && (
+                        <button
+                          type="button"
+                          onClick={() => deleteItem(selectedGroup.id, item.id)}
+                          className="shrink-0 rounded-full px-2 py-1 text-xs text-slate-300 hover:bg-red-50 hover:text-red-500"
+                          aria-label="刪除物品"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))
+              )}
+            </div>
+          </section>
+        ) : (
+          <section className="mt-3 rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-12 text-center shadow-sm">
+            <div className="text-4xl">🧳</div>
+            <div className="mt-3 text-sm font-semibold text-slate-600">還沒有行李群組</div>
+            {!readonly && (
+              <button
+                type="button"
+                onClick={() => setShowGroupModal(true)}
+                className="mt-4 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white"
+              >
+                ＋ 建立第一個群組
+              </button>
+            )}
+          </section>
+        )}
       </div>
 
-      {showGroupModal && (
-
+      {!readonly && showGroupModal && (
         <PackingGroupModal
-  group={editGroup}
-  onClose={() => {
+          group={editGroup}
+          onDelete={editGroup ? () => deleteGroup(editGroup.id) : undefined}
+          onClose={() => {
+            setShowGroupModal(false);
+            setEditGroup(null);
+          }}
+          onSave={async (data) => {
+            let packing;
 
-    setShowGroupModal(false);
+            if (editGroup) {
+              packing = groups.map((group) =>
+                group.id === editGroup.id
+                  ? { ...group, title: data.title, icon: data.icon }
+                  : group
+              );
+            } else {
+              const newGroup = {
+                id: Date.now(),
+                title: data.title,
+                icon: data.icon,
+                items: [],
+              };
+              packing = [...groups, newGroup];
+              setSelectedGroupId(newGroup.id);
+            }
 
-    setEditGroup(null);
-
-  }}
-onSave={async (data) => {
-
-
-
-  let packing;
-
-  if (editGroup) {
-
-    packing = trip.packing.map(group =>
-
-      group.id === editGroup.id
-
-        ? {
-
-            ...group,
-
-            title: data.title,
-
-            icon: data.icon,
-
-          }
-
-        : group
-
-    );
-
-  } else {
-
-    packing = [
-
-      ...(trip.packing || []),
-
-      {
-
-        id: Date.now(),
-
-        title: data.title,
-
-        icon: data.icon,
-
-        items: [],
-
-      },
-
-    ];
-
-  }
-
-  await updateTrip({
-
-    ...trip,
-
-    packing,
-
-  });
-
-  setEditGroup(null);
-
-  setShowGroupModal(false);
-
-}}
-/>
-
+            await saveTrip({ ...trip, packing });
+            setEditGroup(null);
+            setShowGroupModal(false);
+          }}
+        />
       )}
 
-      {showItemModal && (
+      {!readonly && showItemModal && (
+        <PackingItemModal
+          item={editItem}
+          onClose={() => {
+            setShowItemModal(false);
+            setEditItem(null);
+          }}
+          onSave={async (item) => {
+            const packing = groups.map((group) => {
+              if (group.id !== currentGroupId) return group;
 
-  <PackingItemModal
+              if (editItem) {
+                return {
+                  ...group,
+                  items: (group.items || []).map((currentItem) =>
+                    currentItem.id === item.id ? item : currentItem
+                  ),
+                };
+              }
 
-    item={editItem}
+              return {
+                ...group,
+                items: [...(group.items || []), item],
+              };
+            });
 
-    onClose={() => {
-
-      setShowItemModal(false);
-
-      setEditItem(null);
-
-    }}
-
-    onSave={async (item) => {
-
-      const packing = trip.packing.map(group => {
-
-        if (group.id !== currentGroupId) {
-
-          return group;
-
-        }
-
-        if (editItem) {
-
-          return {
-
-            ...group,
-
-            items: group.items.map(i =>
-
-              i.id === item.id
-
-                ? item
-
-                : i
-
-            ),
-
-          };
-
-        }
-
-        return {
-
-          ...group,
-
-          items: [
-
-            ...group.items,
-
-            item,
-
-          ],
-
-        };
-
-      });
-
-      await updateTrip({
-
-        ...trip,
-
-        packing,
-
-      });
-
-      setShowItemModal(false);
-
-      setEditItem(null);
-
-    }}
-
-  />
-
-)}
-
-    </>
-
+            await saveTrip({ ...trip, packing });
+            setShowItemModal(false);
+            setEditItem(null);
+          }}
+        />
+      )}
+    </div>
   );
-
 }
