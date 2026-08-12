@@ -139,11 +139,7 @@ export default function ExpensePage() {
 
   const [editingExpense, setEditingExpense] = useState(null);
 
-  const [showGroupModal, setShowGroupModal] = useState(false);
-
   const [newPerson, setNewPerson] = useState("");
-
-  const [newGroupName, setNewGroupName] = useState("");
 
   // 點擊群組 → 查看群組花費明細
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -557,37 +553,6 @@ export default function ExpensePage() {
 
 
   // =========================
-  // 新增群組
-  // =========================
-
-  async function handleAddGroup() {
-
-    const name = newGroupName.trim();
-
-    if (!name) return;
-
-    const newGroup = {
-      id: `group-${Date.now()}`,
-      name,
-      icon: "📌",
-    };
-
-    await updateTrip({
-      ...trip,
-      expenseGroups: [
-        ...groups,
-        newGroup,
-      ],
-    });
-
-    setNewGroupName("");
-
-    setShowGroupModal(false);
-
-  }
-
-
-  // =========================
   // 找群組
   // =========================
 
@@ -609,14 +574,6 @@ export default function ExpensePage() {
     const entries = Object.entries(totals);
     return { group, totals, entries };
   }).filter((row) => row.entries.length > 0);
-
-  const primaryCurrency = totalCurrencies.length === 1 ? totalCurrencies[0][0] : null;
-  const primaryTotal = primaryCurrency ? Number(currencyTotals[primaryCurrency] || 0) : 0;
-
-  function getGroupPercent(totals) {
-    if (!primaryCurrency || !totals?.[primaryCurrency] || primaryTotal <= 0) return null;
-    return Math.round((Number(totals[primaryCurrency]) / primaryTotal) * 100);
-  }
 
   return (
     <div className="bg-[#f6f8fc]">
@@ -671,19 +628,95 @@ export default function ExpensePage() {
         <section className="mb-8">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-black text-slate-900">◔ 支出群組</h2>
-            {editable && <button onClick={() => setShowGroupModal(true)} className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50">＋ 群組</button>}
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {groupRows.map(({ group, totals, entries }) => {
-              const percent = getGroupPercent(totals);
+          <div
+            className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2 snap-x snap-mandatory"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {groupRows.map(({ group, totals, entries }, index) => {
               const currencyCode = entries[0][0];
               const currency = getCurrency(currencyCode);
-              return <button type="button" key={group.id} onClick={() => setSelectedGroup(group)} className="rounded-[1.15rem] bg-white p-3 text-left shadow-[0_6px_18px_rgba(36,66,115,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-lg">{group.icon}</span><span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-700">{group.name}</span></div>
-                <div className="mt-3 text-sm font-black text-slate-900">{currency.symbol}{formatMoney(totals[currencyCode])}</div>
-                {entries.length > 1 && <div className="mt-0.5 text-[10px] text-slate-400">另有 {entries.length - 1} 種幣別</div>}
-                {percent !== null && <div className="mt-2 flex items-center gap-2"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-400" style={{ width: `${Math.min(percent, 100)}%` }} /></div><span className="text-[9px] font-bold text-slate-400">{percent}%</span></div>}
-              </button>;
+
+              // 讓常用群組固定有自己的顏色；新增群組則依序套用其他顏色。
+              const groupColorClasses = [
+                {
+                  card: "border-blue-100 bg-blue-50/45",
+                  icon: "bg-blue-100/80",
+                  name: "text-blue-700",
+                  amount: "text-blue-600",
+                  currency: "text-slate-400",
+                },
+                {
+                  card: "border-orange-100 bg-orange-50/45",
+                  icon: "bg-orange-100/80",
+                  name: "text-orange-700",
+                  amount: "text-orange-600",
+                  currency: "text-slate-400",
+                },
+                {
+                  card: "border-emerald-100 bg-emerald-50/45",
+                  icon: "bg-emerald-100/80",
+                  name: "text-emerald-700",
+                  amount: "text-emerald-600",
+                  currency: "text-slate-400",
+                },
+                {
+                  card: "border-rose-100 bg-rose-50/45",
+                  icon: "bg-rose-100/80",
+                  name: "text-rose-700",
+                  amount: "text-rose-600",
+                  currency: "text-slate-400",
+                },
+                {
+                  card: "border-violet-100 bg-violet-50/45",
+                  icon: "bg-violet-100/80",
+                  name: "text-violet-700",
+                  amount: "text-violet-600",
+                  currency: "text-slate-400",
+                },
+                {
+                  card: "border-pink-100 bg-pink-50/45",
+                  icon: "bg-pink-100/80",
+                  name: "text-pink-700",
+                  amount: "text-pink-600",
+                  currency: "text-slate-400",
+                },
+              ][index % 6];
+
+              return (
+                <button
+                  type="button"
+                  key={group.id}
+                  onClick={() => setSelectedGroup(group)}
+                  className={`shrink-0 snap-start rounded-[1.15rem] border p-3 text-left shadow-[0_5px_16px_rgba(36,66,115,0.05)] transition hover:-translate-y-0.5 hover:shadow-md ${groupColorClasses.card}`}
+                  style={{ width: "calc((100% - 24px) / 3)" }}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base ${groupColorClasses.icon}`}>
+                      {group.icon}
+                    </span>
+                    <span className={`min-w-0 flex-1 truncate text-xs font-black ${groupColorClasses.name}`}>
+                      {group.name}
+                    </span>
+                    <span className="shrink-0 text-lg font-bold text-slate-300">›</span>
+                  </div>
+
+                  <div className="mt-3 flex min-w-0 items-baseline gap-2">
+                    <span className={`shrink-0 text-[10px] font-bold tracking-wide ${groupColorClasses.currency}`}>
+                      {currencyCode}
+                    </span>
+                    <span className={`min-w-0 truncate text-[15px] font-black ${groupColorClasses.amount}`}>
+                      {currency.symbol}{formatMoney(totals[currencyCode])}
+                    </span>
+                  </div>
+
+                  {entries.length > 1 && (
+                    <div className="mt-1 truncate text-[9px] font-medium text-slate-400">
+                      另有 {entries.length - 1} 種幣別
+                    </div>
+                  )}
+                </button>
+              );
             })}
           </div>
         </section>
@@ -777,95 +810,8 @@ export default function ExpensePage() {
       )}
 
 
-      {/* =========================
-          新增群組
-      ========================= */}
 
-      {editable && showGroupModal && (
-
-        <div className="
-          fixed
-          inset-0
-          z-50
-          flex
-          items-center
-          justify-center
-          bg-black/40
-          p-5
-        ">
-
-          <div className="
-            w-full
-            max-w-md
-            rounded-3xl
-            bg-white
-            p-6
-          ">
-
-            <h2 className="text-2xl font-bold">
-              新增群組
-            </h2>
-
-            <input
-              value={newGroupName}
-              onChange={(e) =>
-                setNewGroupName(e.target.value)
-              }
-              placeholder="例如：寶寶用品"
-              className="
-                mt-5
-                w-full
-                rounded-xl
-                border
-                px-4
-                py-3
-                outline-none
-                focus:border-blue-500
-              "
-            />
-
-            <div className="mt-5 flex gap-3">
-
-              <button
-                onClick={() => {
-
-                  setNewGroupName("");
-
-                  setShowGroupModal(false);
-
-                }}
-                className="
-                  flex-1
-                  rounded-xl
-                  bg-gray-200
-                  py-3
-                "
-              >
-                取消
-              </button>
-
-              <button
-                onClick={handleAddGroup}
-                className="
-                  flex-1
-                  rounded-xl
-                  bg-blue-500
-                  py-3
-                  text-white
-                "
-              >
-                新增
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      )}
-
-    </div>
+      </div>
 
   );
 
