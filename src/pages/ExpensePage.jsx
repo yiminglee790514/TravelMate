@@ -610,6 +610,13 @@ export default function ExpensePage() {
     return { group, totals, entries };
   }).filter((row) => row.entries.length > 0);
 
+  const primaryCurrency = totalCurrencies.length === 1 ? totalCurrencies[0][0] : null;
+  const primaryTotal = primaryCurrency ? Number(currencyTotals[primaryCurrency] || 0) : 0;
+
+  function getGroupPercent(totals) {
+    if (!primaryCurrency || !totals?.[primaryCurrency] || primaryTotal <= 0) return null;
+    return Math.round((Number(totals[primaryCurrency]) / primaryTotal) * 100);
+  }
 
   return (
     <div className="bg-[#f6f8fc]">
@@ -621,14 +628,13 @@ export default function ExpensePage() {
           </div>
           <div className="rounded-[1.35rem] bg-white p-3.5 shadow-[0_8px_26px_rgba(36,66,115,0.08)] ring-1 ring-slate-100">
             {totalCurrencies.length === 0 ? <div className="rounded-xl bg-slate-50 px-4 py-7 text-center text-sm text-slate-400">尚未有花費</div> : (
-              <div className="flex gap-3 overflow-x-auto scrollbar-none">
+              <div className="grid grid-cols-2 gap-3">
                 {totalCurrencies.map(([currencyCode, amount]) => {
                   const currency = getCurrency(currencyCode);
                   const isJPY = currencyCode === "JPY";
-                  return <div key={currencyCode} className={`relative min-w-[calc(50%-6px)] flex-1 overflow-hidden rounded-xl border p-3 ${isJPY ? "border-emerald-100 bg-emerald-50/60" : "border-blue-100 bg-blue-50/60"}`}>
-                    <div className="text-[11px] font-medium text-slate-500">{currencyCode} {currency.name}</div>
-                    <div className={`mt-1 whitespace-nowrap text-[clamp(1.35rem,5vw,2rem)] font-black tracking-tight ${isJPY ? "text-emerald-600" : "text-blue-600"}`}>{currency.symbol}{formatMoney(amount)}</div>
-                    <div className={`absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-xl ${isJPY ? "bg-emerald-100/90 text-emerald-500" : "bg-blue-100/90 text-blue-500"}`}>{currency.symbol === "¥" ? "¥" : "＄"}</div>
+                  return <div key={currencyCode} className={`min-w-0 rounded-xl border p-3.5 sm:p-4 ${isJPY ? "border-emerald-100 bg-emerald-50/60" : "border-blue-100 bg-blue-50/60"}`}>
+                    <div className="truncate text-[11px] font-medium text-slate-500 sm:text-xs">{currencyCode} {currency.name}</div>
+                    <div className={`mt-1 truncate text-[clamp(1.15rem,5vw,1.6rem)] font-black leading-tight ${isJPY ? "text-emerald-600" : "text-blue-600"}`}>{currency.symbol}{formatMoney(amount)}</div>
                   </div>;
                 })}
               </div>
@@ -644,26 +650,18 @@ export default function ExpensePage() {
                 const totals = personTotals[person] || {};
                 const entries = Object.entries(totals);
                 const avatarClass = index % 3 === 0 ? "bg-violet-50 text-violet-400" : index % 3 === 1 ? "bg-sky-50 text-sky-500" : "bg-orange-50 text-orange-400";
-                const jpyAmount = totals.JPY;
-                const twdAmount = totals.TWD;
-                const otherEntries = entries.filter(([currencyCode]) => currencyCode !== "JPY" && currencyCode !== "TWD");
                 return <button type="button" key={person} onClick={() => setSelectedPerson(person)} className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${index !== allPeople.length - 1 ? "border-b border-slate-100" : ""}`}>
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${avatarClass}`}>♟</div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-bold text-slate-800">{person}</div>
-                    <div className="mt-1 grid grid-cols-2">
-                      <div className="min-w-0 pr-4">
-                        <div className="text-[9px] font-bold tracking-wide text-slate-400">JPY</div>
-                        <div className="whitespace-nowrap text-xs font-black text-emerald-600">{jpyAmount != null ? `${getCurrency("JPY").symbol}${formatMoney(jpyAmount)}` : ""}</div>
-                      </div>
-                      <div className="min-w-0 border-l border-slate-200 pl-5 pr-2">
-                        <div className="text-[9px] font-bold tracking-wide text-slate-400">TWD</div>
-                        <div className="whitespace-nowrap text-xs font-black text-blue-600">{twdAmount != null ? `${getCurrency("TWD").symbol}${formatMoney(twdAmount)}` : ""}</div>
-                      </div>
+                    <div className="truncate text-[15px] font-bold text-slate-800 sm:text-base">{person}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-x-3">
+                      {entries.length ? entries.map(([currencyCode, amount]) => {
+                        const currency = getCurrency(currencyCode);
+                        return <div key={currencyCode} className="min-w-0"><span className="block text-[10px] font-semibold text-slate-400">{currencyCode}</span><span className={`text-sm font-black ${currencyCode === "JPY" ? "text-emerald-600" : currencyCode === "TWD" ? "text-blue-600" : "text-slate-700"}`}>{currency.symbol}{formatMoney(amount)}</span></div>;
+                      }) : <span className="text-[11px] text-slate-400">尚未有花費</span>}
                     </div>
-                    {otherEntries.length > 0 && <div className="mt-1 text-[9px] text-slate-400">另有 {otherEntries.length} 種幣別</div>}
                   </div>
-                  <span className="shrink-0 pl-1 text-xl text-slate-300">›</span>
+                  <span className="text-xl text-slate-300">›</span>
                 </button>;
               })}
             </div>
@@ -675,31 +673,16 @@ export default function ExpensePage() {
             <h2 className="text-base font-black text-slate-900">◔ 支出群組</h2>
             {editable && <button onClick={() => setShowGroupModal(true)} className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50">＋ 群組</button>}
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {groupRows.map(({ group, totals, entries }) => {
-              const palette = {
-                flight: { card: "border-blue-100 bg-blue-50/40", icon: "bg-blue-100/80", title: "text-blue-700", amount: "text-blue-600" },
-                hotel: { card: "border-orange-100 bg-orange-50/40", icon: "bg-orange-100/80", title: "text-orange-700", amount: "text-orange-500" },
-                transport: { card: "border-emerald-100 bg-emerald-50/40", icon: "bg-emerald-100/80", title: "text-emerald-700", amount: "text-emerald-600" },
-                food: { card: "border-rose-100 bg-rose-50/40", icon: "bg-rose-100/80", title: "text-rose-700", amount: "text-rose-500" },
-                ticket: { card: "border-violet-100 bg-violet-50/40", icon: "bg-violet-100/80", title: "text-violet-700", amount: "text-violet-600" },
-                shopping: { card: "border-pink-100 bg-pink-50/40", icon: "bg-pink-100/80", title: "text-pink-700", amount: "text-pink-600" },
-              }[group.id] || { card: "border-slate-100 bg-white", icon: "bg-slate-100", title: "text-slate-700", amount: "text-slate-700" };
-              return <button type="button" key={group.id} onClick={() => setSelectedGroup(group)} className={`w-[175px] min-w-[175px] snap-start rounded-[1.15rem] border p-3 text-left shadow-[0_6px_18px_rgba(36,66,115,0.06)] transition hover:-translate-y-0.5 hover:shadow-md ${palette.card}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ${palette.icon}`}>{group.icon}</span>
-                  <span className={`min-w-0 flex-1 truncate text-sm font-black ${palette.title}`}>{group.name}</span>
-                  <span className="text-lg font-bold text-slate-300">›</span>
-                </div>
-                <div className="mt-3 space-y-1">
-                  {entries.slice(0, 3).map(([currencyCode, amount]) => {
-                    const currency = getCurrency(currencyCode);
-                    return <div key={currencyCode} className="flex items-baseline justify-between gap-2">
-                      <span className="text-[9px] font-bold tracking-wide text-slate-400">{currencyCode}</span>
-                      <span className={`whitespace-nowrap text-sm font-black ${palette.amount}`}>{currency.symbol}{formatMoney(amount)}</span>
-                    </div>;
-                  })}
-                </div>
+              const percent = getGroupPercent(totals);
+              const currencyCode = entries[0][0];
+              const currency = getCurrency(currencyCode);
+              return <button type="button" key={group.id} onClick={() => setSelectedGroup(group)} className="rounded-[1.15rem] bg-white p-3 text-left shadow-[0_6px_18px_rgba(36,66,115,0.07)] ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md">
+                <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-50 text-lg">{group.icon}</span><span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-700">{group.name}</span></div>
+                <div className="mt-3 text-sm font-black text-slate-900">{currency.symbol}{formatMoney(totals[currencyCode])}</div>
+                {entries.length > 1 && <div className="mt-0.5 text-[10px] text-slate-400">另有 {entries.length - 1} 種幣別</div>}
+                {percent !== null && <div className="mt-2 flex items-center gap-2"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-400" style={{ width: `${Math.min(percent, 100)}%` }} /></div><span className="text-[9px] font-bold text-slate-400">{percent}%</span></div>}
               </button>;
             })}
           </div>
