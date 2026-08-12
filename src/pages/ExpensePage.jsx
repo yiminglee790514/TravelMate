@@ -607,38 +607,61 @@ export default function ExpensePage() {
                 const totals = personTotals[person] || {};
                 const entries = Object.entries(totals);
                 const avatarClass = index % 3 === 0 ? "bg-violet-50 text-violet-400" : index % 3 === 1 ? "bg-sky-50 text-sky-500" : "bg-orange-50 text-orange-400";
-                return <button type="button" key={person} onClick={() => setSelectedPerson(person)} className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${index !== allPeople.length - 1 ? "border-b border-slate-100" : ""}`}>
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${avatarClass}`}>♟</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[17px] font-extrabold text-slate-800 sm:text-lg">{person}</div>
-                    <div className="mt-1 grid grid-cols-2 gap-x-8">
-                      {(() => {
-                        const jpyAmount = Number(personTotals[person]?.JPY || 0);
-                        const twdAmount = Number(personTotals[person]?.TWD || 0);
-                        const hasJPY = Object.prototype.hasOwnProperty.call(personTotals[person] || {}, "JPY");
-                        const hasTWD = Object.prototype.hasOwnProperty.call(personTotals[person] || {}, "TWD");
-                        const jpy = getCurrency("JPY");
-                        const twd = getCurrency("TWD");
-                        return (
-                          <>
-                            <div className="min-w-0 pr-6">
-                              <span className="block text-[11px] font-bold text-slate-400">JPY</span>
-                              <span className="block truncate text-[15px] font-black text-emerald-600 sm:text-base">
-                                {hasJPY ? `${jpy.symbol}${formatMoney(jpyAmount)}` : ""}
-                              </span>
-                            </div>
-                            <div className="min-w-0 border-l border-slate-200 pl-8">
-                              <span className="block text-[11px] font-bold text-slate-400">TWD</span>
-                              <span className="block truncate text-[15px] font-black text-blue-600 sm:text-base">
-                                {hasTWD ? `${twd.symbol}${formatMoney(twdAmount)}` : ""}
-                              </span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
+                return <button
+                  type="button"
+                  key={person}
+                  onClick={() => setSelectedPerson(person)}
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${index !== allPeople.length - 1 ? "border-b border-slate-100" : ""}`}
+                >
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${avatarClass}`}>
+                    ♟
                   </div>
-                  <span className="text-xl text-slate-300">›</span>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[15px] font-extrabold leading-tight text-slate-800">
+                      {person}
+                    </div>
+
+                    {(() => {
+                      const jpyAmount = Number(personTotals[person]?.JPY || 0);
+                      const twdAmount = Number(personTotals[person]?.TWD || 0);
+                      const hasJPY = Object.prototype.hasOwnProperty.call(personTotals[person] || {}, "JPY");
+                      const hasTWD = Object.prototype.hasOwnProperty.call(personTotals[person] || {}, "TWD");
+                      const jpy = getCurrency("JPY");
+                      const twd = getCurrency("TWD");
+
+                      return (
+                        <div className="mt-1 grid grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]">
+                          {/* 固定左側 JPY */}
+                          <div className="min-w-0 pr-3">
+                            <span className="block text-[10px] font-bold text-slate-400">
+                              JPY
+                            </span>
+                            <span className="block whitespace-nowrap text-[14px] font-black leading-tight text-emerald-600">
+                              {hasJPY ? `${jpy.symbol}${formatMoney(jpyAmount)}` : ""}
+                            </span>
+                          </div>
+
+                          {/* 中間分隔線，刻意與右側保持距離 */}
+                          <div className="my-0.5 w-px bg-slate-200" />
+
+                          {/* 固定右側 TWD */}
+                          <div className="min-w-0 pl-5">
+                            <span className="block text-[10px] font-bold text-slate-400">
+                              TWD
+                            </span>
+                            <span className="block whitespace-nowrap text-[14px] font-black leading-tight text-blue-600">
+                              {hasTWD ? `${twd.symbol}${formatMoney(twdAmount)}` : ""}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <span className="shrink-0 text-xl text-slate-300">
+                    ›
+                  </span>
                 </button>;
               })}
             </div>
@@ -902,7 +925,7 @@ function PersonExpenseModal({
       className="
         fixed
         inset-0
-        z-50
+        z-[200]
         flex
         items-center
         justify-center
@@ -914,10 +937,13 @@ function PersonExpenseModal({
 
       <div
         className="
-          max-h-[85vh]
+          flex
+          max-h-[calc(100dvh-24px)]
           w-full
           max-w-md
-          overflow-y-auto
+          min-h-0
+          flex-col
+          overflow-hidden
           rounded-3xl
           bg-white
           p-3
@@ -975,10 +1001,11 @@ function PersonExpenseModal({
 
         {/* 明細 */}
 
-        <div>
+        <div className="flex min-h-0 flex-1 flex-col">
 
           <div className="
             mb-3
+            shrink-0
             text-sm
             font-bold
             text-gray-800
@@ -1003,11 +1030,12 @@ function PersonExpenseModal({
 
             <div
               className="
-                max-h-[55vh]
                 min-h-0
+                flex-1
                 space-y-2
-                overflow-y-scroll
+                overflow-y-auto
                 overscroll-contain
+                pb-4
                 pr-1
                 text-[13px]
                 [scrollbar-width:thin]
@@ -1069,25 +1097,28 @@ function ExpenseGroupModal({
       className="
         fixed
         inset-0
-        z-50
+        z-[200]
         flex
         items-center
         justify-center
         bg-black/40
-        p-5
+        p-3
       "
       onClick={onClose}
     >
 
       <div
         className="
-          max-h-[80vh]
+          flex
+          max-h-[calc(100dvh-24px)]
           w-full
           max-w-md
-          overflow-y-auto
+          min-h-0
+          flex-col
+          overflow-hidden
           rounded-3xl
           bg-white
-          p-6
+          p-4
         "
         onClick={(event) => event.stopPropagation()}
       >
@@ -1123,7 +1154,7 @@ function ExpenseGroupModal({
 
         ) : (
 
-          <div className="space-y-3">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pb-4">
 
             {groupExpenses.map((expense) => (
 
