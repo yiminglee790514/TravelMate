@@ -603,361 +603,126 @@ export default function ExpensePage() {
   }
 
 
+  const totalCurrencies = Object.entries(currencyTotals);
+  const groupRows = groups.map((group) => {
+    const totals = groupTotals[group.id] || {};
+    const entries = Object.entries(totals);
+    return { group, totals, entries };
+  }).filter((row) => row.entries.length > 0);
+
+  // 群組比例固定優先用台幣；沒有台幣時才用日幣。
+  // 這樣即使旅程同時存在 JPY / TWD，也能維持第三張圖那種比例條。
+  const primaryCurrency = currencyTotals.TWD > 0 ? "TWD" : (currencyTotals.JPY > 0 ? "JPY" : null);
+  const primaryTotal = primaryCurrency ? Number(currencyTotals[primaryCurrency] || 0) : 0;
+
+  function getGroupPercent(totals) {
+    if (!primaryCurrency || !totals?.[primaryCurrency] || primaryTotal <= 0) return null;
+    return Math.round((Number(totals[primaryCurrency]) / primaryTotal) * 100);
+  }
+
   return (
-
-    <div className="bg-gray-100">
-
-      <div className="mx-auto w-full max-w-6xl px-4 pt-2 pb-2 sm:px-6">
-
-
-        {/* =========================
-            總花費
-        ========================= */}
-
-        <div className="mb-8">
-
-          <div className="mb-4 flex items-center justify-between">
-
-            <h1 className="text-xl font-bold text-gray-900">
-              💰 總花費
-            </h1>
-
-            {editable && (
-
-              <button
-                onClick={() => {
-
-                  setEditingExpense(null);
-
-                  setShowModal(true);
-
-                }}
-                className="
-                  rounded-xl
-                  bg-blue-500
-                  px-4
-                  py-2
-                  font-semibold
-                  text-white
-                  hover:bg-blue-600
-                "
-              >
-                ＋新增花費
-              </button>
-
-            )}
-
+    <div className="bg-[#f6f8fc]">
+      <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-6">
+        <section className="mb-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h1 className="text-xl font-black tracking-tight text-slate-900">💰 總花費</h1>
+            {editable && <button onClick={() => { setEditingExpense(null); setShowModal(true); }} className="rounded-full bg-blue-500 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-blue-200 transition hover:bg-blue-600">＋ 新增花費</button>}
           </div>
-
-
-          {/* 幣別總額 */}
-
-          {Object.keys(currencyTotals).length === 0 ? (
-
-            <div className="
-              rounded-2xl
-              bg-white
-              p-6
-              text-center
-              text-gray-400
-              shadow
-            ">
-              尚未有花費
-            </div>
-
-          ) : (
-
-            <div className="grid grid-cols-2 gap-3">
-
-              {Object.entries(currencyTotals).map(
-                ([currencyCode, amount]) => {
-
-                  const currency =
-                    getCurrency(currencyCode);
-
-                  return (
-
-                    <div
-                      key={currencyCode}
-                      className="
-                        rounded-2xl
-                        bg-white
-                        p-4
-                        shadow-sm
-                      "
-                    >
-
-                      <div className="text-xs text-gray-500">
-                        {currencyCode} {currency.name}
-                      </div>
-
-                      <div className="
-                        mt-2
-                        text-xl
-                        font-bold
-                        text-emerald-600
-                      ">
-                        {currency.symbol}
-                        {formatMoney(amount)}
-                      </div>
-
-                    </div>
-
-                  );
-
-                }
-              )}
-
-            </div>
-
-          )}
-
-        </div>
-
-
-        {/* =========================
-            每個付款人的總計
-        ========================= */}
+          <div className="rounded-[1.35rem] bg-white p-3.5 shadow-[0_8px_26px_rgba(36,66,115,0.08)] ring-1 ring-slate-100">
+            {totalCurrencies.length === 0 ? <div className="rounded-xl bg-slate-50 px-4 py-7 text-center text-sm text-slate-400">尚未有花費</div> : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {totalCurrencies.map(([currencyCode, amount]) => {
+                  const currency = getCurrency(currencyCode);
+                  const isJPY = currencyCode === "JPY";
+                  return <div key={currencyCode} className={`relative overflow-hidden rounded-xl border p-3.5 ${isJPY ? "border-emerald-100 bg-emerald-50/60" : "border-blue-100 bg-blue-50/60"}`}>
+                    <div className="text-[11px] font-medium text-slate-500">{currencyCode} {currency.name}</div>
+                    <div className={`mt-1 text-2xl font-black ${isJPY ? "text-emerald-600" : "text-blue-600"}`}>{currency.symbol}{formatMoney(amount)}</div>
+                    <div className={`absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-2xl ${isJPY ? "bg-emerald-100/90 text-emerald-500" : "bg-blue-100/90 text-blue-500"}`}>{currency.symbol === "¥" ? "¥" : "＄"}</div>
+                  </div>;
+                })}
+              </div>
+            )}
+          </div>
+        </section>
 
         {allPeople.length > 0 && (
-
-          <div className="mb-6">
-
-            {/* 區塊標題 */}
-
-            <div className="mb-2 flex items-center gap-2">
-
-              <div className="text-base font-bold text-gray-800">
-                👤 按付款人統計
-              </div>
-
-              <div className="h-px flex-1 bg-gray-200" />
-
-            </div>
-
-
-            {/* 付款人統計卡片 */}
-
-            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-
+          <section className="mb-6">
+            <div className="mb-3 flex items-center gap-2"><h2 className="text-base font-black text-slate-900">👤 按付款人統計</h2><div className="h-px flex-1 bg-slate-200" /></div>
+            <div className="tm-payer-list">
               {allPeople.map((person, index) => {
-
                 const totals = personTotals[person] || {};
-                const entries = Object.entries(totals);
-
+                const jpy = Number(totals.JPY || 0);
+                const twd = Number(totals.TWD || 0);
+                const avatarClass = index % 3 === 0 ? "tm-payer-avatar-violet" : index % 3 === 1 ? "tm-payer-avatar-blue" : "tm-payer-avatar-orange";
                 return (
-
                   <button
                     type="button"
                     key={person}
                     onClick={() => setSelectedPerson(person)}
-                    className={`
-                      w-full
-                      px-4
-                      py-3.5
-                      text-left
-                      transition
-                      hover:bg-gray-50
-                      active:bg-gray-100
-                      ${index !== allPeople.length - 1
-                        ? "border-b border-gray-100"
-                        : ""}
-                    `}
+                    className={`tm-payer-row ${index !== allPeople.length - 1 ? "tm-payer-row-divider" : ""}`}
                   >
-
-                    {/* 姓名列：完整顯示，不切名字 */}
-                    <div className="flex min-w-0 items-center gap-3">
-
-                      <div className="
-                        flex
-                        h-9
-                        w-9
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-purple-50
-                        text-base
-                      ">
-                        👤
-                      </div>
-
-                      <div className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-800">
-                        {person}
-                      </div>
-
-                      <div className="shrink-0 text-lg leading-none text-gray-300">
-                        ›
-                      </div>
-
-                    </div>
-
-                    {/* 金額列：放在姓名下面，手機版也不會擠到姓名 */}
-                    <div className="mt-2 pl-12">
-
-                      {entries.length > 0 ? (
-
-                        <div className="flex flex-wrap items-end gap-x-5 gap-y-1">
-
-                          {entries.map(([currencyCode, amount]) => {
-
-                            const currency = getCurrency(currencyCode);
-
-                            return (
-
-                              <div key={currencyCode} className="min-w-[82px]">
-
-                                <div className="text-[10px] font-medium tracking-wide text-gray-400">
-                                  {currencyCode}
-                                </div>
-
-                                <div className="mt-0.5 whitespace-nowrap text-sm font-bold text-emerald-600">
-                                  {currency.symbol}{formatMoney(amount)}
-                                </div>
-
-                              </div>
-
-                            );
-
-                          })}
-
+                    <div className={`tm-payer-avatar ${avatarClass}`}>♟</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-bold text-slate-800">{person}</div>
+                      <div className="tm-payer-currency-row">
+                        <div className="tm-payer-currency tm-payer-jpy">
+                          <span>JPY</span>
+                          <strong>{jpy ? `¥${formatMoney(jpy)}` : ""}</strong>
                         </div>
-
-                      ) : (
-
-                        <div className="text-xs text-gray-400">
-                          尚未有花費
+                        <div className="tm-payer-currency-divider" />
+                        <div className="tm-payer-currency tm-payer-twd">
+                          <span>TWD</span>
+                          <strong>{twd ? `NT$${formatMoney(twd)}` : ""}</strong>
                         </div>
-
-                      )}
-
+                      </div>
                     </div>
-
+                    <span className="tm-payer-arrow">›</span>
                   </button>
-
                 );
-
               })}
-
             </div>
-
-            <div className="mt-1 text-center text-[10px] text-gray-400">
-              （僅顯示有資料的幣別）
-            </div>
-
-          </div>
-
+          </section>
         )}
 
-
-        {/* =========================
-            支出群組
-        ========================= */}
-
-        <div className="mb-8">
-
-          <div className="mb-4 flex items-center justify-between">
-
-            <h2 className="text-lg font-bold">
-              支出群組
-            </h2>
-
-            {editable && (
-
-              <button
-                onClick={() => setShowGroupModal(true)}
-                className="
-                  rounded-lg
-                  px-3
-                  py-1.5
-                  text-sm
-                  text-blue-600
-                  hover:bg-blue-50
-                "
-              >
-                ＋群組
-              </button>
-
-            )}
-
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-black text-slate-900">◔ 支出群組</h2>
+            {editable && <button onClick={() => setShowGroupModal(true)} className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50">＋ 群組</button>}
           </div>
-
-
-          <div className="space-y-2">
-
-            {groups.map((group) => {
-
-              const totals =
-                groupTotals[group.id];
-
-              if (!totals) return null;
-
+          <div className="tm-expense-group-grid">
+            {groupRows.map(({ group, totals, entries }, index) => {
+              const percent = getGroupPercent(totals);
+              const palette = ["blue", "orange", "green", "purple", "pink", "teal"];
+              const tone = palette[index % palette.length];
+              const jpy = Number(totals.JPY || 0);
+              const twd = Number(totals.TWD || 0);
+              const fallbackCode = entries.find(([code]) => code !== "JPY" && code !== "TWD")?.[0];
+              const fallback = fallbackCode ? getCurrency(fallbackCode) : null;
               return (
-
-                <div
+                <button
+                  type="button"
                   key={group.id}
                   onClick={() => setSelectedGroup(group)}
-                  className="
-                    flex
-                    select-none
-                    items-center
-                    justify-between
-                    rounded-xl
-                    bg-white
-                    px-4
-                    py-3
-                    shadow-sm
-                    active:bg-gray-50
-                  "
+                  className={`tm-expense-group-card tm-expense-group-${tone}`}
                 >
-
-                  <div className="font-medium">
-
-                    {group.icon} {group.name}
-
+                  <div className="tm-expense-group-head">
+                    <span className="tm-expense-group-icon">{group.icon}</span>
+                    <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                    <span className="tm-expense-group-chevron">›</span>
                   </div>
-
-                  <div className="flex gap-4">
-
-                    {Object.entries(totals).map(
-                      ([currencyCode, amount]) => {
-
-                        const currency =
-                          getCurrency(currencyCode);
-
-                        return (
-
-                          <span
-                            key={currencyCode}
-                            className="
-                              font-semibold
-                              text-gray-700
-                            "
-                          >
-                            {currency.symbol}
-                            {formatMoney(amount)}
-                          </span>
-
-                        );
-
-                      }
-                    )}
-
+                  <div className="tm-expense-group-values">
+                    {jpy > 0 && <div><span>JPY</span><strong>¥{formatMoney(jpy)}</strong></div>}
+                    {twd > 0 && <div><span>TWD</span><strong>NT${formatMoney(twd)}</strong></div>}
+                    {!jpy && !twd && fallback && <div><span>{fallbackCode}</span><strong>{fallback.symbol}{formatMoney(totals[fallbackCode])}</strong></div>}
                   </div>
-
-                </div>
-
+                  {percent !== null && <div className="tm-expense-group-progress"><span style={{ width: `${Math.min(percent, 100)}%` }} /></div>}
+                  {percent !== null && <div className="tm-expense-group-percent">{percent}%</div>}
+                </button>
               );
-
             })}
-
           </div>
-
-        </div>
-
-
+        </section>
       </div>
-
 
       {/* =========================
           群組花費明細

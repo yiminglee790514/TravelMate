@@ -32,6 +32,13 @@ export default function HotelCard({ hotel, roomNumber }) {
         {hotel.price !== "" && hotel.price !== null && hotel.price !== undefined && (
           <div className="flex gap-3"><span className="w-20 shrink-0 text-slate-500">價格</span><b className="text-emerald-600">{currency.symbol}{Number(hotel.price).toLocaleString()} <span className="font-normal text-slate-400">{currency.name}</span></b></div>
         )}
+        {hotel.phone && (
+          <div className="flex gap-3"><span className="w-20 shrink-0 text-slate-500">電話</span><b className="break-words text-slate-800">{hotel.phone}</b></div>
+        )}
+        {hotel.booking && (
+          <div className="flex gap-3"><span className="w-20 shrink-0 text-slate-500">訂房平台</span><b className="break-words text-slate-800">{hotel.booking}</b></div>
+        )}
+
       </div>
     </div>
   );

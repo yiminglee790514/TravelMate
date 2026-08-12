@@ -157,110 +157,40 @@ async function handleEditTrip(trip) {
   }
 
   return (
-
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50">
-
-      <div className="mx-auto max-w-md px-6 py-10">
-
+    <div className="min-h-screen bg-gradient-to-b from-[#f7fbff] via-white to-[#f4f7ff]">
+      <div className="mx-auto w-full max-w-md px-4 pb-10 pt-4 sm:max-w-lg sm:px-6">
         <Header />
 
-        <button
-          onClick={() => {
-
-            setEditingTrip(null);
-            setCopyMode(false);
-
-            setShowModal(true);
-
-          }}
-          className="
-            w-full
-            rounded-3xl
-            bg-gradient-to-r
-            from-blue-500
-            to-indigo-600
-            py-4
-            text-lg
-            font-semibold
-            text-white
-            shadow-lg
-            transition-all
-            duration-300
-            hover:-translate-y-0.5
-            hover:shadow-xl
-          "
-        >
-          ✈️ 建立新旅程
+        <button onClick={() => { setEditingTrip(null); setCopyMode(false); setShowModal(true); }} className="group flex w-full items-center gap-4 rounded-[1.45rem] bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-4 text-left text-white shadow-lg shadow-blue-200/50 transition hover:-translate-y-0.5 hover:shadow-xl">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl">✈️</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">建立新旅程</span>
+            <span className="mt-0.5 block text-sm text-blue-100">開始規劃您的下一段旅程</span>
+          </span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-xl font-bold text-blue-600 transition group-hover:translate-x-0.5">›</span>
         </button>
 
-        <div className="mt-10 mb-4 flex items-center justify-between">
-
-          <h2 className="text-xl font-bold text-gray-800">
-
-            我的旅程
-
-          </h2>
-
-          <div className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
-
-            {trips.length} 個旅程
-
-          </div>
-
+        <div className="mb-4 mt-8 flex items-center justify-between px-1">
+          <h2 className="flex items-center gap-2 text-xl font-black text-slate-900"><span className="text-2xl">🧳</span> 我的旅程</h2>
+          <div className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-600">{trips.length} 個旅程</div>
         </div>
 
-        {trips.length === 0 ? (
-
-          <EmptyState />
-
-        ) : (
-
-          <div className="space-y-5">
-
+        {trips.length === 0 ? <EmptyState /> : (
+          <div className="space-y-4">
             {trips.map((trip) => (
-
-              <TripCard
-                  key={trip.id}
-                  trip={trip}
-                  onDelete={handleDeleteTrip}
-                  onEdit={(trip)=>{
-
-                      setEditingTrip(trip);
-                      setCopyMode(false);
-                      setShowModal(true);
-
-                  }}
-                  onCopy={handleCopyTrip}
-              />
-
+              <TripCard key={trip.id} trip={trip} onDelete={handleDeleteTrip}
+                onEdit={(trip) => { setEditingTrip(trip); setCopyMode(false); setShowModal(true); }}
+                onCopy={handleCopyTrip} />
             ))}
-
           </div>
-
         )}
-
       </div>
 
       {showModal && (
-
-        <TripModal
-              trip={editingTrip}
-              copyMode={copyMode}
-              onClose={() => {
-
-                  setEditingTrip(null);
-                  setCopyMode(false);
-
-                  setShowModal(false);
-
-              }}
-              onSave={copyMode ? handleAddTrip : (editingTrip ? handleEditTrip : handleAddTrip)}
-          />
-
+        <TripModal trip={editingTrip} copyMode={copyMode}
+          onClose={() => { setEditingTrip(null); setCopyMode(false); setShowModal(false); }}
+          onSave={copyMode ? handleAddTrip : (editingTrip ? handleEditTrip : handleAddTrip)} />
       )}
-
     </div>
-
   );
-
 }
