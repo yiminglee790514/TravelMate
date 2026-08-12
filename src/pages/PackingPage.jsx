@@ -48,17 +48,15 @@ const groupStyles = [
 
 function PackingGroupCard({
   group,
-  index,
+  index = 0,
   selected,
   readonly,
   onSelect,
   onEdit,
-  onDelete,
 }) {
   const timerRef = useRef(null);
+  const startPointRef = useRef(null);
   const longPressedRef = useRef(false);
-  const style = groupStyles[index % groupStyles.length];
-  const uncheckedCount = (group.items || []).filter((item) => !item.checked).length;
 
   function clearLongPress() {
     if (timerRef.current) {
@@ -67,70 +65,77 @@ function PackingGroupCard({
     }
   }
 
-  function startLongPress(event) {
+  function handlePointerDown(event) {
     if (readonly) return;
+
+    startPointRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+    };
+
     longPressedRef.current = false;
     clearLongPress();
+
     timerRef.current = window.setTimeout(() => {
       longPressedRef.current = true;
       onEdit(group);
-    }, 550);
+    }, 650);
+  }
 
-    if (event.pointerType === "mouse") {
-      event.preventDefault();
+  function handlePointerMove(event) {
+    if (!startPointRef.current) return;
+
+    const dx = Math.abs(event.clientX - startPointRef.current.x);
+    const dy = Math.abs(event.clientY - startPointRef.current.y);
+
+    // 左右滑動時不要誤觸發長按
+    if (dx > 10 || dy > 10) {
+      clearLongPress();
     }
   }
 
-  function endLongPress() {
+  function handlePointerUp() {
     clearLongPress();
+    startPointRef.current = null;
   }
 
   useEffect(() => () => clearLongPress(), []);
 
+  const unfinishedCount = (group.items || []).filter((item) => !item.checked).length;
+  const style = groupStyles[index % groupStyles.length];
+
   return (
-    <div className="relative w-[148px] shrink-0 snap-start sm:w-[164px]">
-      <button
-        type="button"
-        onPointerDown={startLongPress}
-        onPointerUp={endLongPress}
-        onPointerLeave={endLongPress}
-        onPointerCancel={endLongPress}
-        onContextMenu={(event) => {
+    <button
+      type="button"
+      onClick={(event) => {
+        if (longPressedRef.current) {
           event.preventDefault();
-        }}
-        onClick={() => {
-          if (longPressedRef.current) {
-            longPressedRef.current = false;
-            return;
-          }
-          onSelect();
-        }}
-        className={`relative flex h-[112px] w-full flex-col justify-between rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.98] ${style.card} ${selected ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-xl ${style.icon}`}>
-            {group.icon || "📂"}
-          </span>
+          event.stopPropagation();
+          longPressedRef.current = false;
+          return;
+        }
+        onSelect();
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onContextMenu={(event) => event.preventDefault()}
+      className={`tm-packing-group-chip ${style.card} ${selected ? "is-active" : ""}`}
+    >
+      <span className={`tm-packing-group-icon ${style.icon}`}>
+        {group.icon || "📂"}
+      </span>
 
-          {uncheckedCount > 0 && (
-            <span className={`flex min-w-6 h-6 items-center justify-center rounded-full px-1.5 text-[11px] font-black shadow-sm ${style.badge}`}>
-              {uncheckedCount}
-            </span>
-          )}
-        </div>
+      {unfinishedCount > 0 && (
+        <span className={`tm-packing-group-badge ${style.badge}`}>
+          {unfinishedCount}
+        </span>
+      )}
 
-        <div className="min-w-0 pr-1">
-          <div className={`truncate text-[14px] font-extrabold ${style.title}`}>
-            {group.title}
-          </div>
-          <div className="mt-0.5 text-[10px] font-medium text-slate-400">
-            {(group.items || []).length} 項物品
-          </div>
-        </div>
-      </button>
-
-
-    </div>
+      <strong className={style.title}>{group.title || "未命名群組"}</strong>
+      <small>{(group.items || []).length} 項物品</small>
+    </button>
   );
 }
 
@@ -228,16 +233,9 @@ export default function PackingPage() {
   return (
     <div className="min-h-full bg-slate-50 pb-8">
       <div className="mx-auto w-full max-w-6xl px-4 pt-3 sm:px-6">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div>
-            <div className="text-2xl font-black text-slate-900">🧳 行李</div>
-            <div className="mt-1 text-xs text-slate-400">選擇群組查看需要攜帶的物品</div>
-          </div>
-        </div>
-
         {/* 群組橫向滑動區 */}
-        <div className="-mx-4 overflow-x-auto px-4 pb-3 scrollbar-none sm:-mx-6 sm:px-6">
-          <div className="flex w-max snap-x snap-mandatory gap-3">
+        <div className="tm-packing-group-strip">
+          <div className="tm-hotel-group-scroll tm-packing-group-scroll scrollbar-none">
             {groups.map((group, index) => (
               <PackingGroupCard
                 key={group.id}
@@ -250,7 +248,6 @@ export default function PackingPage() {
                   setEditGroup(value);
                   setShowGroupModal(true);
                 }}
-                onDelete={deleteGroup}
               />
             ))}
 
@@ -261,7 +258,7 @@ export default function PackingPage() {
                   setEditGroup(null);
                   setShowGroupModal(true);
                 }}
-                className="flex h-[112px] w-[148px] shrink-0 snap-start flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-200 bg-white text-blue-600 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 active:scale-[0.98] sm:w-[164px]"
+                className="tm-packing-group-add-chip"
               >
                 <span className="text-3xl font-light">＋</span>
                 <span className="mt-1 text-sm font-bold">新增群組</span>

@@ -22,6 +22,8 @@ import { createUserProfile } from "./services/userService";
 import PackingPage from "./pages/PackingPage";
 import DataPage from "./pages/DataPage";
 import ExpensePage from "./pages/ExpensePage";
+import ScrollToTop from "./components/ScrollToTop";
+import BackToTop from "./components/BackToTop";
 
 export default function App() {
 
@@ -67,6 +69,8 @@ useEffect(() => {
 
 return (
   <BrowserRouter key={user.uid}>
+    <ScrollToTop />
+    <BackToTop />
     <Routes>
 
       <Route

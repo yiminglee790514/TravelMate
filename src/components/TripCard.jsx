@@ -12,7 +12,17 @@ function getTripStatus(startDate, endDate) {
   if (today > end) return "已完成";
   return `Day ${Math.floor((today - start) / 86400000) + 1}`;
 }
-function formatDate(date) { return date ? String(date).replaceAll("-", "/") : "----/--/--"; }
+function formatDate(date) {
+  return date ? String(date).replaceAll("-", "/") : "----/--/--";
+}
+
+function formatMobileDateRange(startDate, endDate) {
+  if (!startDate || !endDate) return "----/--/--";
+  const start = formatDate(startDate);
+  const end = formatDate(endDate);
+  const endShort = end.slice(5);
+  return `${start} → ${endShort}`;
+}
 function getFlag(country) {
   const flags = { 日本:"🇯🇵", 韓國:"🇰🇷", 香港:"🇭🇰", 台灣:"🇹🇼", 泰國:"🇹🇭", 美國:"🇺🇸", 新加坡:"🇸🇬", 越南:"🇻🇳", 法國:"🇫🇷", 英國:"🇬🇧" };
   return flags[country] || "🌍";
@@ -35,7 +45,7 @@ export default function TripCard({ trip, onDelete, onEdit, onCopy }) {
 
   return (
     <Link to={`/trip/${trip.id}`} className="block">
-      <div className="relative overflow-visible rounded-[1.55rem] bg-white p-3.5 shadow-[0_8px_30px_rgba(42,73,125,0.10)] ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-[0_14px_35px_rgba(42,73,125,0.14)]">
+      <div className="relative overflow-visible rounded-[1.55rem] bg-white p-3.5 sm:p-3.5 shadow-[0_8px_30px_rgba(42,73,125,0.10)] ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-[0_14px_35px_rgba(42,73,125,0.14)]">
         {owner && (
           <div ref={menuRef} className="absolute right-4 top-4 z-20">
             <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowMenu((prev) => !prev); }} className="rounded-full bg-white/90 px-2 py-1 text-xl font-black leading-none text-slate-500 shadow-sm backdrop-blur" aria-label="更多">•••</button>
@@ -49,15 +59,22 @@ export default function TripCard({ trip, onDelete, onEdit, onCopy }) {
           </div>
         )}
 
-        <div className="flex gap-4">
-          <div className="h-[178px] w-[126px] shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <div className="h-[150px] w-full shrink-0 overflow-hidden rounded-2xl bg-slate-100 sm:h-[178px] sm:w-[126px]">
             <img src={cover.image} alt="" className="h-full w-full object-cover" style={{ objectPosition: cover.position }} />
           </div>
-          <div className="min-w-0 flex-1 py-2 pr-2">
+          <div className="min-w-0 flex-1 py-1 pr-1 sm:py-2 sm:pr-2">
             <div className="pr-8 text-[1.15rem] font-black leading-tight text-slate-950">{trip.title}</div>
             <div className="mt-2 flex items-center gap-1.5 text-sm font-medium text-slate-500"><span className="text-red-500">●</span>{trip.city || "未設定城市"} · {getFlag(trip.country)} {trip.country || "未設定"}</div>
-            <div className="mt-5 overflow-hidden rounded-2xl bg-slate-50/90">
-              <div className="flex items-center gap-2 border-b border-white px-3 py-2.5 text-sm font-semibold text-slate-700"><span className="text-blue-500">▣</span><span className="truncate">{formatDate(trip.startDate)} ～ {formatDate(trip.endDate)}</span><span className="ml-auto text-slate-400">›</span></div>
+            <div className="mt-3 overflow-hidden rounded-2xl bg-slate-50/90 sm:mt-5">
+              <div className="flex items-start gap-2 border-b border-white px-3 py-2.5 text-sm font-semibold text-slate-700">
+                <span className="shrink-0 text-blue-500">▣</span>
+                <span className="min-w-0 flex-1">
+                  <span className="hidden sm:inline">{formatDate(trip.startDate)} ～ {formatDate(trip.endDate)}</span>
+                  <span className="sm:hidden">{formatMobileDateRange(trip.startDate, trip.endDate)}</span>
+                </span>
+                <span className="shrink-0 text-slate-400">›</span>
+              </div>
               <div className="flex items-center gap-2 border-b border-white px-3 py-2.5 text-sm font-semibold text-blue-600"><span>⌛</span><span>{getTripStatus(trip.startDate, trip.endDate)}</span><span className="ml-auto text-slate-400">›</span></div>
               <div className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-slate-700"><span>🧳</span><span>{itemCount} 個行程</span><span className="ml-auto text-slate-400">›</span></div>
             </div>
