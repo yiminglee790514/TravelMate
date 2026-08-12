@@ -610,12 +610,32 @@ export default function ExpensePage() {
                 return <button type="button" key={person} onClick={() => setSelectedPerson(person)} className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${index !== allPeople.length - 1 ? "border-b border-slate-100" : ""}`}>
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base ${avatarClass}`}>♟</div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-bold text-slate-800 sm:text-base">{person}</div>
-                    <div className="mt-1 grid grid-cols-2 gap-x-3">
-                      {entries.length ? entries.map(([currencyCode, amount]) => {
-                        const currency = getCurrency(currencyCode);
-                        return <div key={currencyCode} className="min-w-0"><span className="block text-[10px] font-semibold text-slate-400">{currencyCode}</span><span className={`text-sm font-black ${currencyCode === "JPY" ? "text-emerald-600" : currencyCode === "TWD" ? "text-blue-600" : "text-slate-700"}`}>{currency.symbol}{formatMoney(amount)}</span></div>;
-                      }) : <span className="text-[11px] text-slate-400">尚未有花費</span>}
+                    <div className="truncate text-[17px] font-extrabold text-slate-800 sm:text-lg">{person}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-x-8">
+                      {(() => {
+                        const jpyAmount = Number(personTotals[person]?.JPY || 0);
+                        const twdAmount = Number(personTotals[person]?.TWD || 0);
+                        const hasJPY = Object.prototype.hasOwnProperty.call(personTotals[person] || {}, "JPY");
+                        const hasTWD = Object.prototype.hasOwnProperty.call(personTotals[person] || {}, "TWD");
+                        const jpy = getCurrency("JPY");
+                        const twd = getCurrency("TWD");
+                        return (
+                          <>
+                            <div className="min-w-0 pr-6">
+                              <span className="block text-[11px] font-bold text-slate-400">JPY</span>
+                              <span className="block truncate text-[15px] font-black text-emerald-600 sm:text-base">
+                                {hasJPY ? `${jpy.symbol}${formatMoney(jpyAmount)}` : ""}
+                              </span>
+                            </div>
+                            <div className="min-w-0 border-l border-slate-200 pl-8">
+                              <span className="block text-[11px] font-bold text-slate-400">TWD</span>
+                              <span className="block truncate text-[15px] font-black text-blue-600 sm:text-base">
+                                {hasTWD ? `${twd.symbol}${formatMoney(twdAmount)}` : ""}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                   <span className="text-xl text-slate-300">›</span>
@@ -688,8 +708,7 @@ export default function ExpensePage() {
                   type="button"
                   key={group.id}
                   onClick={() => setSelectedGroup(group)}
-                  className={`shrink-0 snap-start rounded-[1.15rem] border p-3 text-left shadow-[0_5px_16px_rgba(36,66,115,0.05)] transition hover:-translate-y-0.5 hover:shadow-md ${groupColorClasses.card}`}
-                  style={{ width: "calc((100% - 24px) / 3)" }}
+                  className={`w-[178px] shrink-0 snap-start rounded-[1.15rem] border p-3.5 text-left shadow-[0_5px_16px_rgba(36,66,115,0.05)] transition hover:-translate-y-0.5 hover:shadow-md sm:w-[190px] ${groupColorClasses.card}`}
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base ${groupColorClasses.icon}`}>
@@ -705,7 +724,7 @@ export default function ExpensePage() {
                     <span className={`shrink-0 text-[10px] font-bold tracking-wide ${groupColorClasses.currency}`}>
                       {currencyCode}
                     </span>
-                    <span className={`min-w-0 truncate text-[15px] font-black ${groupColorClasses.amount}`}>
+                    <span className={`min-w-0 whitespace-nowrap text-[16px] font-black ${groupColorClasses.amount}`}>
                       {currency.symbol}{formatMoney(totals[currencyCode])}
                     </span>
                   </div>
