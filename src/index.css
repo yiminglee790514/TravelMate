@@ -2343,6 +2343,59 @@ a {
     padding: 12px 16px 16px;
   }
 }
- {
-  z-index: 1000;
+
+/* Weather daily-location editor: always above the fixed bottom navigation */
+.tm-weather-edit-modal-overlay {
+  position: fixed !important;
+  z-index: 9999 !important;
+  isolation: isolate;
 }
+
+.tm-weather-edit-all-modal {
+  position: relative;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tm-weather-edit-all-list {
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .tm-weather-edit-modal-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      12px
+      max(12px, env(safe-area-inset-bottom))
+      12px !important;
+  }
+
+  .tm-weather-edit-all-modal {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px) !important;
+    border-radius: 26px;
+  }
+
+  .tm-weather-edit-all-header {
+    flex: 0 0 auto;
+  }
+
+  .tm-weather-edit-all-list {
+    flex: 1 1 auto;
+    max-height: none !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .tm-weather-edit-all-footer {
+    flex: 0 0 auto;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
