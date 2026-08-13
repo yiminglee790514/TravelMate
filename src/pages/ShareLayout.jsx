@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getShare } from "../services/shareService";
 import TripHeader from "../components/trip/TripHeader";
 import BottomNav from "../components/trip/BottomNav";
+import { preloadWeatherForTrip } from "../services/weatherService";
 
 export default function ShareLayout() {
   const { shareId } = useParams();
@@ -18,6 +19,12 @@ export default function ShareLayout() {
       active = false;
     };
   }, [shareId]);
+
+  useEffect(() => {
+    if (trip?.weather?.length) {
+      preloadWeatherForTrip(trip.weather);
+    }
+  }, [trip]);
 
   if (!trip) {
     return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">載入中...</div>;
