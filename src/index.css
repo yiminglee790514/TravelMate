@@ -1644,10 +1644,10 @@ a {
 .tm-weather-tabs-wrap {
   overflow: hidden;
   margin-bottom: 14px;
-  border: 1px solid #e2e9f3;
-  border-radius: 18px;
-  background: rgba(255,255,255,.94);
-  box-shadow: 0 8px 24px rgba(28, 46, 80, .06);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .tm-weather-tabs {
