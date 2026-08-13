@@ -1644,10 +1644,10 @@ a {
 .tm-weather-tabs-wrap {
   overflow: hidden;
   margin-bottom: 14px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border: 1px solid #e2e9f3;
+  border-radius: 18px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 8px 24px rgba(28, 46, 80, .06);
 }
 
 .tm-weather-tabs {
@@ -2065,8 +2065,17 @@ a {
     margin-bottom: 10px;
   }
 
+  /* 手機版隱藏 Open-Meteo 標籤，但保留右上角「編輯」按鈕 */
   .tm-weather-api-badge {
     display: none;
+  }
+
+  .tm-weather-edit-all-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    visibility: visible;
   }
 
   .tm-weather-tabs-wrap {

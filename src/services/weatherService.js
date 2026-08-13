@@ -4,7 +4,7 @@ const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 
 const geocodeCache = new Map();
 const weatherCache = new Map();
-const inFlightTripWeather = new Map();
+const weatherTripInflight = new Map();
 
 const CITY_ALIASES = {
   "熊本": ["Kumamoto", "Kumamoto City", "Kumamoto-shi"],
@@ -243,68 +243,51 @@ async function getHistoricalReferenceForCity(city, dates) {
 
   const range = buildHistoricalYearRange(targetDates, 10);
 
-  /*
-   * 不再一次抓 2016/01/01～2025/12/31。
-   * 那會下載十年的完整日資料，資料量很大，也容易讓 Archive API
-   * 回傳失敗。改成「每一年只抓行程日期所在的月份/日期區間」，
-   * 例如 10/21～10/31，就只抓：
-   * 2016/10/21～10/31、2017/10/21～10/31 ... 2025/10/21～10/31。
-   */
-  const yearlyResults = [];
+  // 一個城市只送一次 Archive API 請求，抓取 10 年的「同月份區間」。
+  // 例如 10/21～10/31 只需要 2016/10/21～2025/10/31 的資料，
+  // 再從回傳資料中挑出每年相同月日來平均。比逐年送 10 次請求更快。
+  const startDate = `${range.yearStart}-${String(range.monthStart).padStart(2, "0")}-${String(range.dayStart).padStart(2, "0")}`;
+  const endDate = `${range.yearEnd}-${String(range.monthEnd).padStart(2, "0")}-${String(range.dayEnd).padStart(2, "0")}`;
 
-  for (let year = range.yearStart; year <= range.yearEnd; year += 1) {
-    const startDate = `${year}-${String(range.monthStart).padStart(2, "0")}-${String(range.dayStart).padStart(2, "0")}`;
-    const endDate = `${year}-${String(range.monthEnd).padStart(2, "0")}-${String(range.dayEnd).padStart(2, "0")}`;
+  const url = new URL(ARCHIVE_URL);
+  url.searchParams.set("latitude", location.latitude);
+  url.searchParams.set("longitude", location.longitude);
+  url.searchParams.set("start_date", startDate);
+  url.searchParams.set("end_date", endDate);
+  url.searchParams.set("daily", [
+    "weather_code",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "apparent_temperature_max",
+    "apparent_temperature_min",
+    "precipitation_sum",
+    "wind_speed_10m_max",
+  ].join(","));
+  url.searchParams.set("timezone", location.timezone || "Asia/Tokyo");
+  url.searchParams.set("temperature_unit", "celsius");
+  url.searchParams.set("wind_speed_unit", "kmh");
+  url.searchParams.set("models", "era5_land");
 
-    const url = new URL(ARCHIVE_URL);
-    url.searchParams.set("latitude", location.latitude);
-    url.searchParams.set("longitude", location.longitude);
-    url.searchParams.set("start_date", startDate);
-    url.searchParams.set("end_date", endDate);
-    url.searchParams.set("daily", [
-      "weather_code",
-      "temperature_2m_max",
-      "temperature_2m_min",
-      "apparent_temperature_max",
-      "apparent_temperature_min",
-      "precipitation_sum",
-      "wind_speed_10m_max",
-    ].join(","));
-    url.searchParams.set("timezone", location.timezone || "Asia/Tokyo");
-    url.searchParams.set("temperature_unit", "celsius");
-    url.searchParams.set("wind_speed_unit", "kmh");
-    url.searchParams.set("models", "era5_land");
-
-    try {
-      const data = await fetchJson(url.toString(), 30000);
-      if (data?.daily?.time?.length) {
-        yearlyResults.push(data.daily);
-      }
-    } catch (error) {
-      // 某一年失敗不讓整個城市失敗，其他年份仍可作為參考。
-      console.warn(`Open-Meteo historical year ${year} failed for ${city}:`, error);
-    }
-  }
-
-  if (!yearlyResults.length) {
+  const data = await fetchJson(url.toString(), 30000);
+  const daily = data?.daily;
+  if (!daily?.time?.length) {
     throw new Error("Open-Meteo 歷年同期資料沒有回傳內容");
   }
 
   const buckets = new Map();
-
-  yearlyResults.forEach((daily) => {
-    daily.time.forEach((date, index) => {
-      const key = date.slice(5);
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push({
-        weatherCode: daily.weather_code?.[index],
-        minTemp: daily.temperature_2m_min?.[index],
-        maxTemp: daily.temperature_2m_max?.[index],
-        apparentMin: daily.apparent_temperature_min?.[index],
-        apparentMax: daily.apparent_temperature_max?.[index],
-        precipitation: daily.precipitation_sum?.[index],
-        windSpeed: daily.wind_speed_10m_max?.[index],
-      });
+  daily.time.forEach((date, index) => {
+    const key = date.slice(5);
+    // 只保留實際需要的月日，避免處理整段 10 年資料。
+    if (!targetDates.some((target) => target.slice(5) === key)) return;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push({
+      weatherCode: daily.weather_code?.[index],
+      minTemp: daily.temperature_2m_min?.[index],
+      maxTemp: daily.temperature_2m_max?.[index],
+      apparentMin: daily.apparent_temperature_min?.[index],
+      apparentMax: daily.apparent_temperature_max?.[index],
+      precipitation: daily.precipitation_sum?.[index],
+      windSpeed: daily.wind_speed_10m_max?.[index],
     });
   });
 
@@ -359,92 +342,113 @@ async function getHistoricalReferenceForCity(city, dates) {
   return result;
 }
 
-async function fetchWeatherForTrip(days) {
-  const validDays = (days || []).filter((day) => day?.date && day?.city);
-  const byCity = new Map();
-  validDays.forEach((day) => {
-    if (!byCity.has(day.city)) byCity.set(day.city, []);
-    byCity.get(day.city).push(day.date);
-  });
-
-  const result = new Map();
-  const errors = [];
-
-  await Promise.all(
-    [...byCity.entries()].map(async ([city, dates]) => {
-      const forecastDates = dates.filter((date) => isForecastDate(date));
-      const historicalDates = dates.filter((date) => !isForecastDate(date));
-
-      if (forecastDates.length) {
-        try {
-          const forecast = await getForecastForCity(
-            city,
-            forecastDates[0],
-            forecastDates[forecastDates.length - 1]
-          );
-          forecastDates.forEach((date) => {
-            if (forecast[date]) result.set(`${city}::${date}`, forecast[date]);
-            else errors.push(`${city} ${date}：16 天預報沒有這一天`);
-          });
-        } catch (error) {
-          console.warn(`Open-Meteo forecast failed for ${city}`, error);
-          errors.push(`${city}：${error?.message || "16 天預報取得失敗"}`);
-        }
-      }
-
-      if (historicalDates.length) {
-        try {
-          const historical = await getHistoricalReferenceForCity(city, historicalDates);
-          historicalDates.forEach((date) => {
-            if (historical[date]) result.set(`${city}::${date}`, historical[date]);
-            else errors.push(`${city} ${date}：找不到歷年同期資料`);
-          });
-        } catch (error) {
-          console.warn(`Open-Meteo historical reference failed for ${city}`, error);
-          errors.push(`${city}：${error?.message || "歷年同期資料取得失敗"}`);
-        }
-      }
-    })
-  );
-
-  if (validDays.length && result.size === 0 && errors.length) {
-    throw new Error(errors.slice(0, 2).join("；"));
-  }
-
-  return result;
-}
-
-/**
- * 讓不同頁面共用同一份天氣請求。
- * 行程頁進入時會先在背景預載；如果使用者馬上點進天氣頁，
- * 不會再開第二份相同的 API 請求，也能避免 Open-Meteo 被重複呼叫。
- */
-export async function getWeatherForTrip(days) {
-  const validDays = (days || []).filter((day) => day?.date && day?.city);
-  const requestKey = validDays
-    .map((day) => `${day.date}|${day.city}`)
+function weatherTripCacheKey(days) {
+  return (days || [])
+    .filter((day) => day?.date && day?.city)
+    .map((day) => `${day.date}|${normalizeCity(day.city)}`)
     .sort()
     .join(";");
-
-  if (!requestKey) return new Map();
-
-  if (inFlightTripWeather.has(requestKey)) {
-    return inFlightTripWeather.get(requestKey);
-  }
-
-  const request = fetchWeatherForTrip(validDays).finally(() => {
-    inFlightTripWeather.delete(requestKey);
-  });
-
-  inFlightTripWeather.set(requestKey, request);
-  return request;
 }
 
-// 背景預載專用：與天氣頁共用同一份 cache / in-flight request。
-export function preloadWeatherForTrip(days) {
-  return getWeatherForTrip(days).catch((error) => {
-    console.warn("Weather background preload failed:", error);
-    return new Map();
+export async function getWeatherForTrip(days) {
+  const validDays = (days || []).filter((day) => day?.date && day?.city);
+  if (!validDays.length) return new Map();
+
+  const tripKey = weatherTripCacheKey(validDays);
+  if (weatherTripInflight.has(tripKey)) {
+    return weatherTripInflight.get(tripKey);
+  }
+
+  const promise = (async () => {
+    const byCity = new Map();
+    validDays.forEach((day) => {
+      if (!byCity.has(day.city)) byCity.set(day.city, []);
+      byCity.get(day.city).push(day.date);
+    });
+
+    const result = new Map();
+    const errors = [];
+
+    // 不同城市並行抓取，避免熊本完成後才開始抓博多、姬路。
+    await Promise.all(
+      [...byCity.entries()].map(async ([city, dates]) => {
+        const forecastDates = dates.filter((date) => isForecastDate(date));
+        const historicalDates = dates.filter((date) => !isForecastDate(date));
+
+        if (forecastDates.length) {
+          try {
+            const forecast = await getForecastForCity(
+              city,
+              forecastDates[0],
+              forecastDates[forecastDates.length - 1]
+            );
+            forecastDates.forEach((date) => {
+              if (forecast[date]) result.set(`${city}::${date}`, forecast[date]);
+              else errors.push(`${city} ${date}：16 天預報沒有這一天`);
+            });
+          } catch (error) {
+            console.warn(`Open-Meteo forecast failed for ${city}`, error);
+            errors.push(`${city}：${error?.message || "16 天預報取得失敗"}`);
+          }
+        }
+
+        if (historicalDates.length) {
+          try {
+            const historical = await getHistoricalReferenceForCity(city, historicalDates);
+            historicalDates.forEach((date) => {
+              if (historical[date]) result.set(`${city}::${date}`, historical[date]);
+              else errors.push(`${city} ${date}：找不到歷年同期資料`);
+            });
+          } catch (error) {
+            console.warn(`Open-Meteo historical reference failed for ${city}`, error);
+            errors.push(`${city}：${error?.message || "歷年同期資料取得失敗"}`);
+          }
+        }
+      })
+    );
+
+    if (validDays.length && result.size === 0 && errors.length) {
+      throw new Error(errors.slice(0, 2).join("；"));
+    }
+
+    return result;
+  })();
+
+  weatherTripInflight.set(tripKey, promise);
+  try {
+    return await promise;
+  } finally {
+    weatherTripInflight.delete(tripKey);
+  }
+}
+
+// 背景預載：頁面還沒切到「天氣」前就先把資料抓進記憶體快取。
+// 不 await 也不阻塞目前頁面；使用者進入天氣頁時會直接命中同一個請求。
+export function buildWeatherDaysForTrip(trip) {
+  if (!trip?.startDate || !trip?.endDate) return [];
+
+  const existing = Array.isArray(trip.weather) ? trip.weather : [];
+  const result = [];
+  const start = new Date(`${trip.startDate}T00:00:00`);
+  const end = new Date(`${trip.endDate}T00:00:00`);
+
+  for (let current = new Date(start); current <= end; current = addDays(current, 1)) {
+    const date = toIsoDate(current);
+    const old = existing.find((item) => item.date === date);
+    result.push(old || {
+      id: `${date}-prefetch`,
+      date,
+      city: trip.city || "",
+    });
+  }
+
+  return result.filter((day) => day.city);
+}
+
+export function prefetchWeatherForTrip(days) {
+  if (!Array.isArray(days) || !days.length) return;
+  void getWeatherForTrip(days).catch((error) => {
+    console.warn("Weather background prefetch failed:", error);
   });
 }
 

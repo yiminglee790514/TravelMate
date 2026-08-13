@@ -271,6 +271,42 @@ export default function WeatherPage() {
 
         {selectedDay && (
           <>
+            <div className="tm-weather-selected-title">
+              <div>
+                <strong>{formatDayButton(
+                  selectedDay.date,
+                  days.findIndex((item) => item.date === selectedDay.date) + 1,
+                  selectedWeather
+                ).date}</strong>
+                <span>{formatDayButton(
+                  selectedDay.date,
+                  days.findIndex((item) => item.date === selectedDay.date) + 1,
+                  selectedWeather
+                ).weekday}</span>
+              </div>
+
+              <div className="tm-weather-selected-location">
+                <span>📍 {selectedDay.city}</span>
+                <span className="tm-weather-selected-weather-icon" aria-hidden="true">
+                  {formatDayButton(
+                    selectedDay.date,
+                    days.findIndex((item) => item.date === selectedDay.date) + 1,
+                    selectedWeather
+                  ).icon}
+                </span>
+                {selectedWeather?.mode === "historical-reference" && (
+                  <span className="tm-weather-top-source">歷年參考</span>
+                )}
+                {selectedWeather?.mode === "forecast" && (
+                  <span className="tm-weather-top-source is-live">即時預報</span>
+                )}
+                {!selectedWeather && !loading && (
+                  <span className="tm-weather-top-source is-error">未取得</span>
+                )}
+
+              </div>
+            </div>
+
             {loading ? (
               <div className="tm-weather-loading">
                 <div className="tm-weather-loading-icon">🌤️</div>

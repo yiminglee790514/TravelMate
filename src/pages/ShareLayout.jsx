@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getShare } from "../services/shareService";
 import TripHeader from "../components/trip/TripHeader";
 import BottomNav from "../components/trip/BottomNav";
-import { preloadWeatherForTrip } from "../services/weatherService";
+import { buildWeatherDaysForTrip, prefetchWeatherForTrip } from "../services/weatherService";
 
 export default function ShareLayout() {
   const { shareId } = useParams();
@@ -21,9 +21,8 @@ export default function ShareLayout() {
   }, [shareId]);
 
   useEffect(() => {
-    if (trip?.weather?.length) {
-      preloadWeatherForTrip(trip.weather);
-    }
+    if (!trip) return;
+    prefetchWeatherForTrip(buildWeatherDaysForTrip(trip));
   }, [trip]);
 
   if (!trip) {
