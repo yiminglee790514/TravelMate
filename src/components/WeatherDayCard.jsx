@@ -127,6 +127,7 @@ export default function WeatherDayCard({
         </div>
       </div>
 
+
       {editing && !readonly && !onEditOpen && (
         <div className="tm-weather-edit-row">
           <input

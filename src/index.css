@@ -1644,10 +1644,10 @@ a {
 .tm-weather-tabs-wrap {
   overflow: hidden;
   margin-bottom: 14px;
-  border: 1px solid #e2e9f3;
-  border-radius: 18px;
-  background: rgba(255,255,255,.94);
-  box-shadow: 0 8px 24px rgba(28, 46, 80, .06);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .tm-weather-tabs {
@@ -2065,17 +2065,15 @@ a {
     margin-bottom: 10px;
   }
 
-  /* 手機版隱藏 Open-Meteo 標籤，但保留右上角「編輯」按鈕 */
   .tm-weather-api-badge {
     display: none;
   }
 
+  /* 編輯按鈕使用同一組外觀 class，但手機版不能跟 API 標籤一起隱藏 */
   .tm-weather-edit-all-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 auto;
-    visibility: visible;
   }
 
   .tm-weather-tabs-wrap {
@@ -2171,13 +2169,11 @@ a {
   color: #26344d;
 }
 
-
-/* 編輯每日地區視窗必須高於固定底部導覽列 */
+/* 編輯地區視窗一定要蓋在天氣卡片與底部導覽列上方 */
 .tm-weather-edit-modal-overlay {
-  z-index: 1000 !important;
+  z-index: 200;
 }
 
-/* 編輯地區視窗一定要蓋在天氣卡片上方 */
 .tm-weather-edit-modal-overlay
 .tm-weather-edit-all-button {
   appearance: none;
@@ -2190,6 +2186,8 @@ a {
 }
 
 .tm-weather-edit-all-modal {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   max-height: min(88vh, 760px);
 }
@@ -2229,8 +2227,10 @@ a {
 }
 
 .tm-weather-edit-all-list {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  max-height: 58vh;
+  max-height: none;
   padding: 8px 22px;
 }
 
@@ -2285,6 +2285,7 @@ a {
 }
 
 .tm-weather-edit-all-footer {
+  flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -2332,7 +2333,7 @@ a {
 
   .tm-weather-edit-all-list {
     padding: 6px 16px;
-    max-height: 60vh;
+    max-height: none;
   }
 
   .tm-weather-edit-all-row {
