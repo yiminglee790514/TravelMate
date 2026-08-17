@@ -32,7 +32,16 @@ function localApiPlugin(env) {
     name: "travelmate-local-api",
 
     configureServer(server) {
-      process.env.GEMINI_API_KEY = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+      // 本機開發也載入 5 把 Gemini Key，與 Vercel Environment Variables 保持一致。
+      for (const name of [
+        "GEMINI_API_KEY",
+        "GEMINI_API_KEY_2",
+        "GEMINI_API_KEY_3",
+        "GEMINI_API_KEY_4",
+        "GEMINI_API_KEY_5",
+      ]) {
+        process.env[name] = env[name] || process.env[name] || "";
+      }
       process.env.GOOGLE_MAPS_API_KEY = env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "";
 
       const handlers = {
@@ -64,11 +73,17 @@ function localApiPlugin(env) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
+  const geminiKeyNames = [
+    "GEMINI_API_KEY",
+    "GEMINI_API_KEY_2",
+    "GEMINI_API_KEY_3",
+    "GEMINI_API_KEY_4",
+    "GEMINI_API_KEY_5",
+  ];
+
   console.log(
-    "Gemini API Key:",
-    env.GEMINI_API_KEY
-      ? `已讀取（${env.GEMINI_API_KEY.length} 字元）`
-      : "❌ 沒有讀到"
+    "Gemini API Keys:",
+    `${geminiKeyNames.filter((name) => env[name]).length}/5 已讀取`
   );
 
   console.log(

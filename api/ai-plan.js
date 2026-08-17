@@ -16,12 +16,20 @@ export default {
     }
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
+      // Gemini API Key 輪替：GEMINI_API_KEY ～ GEMINI_API_KEY_5
+      // 每次請求先從不同 Key 開始；若遇到 429 / 403，再自動切換下一把 Key。
+      const apiKeys = [
+        process.env.GEMINI_API_KEY,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY_4,
+        process.env.GEMINI_API_KEY_5,
+      ].filter(Boolean);
 
-      if (!apiKey) {
+      if (!apiKeys.length) {
         return new Response(
           JSON.stringify({
-            error: "找不到 GEMINI_API_KEY，請確認 Vercel Environment Variables。"
+            error: "找不到 Gemini API Key。請確認 GEMINI_API_KEY ～ GEMINI_API_KEY_5 已設定。"
           }),
           {
             status: 500,
@@ -31,6 +39,13 @@ export default {
           }
         );
       }
+
+      // 讓連續請求平均分散到不同 Key。
+      // Vercel 每個執行個體各自維護 index，但即使如此也能降低單一 Key 被集中打爆的機率。
+      globalThis.__travelMateGeminiKeyIndex =
+        (globalThis.__travelMateGeminiKeyIndex || 0) + 1;
+      const startIndex =
+        (globalThis.__travelMateGeminiKeyIndex - 1) % apiKeys.length;
 
       const input = await request.json();
 
@@ -201,53 +216,87 @@ reason
         ]
       };
 
-      const geminiResponse = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: prompt
-                  }
-                ]
-              }
-            ],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: schema
-            }
-          })
-        }
-      );
-
-      const raw = await geminiResponse.text();
-
+      let geminiResponse = null;
       let geminiData = {};
+      let lastErrorMessage = "Gemini API 發生錯誤";
+      let lastErrorStatus = 500;
 
-      try {
-        geminiData = JSON.parse(raw);
-      } catch {
-        geminiData = {};
+      // 最多依序嘗試目前可用的 5 把 Key。
+      // 429：代表目前 Key 達到限制，立刻換下一把。
+      // 401/403：通常代表 Key 無效或沒有權限，也換下一把，避免整個 AI 功能直接失效。
+      for (let attempt = 0; attempt < apiKeys.length; attempt += 1) {
+        const keyIndex = (startIndex + attempt) % apiKeys.length;
+        const apiKey = apiKeys[keyIndex];
+
+        try {
+          geminiResponse = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: prompt
+                      }
+                    ]
+                  }
+                ],
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  responseSchema: schema
+                }
+              })
+            }
+          );
+
+          const raw = await geminiResponse.text();
+
+          try {
+            geminiData = JSON.parse(raw);
+          } catch {
+            geminiData = {};
+          }
+
+          if (geminiResponse.ok) {
+            break;
+          }
+
+          lastErrorStatus = geminiResponse.status;
+          lastErrorMessage =
+            geminiData?.error?.message ||
+            `Gemini API 錯誤：${geminiResponse.status}`;
+
+          // 只有配額／權限類錯誤才換 Key；其他錯誤直接回傳，避免重複送出相同請求。
+          if (![401, 403, 429].includes(geminiResponse.status)) {
+            break;
+          }
+
+          console.warn(
+            `Gemini API Key ${keyIndex + 1}/${apiKeys.length} 失敗（${geminiResponse.status}），切換下一把 Key。`
+          );
+        } catch (error) {
+          lastErrorStatus = 500;
+          lastErrorMessage = error?.message || "Gemini API 連線失敗";
+          console.warn(
+            `Gemini API Key ${keyIndex + 1}/${apiKeys.length} 連線失敗，切換下一把 Key。`,
+            error
+          );
+        }
       }
 
-      if (!geminiResponse.ok) {
-        const message =
-          geminiData?.error?.message ||
-          `Gemini API 錯誤：${geminiResponse.status}`;
-
+      if (!geminiResponse?.ok) {
         return new Response(
           JSON.stringify({
-            error: message
+            error: lastErrorMessage
           }),
           {
-            status: geminiResponse.status,
+            status: lastErrorStatus,
             headers: {
               "Content-Type": "application/json; charset=utf-8"
             }
